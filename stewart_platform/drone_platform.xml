@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<SimscapeMultibodyImportXML version="2.0" xmlns="urn:mathworks:SimscapeMultibody:import" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<Created by="" on="12/11/19||13:53:08" using="Simscape Multibody Link Version 5.1" from="SolidWorks 26.3.0"/>
+<ModelUnits mass="kilogram" length="millimeter"/>
+<DataUnits mass="kilogram" length="meter"/>
+<RootAssembly name="" uid="" version="104">
+<AssemblyFile name="" type="SolidWorks Assembly"/>
+<InstanceTree>
+<Instance name="Drone_Stewart_Platform_V8 voice-coil.CATProduct-1" uid="Drone_Stewart_Platform_V8 voice-coil.CATProduct-1" grounded="true" entityUid="Drone_Stewart_Platform_V8 voice-coil.CATProduct" rigid="true">
+<Transform>
+<Rotation>1 0 0 0 1 0 0 0 1</Rotation>
+<Translation>0 0 0</Translation>
+</Transform>
+<Instance name="Spring cylinder.CATPart-1" uid="Spring cylinder.CATPart-1" grounded="true" entityUid="Spring cylinder.CATPart*:*Default">
+<Transform>
+<Rotation>0.99559443847292006 -0.093764140703102114 0 0.093764140703102114 0.99559443847292006 0 0 0 1</Rotation>
+<Translation>0.017500000000020999 0.030310889132419 0.0051574606296499997</Translation>
+</Transform>
+</Instance>
+<Instance name="Upper_Stewart_Platform_V8.CATPart-1" uid="Upper_Stewart_Platform_V8.CATPart-1" grounded="true" entityUid="Upper_Stewart_Platform_V8.CATPart*:*Default">
+<Transform>
+<Rotation>1 0 0 0 1 0 0 0 1</Rotation>
+<Translation>0 0 0</Translation>
+</Transform>
+</Instance>
+<Instance name="Spring cylinder.CATPart-3" uid="Spring cylinder.CATPart-3" grounded="true" entityUid="Spring cylinder.CATPart*:*Default">
+<Transform>
+<Rotation>0.99559443847292006 -0.093764140703102114 0 0.093764140703102114 0.99559443847292006 0 0 0 1</Rotation>
+<Translation>0.017500000000020999 -0.030310889132492001 0.0051574606296499997</Translation>
+</Transform>
+</Instance>
+<Instance name="Voice-coil.CATPart-1" uid="Voice-coil.CATPart-1" grounded="true" entityUid="Voice-coil.CATPart*:*Default">
+<Transform>
+<Rotation>0.57735026918919186 1.244016935856359e-15 -0.81649658092803279 9.9999999999999988e-16 -1 -8.1649658092803182e-16 -0.81649658092803279 -3.4509206013717914e-16 -0.57735026918919186</Rotation>
+<Translation>0.0096240451994409996 -0.030811470883507001 0.019383957937758</Translation>
+</Transform>
+</Instance>
+<Instance name="Voice-coil.CATPart-2" uid="Voice-coil.CATPart-2" grounded="true" entityUid="Voice-coil.CATPart*:*Default">
+<Transform>
+<Rotation>0.28867513459459598 0.86602540378443804 0.4082482904640175 0.49999999999962402 -0.50000000000000089 0.70710678118681269 0.81649658092803301 5.8261899184318886e-16 -0.57735026918919163</Rotation>
+<Translation>0.021871493913361999 -0.023740403071639 0.019383957937758</Translation>
+</Transform>
+</Instance>
+<Instance name="Voice-coil.CATPart-3" uid="Voice-coil.CATPart-3" grounded="true" entityUid="Voice-coil.CATPart*:*Default">
+<Transform>
+<Rotation>-0.28867513459459498 0.86602540378443871 0.40824829046401689 0.49999999999962302 0.49999999999999978 -0.70710678118681425 -0.81649658092803401 0 -0.5773502691891903</Rotation>
+<Translation>0.021871493913361 0.023740403071566 0.019383957937758</Translation>
+</Transform>
+</Instance>
+<Instance name="Voice-coil.CATPart-4" uid="Voice-coil.CATPart-4" grounded="true" entityUid="Voice-coil.CATPart*:*Default">
+<Transform>
+<Rotation>-0.57735026918919119 -7.7261241506550613e-16 -0.81649658092803323 -1.0000000000000005e-15 0.99999999999999989 -2.3914631173884234e-16 0.81649658092803334 6.7842539347001128e-16 -0.57735026918919108</Rotation>
+<Translation>0.0096240451994409996 0.030811470883434 0.019383957937758</Translation>
+</Transform>
+</Instance>
+<Instance name="Voice-coil.CATPart-5" uid="Voice-coil.CATPart-5" grounded="true" entityUid="Voice-coil.CATPart*:*Default">
+<Transform>
+<Rotation>-0.28867513459459521 -0.86602540378443937 0.40824829046401545 -0.49999999999962164 0.49999999999999872 0.70710678118681602 -0.81649658092803479 1.8290472843949615e-15 -0.57735026918918919</Rotation>
+<Translation>-0.031495539112739002 0.0070710678118320004 0.019383957937758</Translation>
+</Transform>
+</Instance>
+<Instance name="Voice-coil.CATPart-6" uid="Voice-coil.CATPart-6" grounded="true" entityUid="Voice-coil.CATPart*:*Default">
+<Transform>
+<Rotation>0.28867513459459598 -0.86602540378443771 0.40824829046401856 -0.49999999999962402 -0.50000000000000178 -0.70710678118681225 0.81649658092803301 -1.2398266370068536e-15 -0.57735026918919174</Rotation>
+<Translation>-0.031495539112739002 -0.0070710678119050002 0.019383957937758</Translation>
+</Transform>
+</Instance>
+<Instance name="Bottom_Stewart_Platform_V8.CATPart-1" uid="Bottom_Stewart_Platform_V8.CATPart-1" grounded="true" entityUid="Bottom_Stewart_Platform_V8.CATPart*:*Default">
+<Transform>
+<Rotation>1 0 0 0 1 0 0 0 1</Rotation>
+<Translation>0 0 0</Translation>
+</Transform>
+</Instance>
+<Instance name="Spring cylinder.CATPart-2" uid="Spring cylinder.CATPart-2" grounded="true" entityUid="Spring cylinder.CATPart*:*Default">
+<Transform>
+<Rotation>0.99559443847292006 -0.093764140703102114 0 0.093764140703102114 0.99559443847292006 0 0 0 1</Rotation>
+<Translation>-0.034999999999978999 -3.7e-14 0.0051574606296499997</Translation>
+</Transform>
+</Instance>
+</Instance>
+</InstanceTree>
+<Constraints>
+</Constraints>
+</RootAssembly>
+<Assemblies>
+<Assembly name="Drone_Stewart_Platform_V8 voice-coil.CATProduct" uid="Drone_Stewart_Platform_V8 voice-coil.CATProduct" version="104">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<AssemblyFile name="Drone_Stewart_Platform_V8 voice-coil.CATProduct.SLDASM" type="SolidWorks Assembly"/>
+</Assembly>
+</Assemblies>
+<Parts>
+<Part name="Bottom_Stewart_Platform_V8.CATPart" uid="Bottom_Stewart_Platform_V8.CATPart*:*Default" version="104">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<PartFile name="Bottom_Stewart_Platform_V8.CATPart.SLDPRT" type="SolidWorks Part"/>
+<MassProperties>
+<Mass>0.036808422349281396</Mass>
+<CenterOfMass>1.5151381609408908e-11 -2.584273842557644e-11 0.0038488764942888206</CenterOfMass>
+<Inertia>1.6573140175725057e-05 1.6573140156158694e-05 3.2475141872846651e-05 4.9976421207227284e-15 -2.8421200098863714e-15 -1.3395036264003659e-14</Inertia>
+</MassProperties>
+<GeometryFile name="Bottom_Stewart_Platform_V8.CATPart_Default_sldprt.STEP" type="STEP"/>
+<VisualProperties>
+<Ambient r="1" g="1" b="0" a="1"/>
+<Diffuse r="1" g="1" b="0" a="1"/>
+<Specular r="0.5" g="0.5" b="0" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.40000000596046448</Shininess>
+</VisualProperties>
+</Part>
+<Part name="Spring cylinder.CATPart" uid="Spring cylinder.CATPart*:*Default" version="104">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<PartFile name="Spring cylinder.CATPart.SLDPRT" type="SolidWorks Part"/>
+<MassProperties>
+<Mass>0.002953024625510399</Mass>
+<CenterOfMass>1.9528918640542436e-07 -3.03908697070007e-06 0.0034103846069334764</CenterOfMass>
+<Inertia>9.4245235034989608e-08 9.5111221695610222e-08 6.056497666333128e-08 9.2822238167834427e-13 1.5998098386190716e-09 -2.9934446424201115e-11</Inertia>
+</MassProperties>
+<GeometryFile name="Spring cylinder.CATPart_Default_sldprt.STEP" type="STEP"/>
+<VisualProperties>
+<Ambient r="0.82352941176470584" g="0.82352941176470584" b="1" a="1"/>
+<Diffuse r="0.82352941176470584" g="0.82352941176470584" b="1" a="1"/>
+<Specular r="0.41176470588235292" g="0.41176470588235292" b="0.5" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.40000000596046448</Shininess>
+</VisualProperties>
+</Part>
+<Part name="Upper_Stewart_Platform_V8.CATPart" uid="Upper_Stewart_Platform_V8.CATPart*:*Default" version="104">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<PartFile name="Upper_Stewart_Platform_V8.CATPart.SLDPRT" type="SolidWorks Part"/>
+<MassProperties>
+<Mass>0.032807859410420866</Mass>
+<CenterOfMass>4.3204111866222267e-08 6.4929928363256895e-09 0.022029956321592298</CenterOfMass>
+<Inertia>1.0958807269683137e-05 1.095865147887874e-05 2.1418645161274546e-05 -2.7272640778847974e-12 2.0116845742236025e-12 2.0925824216820959e-12</Inertia>
+</MassProperties>
+<GeometryFile name="Upper_Stewart_Platform_V8.CATPart_Default_sldprt.STEP" type="STEP"/>
+<VisualProperties>
+<Ambient r="0" g="1" b="1" a="1"/>
+<Diffuse r="0" g="1" b="1" a="1"/>
+<Specular r="0" g="0.5" b="0.5" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.40000000596046448</Shininess>
+</VisualProperties>
+</Part>
+<Part name="Voice-coil.CATPart" uid="Voice-coil.CATPart*:*Default" version="102">
+<ModelUnits mass="kilogram" length="millimeter"/>
+<PartFile name="Voice-coil.CATPart.SLDPRT" type="SolidWorks Part"/>
+<MassProperties>
+<Mass>0.00072851613140055473</Mass>
+<CenterOfMass>1.6672752107505068e-10 4.9264195897497112e-05 0.0068426699166844653</CenterOfMass>
+<Inertia>2.364206948255963e-08 2.3409631588225184e-08 7.6150552208997043e-09 1.9174011014260876e-10 5.66357422383939e-16 -6.4605353421422726e-16</Inertia>
+</MassProperties>
+<GeometryFile name="Voice-coil.CATPart_Default_sldprt.STEP" type="STEP"/>
+<VisualProperties>
+<Ambient r="0.82352941176470584" g="0.82352941176470584" b="1" a="1"/>
+<Diffuse r="0.82352941176470584" g="0.82352941176470584" b="1" a="1"/>
+<Specular r="0.41176470588235292" g="0.41176470588235292" b="0.5" a="1"/>
+<Emissive r="0" g="0" b="0" a="1"/>
+<Shininess>0.40000000596046448</Shininess>
+</VisualProperties>
+</Part>
+</Parts>
+</SimscapeMultibodyImportXML>
