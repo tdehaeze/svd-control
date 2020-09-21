@@ -34,14 +34,16 @@
 #+PROPERTY: header-args:latex+ :imagemagick t :fit yes
 #+PROPERTY: header-args:latex+ :iminoptions -scale 100% -density 150
 #+PROPERTY: header-args:latex+ :imoutoptions -quality 100
-#+PROPERTY: header-args:latex+ :results raw replace :buffer no
+#+PROPERTY: header-args:latex+ :results file raw replace
+#+PROPERTY: header-args:latex+ :buffer no
 #+PROPERTY: header-args:latex+ :eval no-export
-#+PROPERTY: header-args:latex+ :exports both
+#+PROPERTY: header-args:latex+ :exports results
 #+PROPERTY: header-args:latex+ :mkdirp yes
 #+PROPERTY: header-args:latex+ :output-dir figs
+#+PROPERTY: header-args:latex+ :post pdf2svg(file=*this*, ext="png")
 :END:
 
-* Simscape Model - Gravimeter
+* Gravimeter - Simscape Model
 ** Matlab Init                                             :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
@@ -380,7 +382,7 @@ The plant as 6 states as expected (2 translations + 1 rotation)
       rot = PHI(:,11,11);
 #+end_src
 
-* Simscape Model - Stewart Platform
+* Stewart Platform - Simscape Model
 ** Matlab Init                                             :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
@@ -392,7 +394,6 @@ The plant as 6 states as expected (2 translations + 1 rotation)
 
 ** Jacobian
 First, the position of the "joints" (points of force application) are estimated and the Jacobian computed.
-
 #+begin_src matlab
   open('stewart_platform/drone_platform_jacobian.slx');
 #+end_src
@@ -425,7 +426,7 @@ First, the position of the "joints" (points of force application) are estimated 
   save('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 #+end_src
 
-** Simulink
+** Simscape Model
 #+begin_src matlab
   open('stewart_platform/drone_platform.slx');
 #+end_src
@@ -446,7 +447,7 @@ We load the Jacobian.
   load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 #+end_src
 
-
+** Identification of the plant
 The dynamics is identified from forces applied by each legs to the measured acceleration of the top platform.
 #+begin_src matlab
   %% Name of the Simulink File
@@ -454,30 +455,41 @@ The dynamics is identified from forces applied by each legs to the measured acce
 
   %% Input/Output definition
   clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/Dw'],              1, 'openinput');  io_i = io_i + 1;
   io(io_i) = linio([mdl, '/u'],               1, 'openinput');  io_i = io_i + 1;
   io(io_i) = linio([mdl, '/Inertial Sensor'], 1, 'openoutput'); io_i = io_i + 1;
 
   G = linearize(mdl, io);
-  G.InputName  = {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
+  G.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
+                  'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
   G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
 #+end_src
 
+There are 24 states (6dof for the bottom platform + 6dof for the top platform).
 #+begin_src matlab :results output replace
   size(G)
 #+end_src
 
 #+RESULTS:
-: State-space model with 6 outputs, 6 inputs, and 12 states.
+: State-space model with 6 outputs, 12 inputs, and 24 states.
+
+#+begin_src matlab
+  % G = G*blkdiag(inv(J), eye(6));
+  % G.InputName  = {'Dw1', 'Dw2', 'Dw3', 'Dw4', 'Dw5', 'Dw6', ...
+  %                 'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
+#+end_src
 
 Thanks to the Jacobian, we compute the transfer functions in the frame of the legs and in an inertial frame.
 #+begin_src matlab
-  Gx = -G*inv(J');
-  Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
+  Gx = G*blkdiag(eye(6), inv(J'));
+  Gx.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
+                   'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
 
-  Gl = -J*G;
+  Gl = J*G;
   Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
 #+end_src
 
+** Obtained Dynamics
 #+begin_src matlab :exports none
   freqs = logspace(-1, 2, 1000);
 
@@ -485,9 +497,9 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax1 = subplot(2, 1, 1);
   hold on;
-  plot(freqs, abs(squeeze(freqresp(Gx(1, 1), freqs, 'Hz'))), 'DisplayName', '$A_x/F_x$');
-  plot(freqs, abs(squeeze(freqresp(Gx(2, 2), freqs, 'Hz'))), 'DisplayName', '$A_y/F_y$');
-  plot(freqs, abs(squeeze(freqresp(Gx(3, 3), freqs, 'Hz'))), 'DisplayName', '$A_z/F_z$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Fx'), freqs, 'Hz'))), 'DisplayName', '$A_x/F_x$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Fy'), freqs, 'Hz'))), 'DisplayName', '$A_y/F_y$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Fz'), freqs, 'Hz'))), 'DisplayName', '$A_z/F_z$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Amplitude [m/N]'); set(gca, 'XTickLabel',[]);
@@ -495,13 +507,13 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax2 = subplot(2, 1, 2);
   hold on;
-  for i = 1:3
-    plot(freqs, 180/pi*unwrap(angle(squeeze(freqresp(Gx(i, i), freqs, 'Hz')))));
-  end
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ax', 'Fx'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ay', 'Fy'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Az', 'Fz'), freqs, 'Hz'))));
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
   ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
-  ylim([-270, 90]);
+  ylim([-180, 180]);
   yticks([-360:90:360]);
 
   linkaxes([ax1,ax2],'x');
@@ -523,9 +535,9 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax1 = subplot(2, 1, 1);
   hold on;
-  plot(freqs, abs(squeeze(freqresp(Gx(4, 4), freqs, 'Hz'))), 'DisplayName', '$A_{R_x}/M_x$');
-  plot(freqs, abs(squeeze(freqresp(Gx(5, 5), freqs, 'Hz'))), 'DisplayName', '$A_{R_y}/M_y$');
-  plot(freqs, abs(squeeze(freqresp(Gx(6, 6), freqs, 'Hz'))), 'DisplayName', '$A_{R_z}/M_z$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Mx'), freqs, 'Hz'))), 'DisplayName', '$A_{R_x}/M_x$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'My'), freqs, 'Hz'))), 'DisplayName', '$A_{R_y}/M_y$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Mz'), freqs, 'Hz'))), 'DisplayName', '$A_{R_z}/M_z$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Amplitude [rad/(Nm)]'); set(gca, 'XTickLabel',[]);
@@ -533,13 +545,13 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax2 = subplot(2, 1, 2);
   hold on;
-  for i = 4:6
-    plot(freqs, 180/pi*unwrap(angle(squeeze(freqresp(Gx(i, i), freqs, 'Hz')))));
-  end
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Arx', 'Mx'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ary', 'My'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Arz', 'Mz'), freqs, 'Hz'))));
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
   ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
-  ylim([-270, 90]);
+  ylim([-180, 180]);
   yticks([-360:90:360]);
 
   linkaxes([ax1,ax2],'x');
@@ -562,11 +574,11 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
   ax1 = subplot(2, 1, 1);
   hold on;
   for i = 1:6
-    plot(freqs, abs(squeeze(freqresp(Gl(i, i), freqs, 'Hz'))));
+    plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', i), sprintf('F%i', i)), freqs, 'Hz'))));
   end
   for i = 1:5
     for j = i+1:6
-      plot(freqs, abs(squeeze(freqresp(Gl(i, j), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2]);
+      plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', i), sprintf('F%i', j)), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2]);
     end
   end
   hold off;
@@ -576,12 +588,12 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
   ax2 = subplot(2, 1, 2);
   hold on;
   for i = 1:6
-    plot(freqs, 180/pi*unwrap(angle(squeeze(freqresp(Gl(i, i), freqs, 'Hz')))));
+    plot(freqs, 180/pi*angle(squeeze(freqresp(Gl(sprintf('A%i', i), sprintf('F%i', i)), freqs, 'Hz'))));
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
   ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
-  ylim([-270, 90]);
+  ylim([-180, 180]);
   yticks([-360:90:360]);
 
   linkaxes([ax1,ax2],'x');
@@ -595,3 +607,548 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 #+caption: Stewart Platform Plant from forces applied by the legs to displacement of the legs
 #+RESULTS:
 [[file:figs/stewart_platform_legs.png]]
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+
+  ax1 = subplot(2, 1, 1);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - Translations');  xlabel('Frequency [Hz]');
+  legend('location', 'northeast');
+
+  ax2 = subplot(2, 1, 2);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - Rotations');  xlabel('Frequency [Hz]');
+  legend('location', 'northeast');
+
+  linkaxes([ax1,ax2],'x');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_transmissibility.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_transmissibility
+#+caption: Transmissibility
+#+RESULTS:
+[[file:figs/stewart_platform_transmissibility.png]]
+
+** Real Approximation of $G$ at the decoupling frequency
+Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_c(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
+#+begin_src matlab
+  wc = 2*pi*20; % Decoupling frequency [rad/s]
+  Gc = G({'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'}, {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'}); % Transfer function to find a real approximation
+#+end_src
+
+#+begin_src matlab
+  H1 = evalfr(Gc, j*wc);
+#+end_src
+
+The real approximation is computed as follows:
+#+begin_src matlab
+  D = pinv(real(H1'*H1));
+  H1 = inv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+#+end_src
+
+** Verification of the decoupling using the "Gershgorin Radii"
+First, the Singular Value Decomposition of $H_1$ is performed:
+\[ H_1 = U \Sigma V^H \]
+
+#+begin_src matlab
+  [U,S,V] = svd(H1);
+#+end_src
+
+Then, the "Gershgorin Radii" is computed for the plant $G_c(s)$ and the "SVD Decoupled Plant" $G_d(s)$:
+\[ G_d(s) = U^T G_c(s) V \]
+
+It is done over the following frequencies.
+#+begin_src matlab
+  freqs = logspace(-1,2,1000); % [Hz]
+#+end_src
+
+#+begin_src matlab
+  for i = 1:length(freqs)
+      H = abs(evalfr(Gc, j*2*pi*freqs(i)));
+      for j = 1:size(H,2)
+          g_r1(i,j) =  (sum(H(j,:)) - H(j,j))/H(j,j);
+      end
+  end
+#+end_src
+
+#+begin_src matlab
+  Gd = U'*Gc*V;
+ 
+  for i  = 1:length(freqs)
+      H_dec = abs(evalfr(Gd, j*2*pi*freqs(i)));
+      for j = 1:size(H,2)
+          g_r2(i,j) =  (sum(H_dec(j,:)) - H_dec(j,j))/H_dec(j,j);
+      end
+  end
+#+end_src
+
+#+begin_src matlab :exports results
+  figure;
+  hold on;
+  plot(freqs, g_r1(:,1), 'DisplayName', '$a_x$')
+  plot(freqs, g_r1(:,2), 'DisplayName', '$a_y$')
+  plot(freqs, g_r1(:,3), 'DisplayName', '$a_z$')
+  plot(freqs, g_r1(:,4), 'DisplayName', '$a_{R_x}$')
+  plot(freqs, g_r1(:,5), 'DisplayName', '$a_{R_y}$')
+  plot(freqs, g_r1(:,6), 'DisplayName', '$a_{R_z}$')
+  plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  hold off;
+  xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+#+end_src
+
+#+begin_src matlab :exports results
+  figure;
+  hold on;
+  plot(freqs, g_r2(:,1), 'DisplayName', '$a_x$')
+  plot(freqs, g_r2(:,2), 'DisplayName', '$a_y$')
+  plot(freqs, g_r2(:,3), 'DisplayName', '$a_z$')
+  plot(freqs, g_r2(:,4), 'DisplayName', '$a_{R_x}$')
+  plot(freqs, g_r2(:,5), 'DisplayName', '$a_{R_y}$')
+  plot(freqs, g_r2(:,6), 'DisplayName', '$a_{R_z}$')
+  plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+#+end_src
+
+** Decoupled Plant
+Let's see the bode plot of the decoupled plant $G_d(s)$.
+\[ G_d(s) = U^T G_c(s) V \]
+
+#+begin_src matlab :exports results
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+  hold on;
+  for i = 1:6
+    plot(freqs, abs(squeeze(freqresp(Gd(i, i), freqs, 'Hz'))), ...
+         'DisplayName', sprintf('$G(%i, %i)$', i, i));
+  end
+  for i = 1:5
+    for j = i+1:6
+      plot(freqs, abs(squeeze(freqresp(G(i, j), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2], ...
+           'HandleVisibility', 'off');
+    end
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Amplitude'); xlabel('Frequency [Hz]');
+  legend('location', 'southeast');
+#+end_src
+
+** Diagonal Controller
+The controller $K$ is a diagonal controller consisting a low pass filters with a crossover frequency $\omega_c$ and a DC gain $C_g$.
+
+#+begin_src matlab
+  wc = 2*pi*0.1; % Crossover Frequency [rad/s]
+  C_g = 50; % DC Gain
+
+  K = eye(6)*C_g/(s+wc);
+#+end_src
+
+** Centralized Control
+The control diagram for the centralized control is shown below.
+
+The controller $K_c$ is "working" in an cartesian frame.
+The Jacobian is used to convert forces in the cartesian frame to forces applied by the actuators.
+
+#+begin_src latex :file centralized_control.pdf
+  \begin{tikzpicture}
+    \node[block={2cm}{1.5cm}] (G) {$G$};
+    \node[block, below right=0.6 and -0.5 of G] (K) {$K_c$};
+    \node[block, below left= 0.6 and -0.5 of G] (J) {$J^{-T}$};
+
+    % Inputs of the controllers
+    \coordinate[] (inputd) at ($(G.south west)!0.75!(G.north west)$);
+    \coordinate[] (inputu) at ($(G.south west)!0.25!(G.north west)$);
+
+    % Connections and labels
+    \draw[<-] (inputd) -- ++(-0.8, 0) node[above right]{$D_w$};
+    \draw[->] (G.east) -- ++(2.0, 0)  node[above left]{$a$};
+    \draw[->] ($(G.east)+(1.4, 0)$)node[branch]{} |- (K.east);
+    \draw[->] (K.west) -- (J.east) node[above right]{$\mathcal{F}$};
+    \draw[->] (J.west) -- ++(-0.6, 0) |- (inputu) node[above left]{$\tau$};
+  \end{tikzpicture}
+#+end_src
+
+#+RESULTS:
+[[file:figs/centralized_control.png]]
+
+#+begin_src matlab
+  G_cen = feedback(G, inv(J')*K, [7:12], [1:6]);
+#+end_src
+
+** SVD Control
+The SVD control architecture is shown below.
+The matrices $U$ and $V$ are used to decoupled the plant $G$.
+
+#+begin_src latex :file svd_control.pdf
+  \begin{tikzpicture}
+    \node[block={2cm}{1.5cm}] (G) {$G$};
+    \node[block, below right=0.6 and 0 of G] (U) {$U^{-1}$};
+    \node[block, below=0.6 of G] (K) {$K_{\text{SVD}}$};
+    \node[block, below left= 0.6 and 0 of G] (V) {$V^{-T}$};
+
+    % Inputs of the controllers
+    \coordinate[] (inputd) at ($(G.south west)!0.75!(G.north west)$);
+    \coordinate[] (inputu) at ($(G.south west)!0.25!(G.north west)$);
+
+    % Connections and labels
+    \draw[<-] (inputd) -- ++(-0.8, 0) node[above right]{$D_w$};
+    \draw[->] (G.east) -- ++(2.5, 0) node[above left]{$a$};
+    \draw[->] ($(G.east)+(2.0, 0)$) node[branch]{} |- (U.east);
+    \draw[->] (U.west) -- (K.east);
+    \draw[->] (K.west) -- (V.east);
+    \draw[->] (V.west) -- ++(-0.6, 0) |- (inputu) node[above left]{$\tau$};
+  \end{tikzpicture}
+#+end_src
+
+#+RESULTS:
+[[file:figs/svd_control.png]]
+
+SVD Control
+#+begin_src matlab
+  G_svd = feedback(G, pinv(V')*K*pinv(U), [7:12], [1:6]);
+#+end_src
+
+** Results
+The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure [[fig:stewart_platform_simscape_cl_transmissibility]].
+
+#+begin_src matlab :exports results
+  freqs = logspace(-3, 3, 1000);
+
+  figure
+
+  ax1 = subplot(2, 3, 1);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
+  plot(freqs, abs(squeeze(freqresp(G_cen('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'SVD');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - $D_x/D_{w,x}$');  xlabel('Frequency [Hz]');
+  legend('location', 'southwest');
+
+  ax2 = subplot(2, 3, 2);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Ay', 'Dwy')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Ay', 'Dwy')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))));
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - $D_y/D_{w,y}$');  xlabel('Frequency [Hz]');
+
+  ax3 = subplot(2, 3, 3);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Az', 'Dwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Az', 'Dwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Az', 'Dwz')/s^2, freqs, 'Hz'))));
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - $D_z/D_{w,z}$');  xlabel('Frequency [Hz]');
+
+  ax4 = subplot(2, 3, 4);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - $R_x/R_{w,x}$');  xlabel('Frequency [Hz]');
+
+  ax5 = subplot(2, 3, 5);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
+
+  ax6 = subplot(2, 3, 6);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility - $R_z/R_{w,z}$');  xlabel('Frequency [Hz]');
+
+  linkaxes([ax1,ax2,ax3,ax4,ax5,ax6],'x');
+  xlim([freqs(1), freqs(end)]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_simscape_cl_transmissibility.pdf', 'width', 1600, 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_simscape_cl_transmissibility
+#+caption: Obtained Transmissibility
+#+RESULTS:
+[[file:figs/stewart_platform_simscape_cl_transmissibility.png]]
+
+* Stewart Platform - Analytical Model
+** Matlab Init                                              :noexport:ignore:
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+  <<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+  <<matlab-init>>
+#+end_src
+
+#+begin_src matlab
+  %% Bode plot options
+  opts = bodeoptions('cstprefs');
+  opts.FreqUnits = 'Hz';
+  opts.MagUnits = 'abs';
+  opts.MagScale = 'log';
+  opts.PhaseWrapping = 'on';
+  opts.xlim = [1 1000];
+#+end_src
+
+** Characteristics
+#+begin_src matlab
+  L  = 0.055;
+  Zc = 0;
+  m  = 0.2;
+  k  = 1e3;
+  c  = 2*0.1*sqrt(k*m);
+
+  Rx = 0.04;
+  Rz = 0.04;
+  Ix = m*Rx^2;
+  Iy = m*Rx^2;
+  Iz = m*Rz^2;
+#+end_src
+
+** Mass Matrix
+#+begin_src matlab
+  M = m*[1 0 0 0 Zc 0;
+         0 1 0 -Zc 0 0;
+         0 0 1 0 0 0;
+         0 -Zc 0 Rx^2+Zc^2 0 0;
+         Zc 0 0 0 Rx^2+Zc^2 0;
+         0 0 0 0 0 Rz^2];
+#+end_src
+
+** Jacobian Matrix
+#+begin_src matlab
+  Bj=1/sqrt(6)*[ 1 1 -2 1 1 -2;
+                 sqrt(3) -sqrt(3) 0 sqrt(3) -sqrt(3) 0;
+                 sqrt(2) sqrt(2) sqrt(2) sqrt(2) sqrt(2) sqrt(2);
+                 0 0 L L -L -L;
+                 -L*2/sqrt(3) -L*2/sqrt(3) L/sqrt(3) L/sqrt(3) L/sqrt(3) L/sqrt(3);
+                 L*sqrt(2) -L*sqrt(2) L*sqrt(2) -L*sqrt(2) L*sqrt(2) -L*sqrt(2)];
+#+end_src
+
+** Stifnness matrix and Damping matrix
+#+begin_src matlab
+  kv = k/3; % [N/m]
+  kh = 0.5*k/3; % [N/m]
+
+  K = diag([3*kh,3*kh,3*kv,3*kv*Rx^2/2,3*kv*Rx^2/2,3*kh*Rx^2]); % Stiffness Matrix
+
+  C = c*K/100000; % Damping Matrix
+#+end_src
+
+** State Space System
+#+begin_src matlab
+  A  = [zeros(6) eye(6); -M\K -M\C];
+  Bw = [zeros(6); -eye(6)];
+  Bu = [zeros(6); M\Bj];
+  Co = [-M\K -M\C];
+  D  = [zeros(6) M\Bj];
+ 
+  ST = ss(A,[Bw Bu],Co,D);
+#+end_src
+
+- OUT 1-6: 6 dof
+- IN 1-6 : ground displacement in the directions of the legs
+- IN 7-12: forces in the actuators.
+#+begin_src matlab
+  ST.StateName = {'x';'y';'z';'theta_x';'theta_y';'theta_z';...
+                  'dx';'dy';'dz';'dtheta_x';'dtheta_y';'dtheta_z'};
+  ST.InputName = {'w1';'w2';'w3';'w4';'w5';'w6';...
+                  'u1';'u2';'u3';'u4';'u5';'u6'};
+  ST.OutputName = {'ax';'ay';'az';'atheta_x';'atheta_y';'atheta_z'};
+#+end_src
+
+** Transmissibility
+#+begin_src matlab
+  TR=ST*[eye(6); zeros(6)];
+#+end_src
+
+#+begin_src matlab
+  figure
+  subplot(231)
+  bodemag(TR(1,1),opts);
+  subplot(232)
+  bodemag(TR(2,2),opts);
+  subplot(233)
+  bodemag(TR(3,3),opts);
+  subplot(234)
+  bodemag(TR(4,4),opts);
+  subplot(235)
+  bodemag(TR(5,5),opts);
+  subplot(236)
+  bodemag(TR(6,6),opts);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_analytical_transmissibility.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_analytical_transmissibility
+#+caption: Transmissibility
+#+RESULTS:
+[[file:figs/stewart_platform_analytical_transmissibility.png]]
+
+** Real approximation of $G(j\omega)$ at decoupling frequency
+#+begin_src matlab
+  sys1 = ST*[zeros(6); eye(6)]; % take only the forces inputs
+
+  dec_fr = 20;
+  H1 = evalfr(sys1,j*2*pi*dec_fr);
+  H2 = H1;
+  D = pinv(real(H2'*H2));
+  H1 = inv(D*real(H2'*diag(exp(j*angle(diag(H2*D*H2.'))/2)))) ;
+  [U,S,V] = svd(H1);
+
+  wf = logspace(-1,2,1000);
+  for i  = 1:length(wf)
+      H = abs(evalfr(sys1,j*2*pi*wf(i)));
+      H_dec = abs(evalfr(U'*sys1*V,j*2*pi*wf(i)));
+      for j = 1:size(H,2)
+          g_r1(i,j) =  (sum(H(j,:))-H(j,j))/H(j,j);
+          g_r2(i,j) =  (sum(H_dec(j,:))-H_dec(j,j))/H_dec(j,j);
+          %     keyboard
+      end
+      g_lim(i) = 0.5;
+  end
+#+end_src
+
+** Coupled and Decoupled Plant "Gershgorin Radii"
+#+begin_src matlab
+  figure;
+  title('Coupled plant')
+  loglog(wf,g_r1(:,1),wf,g_r1(:,2),wf,g_r1(:,3),wf,g_r1(:,4),wf,g_r1(:,5),wf,g_r1(:,6),wf,g_lim,'--');
+  legend('$a_x$','$a_y$','$a_z$','$\theta_x$','$\theta_y$','$\theta_z$','Limit');
+  xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gershorin_raddii_coupled_analytical.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:gershorin_raddii_coupled_analytical
+#+caption: Gershorin Raddi for the coupled plant
+#+RESULTS:
+[[file:figs/gershorin_raddii_coupled_analytical.png]]
+
+#+begin_src matlab
+  figure;
+  title('Decoupled plant (10 Hz)')
+  loglog(wf,g_r2(:,1),wf,g_r2(:,2),wf,g_r2(:,3),wf,g_r2(:,4),wf,g_r2(:,5),wf,g_r2(:,6),wf,g_lim,'--');
+  legend('$S_1$','$S_2$','$S_3$','$S_4$','$S_5$','$S_6$','Limit');
+  xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gershorin_raddii_decoupled_analytical.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:gershorin_raddii_decoupled_analytical
+#+caption: Gershorin Raddi for the decoupled plant
+#+RESULTS:
+[[file:figs/gershorin_raddii_decoupled_analytical.png]]
+
+** Decoupled Plant
+#+begin_src matlab
+  figure;
+  bodemag(U'*sys1*V,opts)
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_analytical_decoupled_plant.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_analytical_decoupled_plant
+#+caption: Decoupled Plant
+#+RESULTS:
+[[file:figs/stewart_platform_analytical_decoupled_plant.png]]
+
+** Controller
+#+begin_src matlab
+  fc = 2*pi*0.1; % Crossover Frequency [rad/s]
+  c_gain = 50; %
+
+  cont = eye(6)*c_gain/(s+fc);
+#+end_src
+
+** Closed Loop System
+#+begin_src matlab
+  FEEDIN  = [7:12]; % Input of controller
+  FEEDOUT = [1:6]; % Output of controller
+#+end_src
+
+Centralized Control
+#+begin_src matlab
+  STcen = feedback(ST, inv(Bj)*cont, FEEDIN, FEEDOUT);
+  TRcen = STcen*[eye(6); zeros(6)];
+#+end_src
+
+SVD Control
+#+begin_src matlab
+  STsvd = feedback(ST, pinv(V')*cont*pinv(U), FEEDIN, FEEDOUT);
+  TRsvd = STsvd*[eye(6); zeros(6)];
+#+end_src
+
+** Results
+#+begin_src matlab
+  figure
+  subplot(231)
+  bodemag(TR(1,1),TRcen(1,1),TRsvd(1,1),opts)
+  legend('OL','Centralized','SVD')
+  subplot(232)
+  bodemag(TR(2,2),TRcen(2,2),TRsvd(2,2),opts)
+  legend('OL','Centralized','SVD')
+  subplot(233)
+  bodemag(TR(3,3),TRcen(3,3),TRsvd(3,3),opts)
+  legend('OL','Centralized','SVD')
+  subplot(234)
+  bodemag(TR(4,4),TRcen(4,4),TRsvd(4,4),opts)
+  legend('OL','Centralized','SVD')
+  subplot(235)
+  bodemag(TR(5,5),TRcen(5,5),TRsvd(5,5),opts)
+  legend('OL','Centralized','SVD')
+  subplot(236)
+  bodemag(TR(6,6),TRcen(6,6),TRsvd(6,6),opts)
+  legend('OL','Centralized','SVD')
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_analytical_svd_cen_comp.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_analytical_svd_cen_comp
+#+caption: Comparison of the obtained transmissibility for the centralized control and the SVD control
+#+RESULTS:
+[[file:figs/stewart_platform_analytical_svd_cen_comp.png]]
