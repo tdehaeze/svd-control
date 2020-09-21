@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2020-09-21 lun. 13:07 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>SVD Control</title>
+<meta name="generator" content="Org mode" />
+<meta name="author" content="Dehaeze Thomas" />
+<link rel="stylesheet" type="text/css" href="./css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="./css/readtheorg.css"/>
+<link rel="stylesheet" type="text/css" href="./css/zenburn.css"/>
+<script type="text/javascript" src="./js/jquery.min.js"></script>
+<script type="text/javascript" src="./js/bootstrap.min.js"></script>
+<script type="text/javascript" src="./js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="./js/readtheorg.js"></script>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="../index.html"> UP </a>
+ |
+ <a accesskey="H" href="../index.html"> HOME </a>
+</div><div id="content">
+<h1 class="title">SVD Control</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orga7bd74e">1. Simscape Model - Gravimeter</a>
+<ul>
+<li><a href="#org2acf438">1.1. Simulink</a></li>
+</ul>
+</li>
+<li><a href="#org08c4258">2. Simscape Model - Stewart Platform</a>
+<ul>
+<li><a href="#orgb618964">2.1. Jacobian</a></li>
+<li><a href="#org5a73bf5">2.2. Simulink</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orga7bd74e" class="outline-2">
+<h2 id="orga7bd74e"><span class="section-number-2">1</span> Simscape Model - Gravimeter</h2>
+<div class="outline-text-2" id="text-1">
+</div>
+<div id="outline-container-org2acf438" class="outline-3">
+<h3 id="org2acf438"><span class="section-number-3">1.1</span> Simulink</h3>
+<div class="outline-text-3" id="text-1-1">
+<div class="org-src-container">
+<pre class="src src-matlab">open('gravimeter.slx')
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-matlab">%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'F1', 'F2', 'F3'};
+G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+</pre>
+</div>
+
+<p>
+The plant as 6 states as expected (2 translations + 1 rotation)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-matlab">size(G)
+</pre>
+</div>
+
+<pre class="example">
+State-space model with 4 outputs, 3 inputs, and 6 states.
+</pre>
+
+
+
+<div id="orgfba9d15" class="figure">
+<p><img src="figs/open_loop_tf.png" alt="open_loop_tf.png" />
+</p>
+<p><span class="figure-number">Figure 1: </span>Open Loop Transfer Function from 3 Actuators to 4 Accelerometers</p>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org08c4258" class="outline-2">
+<h2 id="org08c4258"><span class="section-number-2">2</span> Simscape Model - Stewart Platform</h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-orgb618964" class="outline-3">
+<h3 id="orgb618964"><span class="section-number-3">2.1</span> Jacobian</h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+First, the position of the &ldquo;joints&rdquo; (points of force application) are estimated and the Jacobian computed.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-matlab">open('stewart_platform/drone_platform_jacobian.slx');
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-matlab">sim('drone_platform_jacobian');
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-matlab">Aa = [a1.Data(1,:);
+      a2.Data(1,:);
+      a3.Data(1,:);
+      a4.Data(1,:);
+      a5.Data(1,:);
+      a6.Data(1,:)]';
+
+Ab = [b1.Data(1,:);
+      b2.Data(1,:);
+      b3.Data(1,:);
+      b4.Data(1,:);
+      b5.Data(1,:);
+      b6.Data(1,:)]';
+
+As = (Ab - Aa)./vecnorm(Ab - Aa);
+
+l = vecnorm(Ab - Aa)';
+
+J = [As' , cross(Ab, As)'];
+
+save('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org5a73bf5" class="outline-3">
+<h3 id="org5a73bf5"><span class="section-number-3">2.2</span> Simulink</h3>
+<div class="outline-text-3" id="text-2-2">
+<div class="org-src-container">
+<pre class="src src-matlab">open('stewart_platform/drone_platform.slx');
+</pre>
+</div>
+
+<p>
+Definition of spring parameters
+</p>
+<div class="org-src-container">
+<pre class="src src-matlab">kx = 50; % [N/m]
+ky = 50;
+kz = 50;
+
+cx = 0.025; % [Nm/rad]
+cy = 0.025;
+cz = 0.025;
+</pre>
+</div>
+
+<p>
+We load the Jacobian.
+</p>
+<div class="org-src-container">
+<pre class="src src-matlab">load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
+</pre>
+</div>
+
+
+<p>
+The dynamics is identified from forces applied by each legs to the measured acceleration of the top platform.
+</p>
+<div class="org-src-container">
+<pre class="src src-matlab">%% Name of the Simulink File
+mdl = 'drone_platform';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/u'],               1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Inertial Sensor'], 1, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
+G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
+</pre>
+</div>
+
+<p>
+Thanks to the Jacobian, we compute the transfer functions in the frame of the legs and in an inertial frame.
+</p>
+<div class="org-src-container">
+<pre class="src src-matlab">Gx = -G*inv(J');
+Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
+
+Gl = -J*G;
+Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
+</pre>
+</div>
+
+
+<div id="orgc24d97d" class="figure">
+<p><img src="figs/stewart_platform_translations.png" alt="stewart_platform_translations.png" />
+</p>
+<p><span class="figure-number">Figure 2: </span>Stewart Platform Plant from forces applied by the legs to the acceleration of the platform</p>
+</div>
+
+
+<div id="orgd85b88a" class="figure">
+<p><img src="figs/stewart_platform_rotations.png" alt="stewart_platform_rotations.png" />
+</p>
+<p><span class="figure-number">Figure 3: </span>Stewart Platform Plant from torques applied by the legs to the angular acceleration of the platform</p>
+</div>
+
+
+<div id="org85cf2f1" class="figure">
+<p><img src="figs/stewart_platform_legs.png" alt="stewart_platform_legs.png" />
+</p>
+<p><span class="figure-number">Figure 4: </span>Stewart Platform Plant from forces applied by the legs to displacement of the legs</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Dehaeze Thomas</p>
+<p class="date">Created: 2020-09-21 lun. 13:07</p>
+</div>
+</body>
+</html>
