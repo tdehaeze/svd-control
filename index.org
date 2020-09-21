@@ -71,9 +71,20 @@
   io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
 
   G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
 #+end_src
 
-#+begin_src matlab
+The plant as 6 states as expected (2 translations + 1 rotation)
+
+#+begin_src matlab :results output replace
+  size(G)
+#+end_src
+
+#+RESULTS:
+: State-space model with 4 outputs, 3 inputs, and 6 states.
+
+#+begin_src matlab :exports none
   freqs = logspace(-2, 2, 1000);
 
   figure;
@@ -95,7 +106,7 @@
 #+RESULTS:
 [[file:figs/open_loop_tf.png]]
 
-** Matlab Code
+** Matlab Code                                                     :noexport:
 #+begin_src matlab
   clc;
   % close all
@@ -266,7 +277,7 @@
   xlim([7e-2 1e1]);
 #+end_src
 
-** Model Generation
+** Model Generation                                                :noexport:
 #+begin_src matlab
   function [Fr, x1, z1, x2, z2, wx, wz, x12, z12, PHIwx, PHIwz,xsum,zsum,xdelta,zdelta,rot] = modelGeneration(m,I,k,h,ha,l,la,dampv,damph,kv,kh)
       %% generation of the state space model
@@ -380,6 +391,8 @@
 #+end_src
 
 ** Jacobian
+First, the position of the "joints" (points of force application) are estimated and the Jacobian computed.
+
 #+begin_src matlab
   open('stewart_platform/drone_platform_jacobian.slx');
 #+end_src
@@ -417,20 +430,24 @@
   open('stewart_platform/drone_platform.slx');
 #+end_src
 
+Definition of spring parameters
 #+begin_src matlab
-  kx = 50;
+  kx = 50; % [N/m]
   ky = 50;
   kz = 50;
 
-  cx = 0.025;
+  cx = 0.025; % [Nm/rad]
   cy = 0.025;
   cz = 0.025;
 #+end_src
 
+We load the Jacobian.
 #+begin_src matlab
   load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 #+end_src
 
+
+The dynamics is identified from forces applied by each legs to the measured acceleration of the top platform.
 #+begin_src matlab
   %% Name of the Simulink File
   mdl = 'drone_platform';
@@ -443,7 +460,10 @@
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
   G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
+#+end_src
 
+Thanks to the Jacobian, we compute the transfer functions in the frame of the legs and in an inertial frame.
+#+begin_src matlab
   Gx = -G*inv(J');
   Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
 
@@ -480,6 +500,15 @@
   linkaxes([ax1,ax2],'x');
 #+end_src
 
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_translations.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_translations
+#+caption: Stewart Platform Plant from forces applied by the legs to the acceleration of the platform
+#+RESULTS:
+[[file:figs/stewart_platform_translations.png]]
+
 #+begin_src matlab :exports none
   freqs = logspace(-1, 2, 1000);
 
@@ -508,6 +537,15 @@
 
   linkaxes([ax1,ax2],'x');
 #+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_rotations.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_rotations
+#+caption: Stewart Platform Plant from torques applied by the legs to the angular acceleration of the platform
+#+RESULTS:
+[[file:figs/stewart_platform_rotations.png]]
 
 #+begin_src matlab :exports none
   freqs = logspace(-1, 2, 1000);
@@ -541,3 +579,12 @@
 
   linkaxes([ax1,ax2],'x');
 #+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_platform_legs.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:stewart_platform_legs
+#+caption: Stewart Platform Plant from forces applied by the legs to displacement of the legs
+#+RESULTS:
+[[file:figs/stewart_platform_legs.png]]
