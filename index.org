@@ -649,10 +649,10 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_c(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
 #+begin_src matlab
   wc = 2*pi*20; % Decoupling frequency [rad/s]
-  Gc = G({'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'}, {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'}); % Transfer function to find a real approximation
-#+end_src
 
-#+begin_src matlab
+  Gc = G({'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'}, ...
+         {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'}); % Transfer function to find a real approximation
+
   H1 = evalfr(Gc, j*wc);
 #+end_src
 
@@ -673,60 +673,73 @@ First, the Singular Value Decomposition of $H_1$ is performed:
 Then, the "Gershgorin Radii" is computed for the plant $G_c(s)$ and the "SVD Decoupled Plant" $G_d(s)$:
 \[ G_d(s) = U^T G_c(s) V \]
 
-It is done over the following frequencies.
+This is computed over the following frequencies.
 #+begin_src matlab
-  freqs = logspace(-1,2,1000); % [Hz]
+  freqs = logspace(-2, 2, 1000); % [Hz]
 #+end_src
 
+Gershgorin Radii for the coupled plant:
 #+begin_src matlab
-  for i = 1:length(freqs)
-      H = abs(evalfr(Gc, j*2*pi*freqs(i)));
-      for j = 1:size(H,2)
-          g_r1(i,j) =  (sum(H(j,:)) - H(j,j))/H(j,j);
-      end
+  Gr_coupled = zeros(length(freqs), size(Gc,2));
+
+  H = abs(squeeze(freqresp(Gc, freqs, 'Hz')));
+  for out_i = 1:size(Gc,2)
+      Gr_coupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
   end
 #+end_src
 
+Gershgorin Radii for the decoupled plant using SVD:
 #+begin_src matlab
   Gd = U'*Gc*V;
- 
-  for i  = 1:length(freqs)
-      H_dec = abs(evalfr(Gd, j*2*pi*freqs(i)));
-      for j = 1:size(H,2)
-          g_r2(i,j) =  (sum(H_dec(j,:)) - H_dec(j,j))/H_dec(j,j);
-      end
+  Gr_decoupled = zeros(length(freqs), size(Gd,2));
+
+  H = abs(squeeze(freqresp(Gd, freqs, 'Hz')));
+  for out_i = 1:size(Gd,2)
+      Gr_decoupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
+  end
+#+end_src
+
+Gershgorin Radii for the decoupled plant using the Jacobian:
+#+begin_src matlab
+  Gj = Gc*inv(J');
+  Gr_jacobian = zeros(length(freqs), size(Gj,2));
+
+  H = abs(squeeze(freqresp(Gj, freqs, 'Hz')));
+
+  for out_i = 1:size(Gj,2)
+      Gr_jacobian(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
   end
 #+end_src
 
 #+begin_src matlab :exports results
   figure;
   hold on;
-  plot(freqs, g_r1(:,1), 'DisplayName', '$a_x$')
-  plot(freqs, g_r1(:,2), 'DisplayName', '$a_y$')
-  plot(freqs, g_r1(:,3), 'DisplayName', '$a_z$')
-  plot(freqs, g_r1(:,4), 'DisplayName', '$a_{R_x}$')
-  plot(freqs, g_r1(:,5), 'DisplayName', '$a_{R_y}$')
-  plot(freqs, g_r1(:,6), 'DisplayName', '$a_{R_z}$')
+  plot(freqs, Gr_coupled(:,1), 'DisplayName', 'Coupled');
+  plot(freqs, Gr_decoupled(:,1), 'DisplayName', 'SVD');
+  plot(freqs, Gr_jacobian(:,1), 'DisplayName', 'Jacobian');
+  for i = 2:6
+      set(gca,'ColorOrderIndex',1)
+      plot(freqs, Gr_coupled(:,i), 'HandleVisibility', 'off');
+      set(gca,'ColorOrderIndex',2)
+      plot(freqs, Gr_decoupled(:,i), 'HandleVisibility', 'off');
+      set(gca,'ColorOrderIndex',3)
+      plot(freqs, Gr_jacobian(:,i), 'HandleVisibility', 'off');
+  end
   plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   hold off;
   xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+  legend('location', 'northeast');
 #+end_src
 
-#+begin_src matlab :exports results
-  figure;
-  hold on;
-  plot(freqs, g_r2(:,1), 'DisplayName', '$a_x$')
-  plot(freqs, g_r2(:,2), 'DisplayName', '$a_y$')
-  plot(freqs, g_r2(:,3), 'DisplayName', '$a_z$')
-  plot(freqs, g_r2(:,4), 'DisplayName', '$a_{R_x}$')
-  plot(freqs, g_r2(:,5), 'DisplayName', '$a_{R_y}$')
-  plot(freqs, g_r2(:,6), 'DisplayName', '$a_{R_z}$')
-  plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/simscape_model_gershgorin_radii.pdf', 'width', 'full', 'height', 'full');
 #+end_src
+
+#+name: fig:simscape_model_gershgorin_radii
+#+caption: Gershgorin Radii of the Coupled and Decoupled plants
+#+RESULTS:
+[[file:figs/simscape_model_gershgorin_radii.png]]
 
 ** Decoupled Plant
 Let's see the bode plot of the decoupled plant $G_d(s)$.
@@ -737,13 +750,13 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
 
   figure;
   hold on;
-  for i = 1:6
-    plot(freqs, abs(squeeze(freqresp(Gd(i, i), freqs, 'Hz'))), ...
-         'DisplayName', sprintf('$G(%i, %i)$', i, i));
+  for ch_i = 1:6
+    plot(freqs, abs(squeeze(freqresp(Gd(ch_i, ch_i), freqs, 'Hz'))), ...
+         'DisplayName', sprintf('$G(%i, %i)$', ch_i, ch_i));
   end
-  for i = 1:5
-    for j = i+1:6
-      plot(freqs, abs(squeeze(freqresp(G(i, j), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2], ...
+  for in_i = 1:5
+    for out_i = in_i+1:6
+      plot(freqs, abs(squeeze(freqresp(Gd(out_i, in_i), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2], ...
            'HandleVisibility', 'off');
     end
   end
@@ -752,6 +765,45 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
   ylabel('Amplitude'); xlabel('Frequency [Hz]');
   legend('location', 'southeast');
 #+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/simscape_model_decoupled_plant_svd.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:simscape_model_decoupled_plant_svd
+#+caption: Decoupled Plant using SVD
+#+RESULTS:
+[[file:figs/simscape_model_decoupled_plant_svd.png]]
+
+#+begin_src matlab :exports results
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+  hold on;
+  for ch_i = 1:6
+    plot(freqs, abs(squeeze(freqresp(Gj(ch_i, ch_i), freqs, 'Hz'))), ...
+         'DisplayName', sprintf('$G(%i, %i)$', ch_i, ch_i));
+  end
+  for in_i = 1:5
+    for out_i = in_i+1:6
+      plot(freqs, abs(squeeze(freqresp(Gj(out_i, in_i), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2], ...
+           'HandleVisibility', 'off');
+    end
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Amplitude'); xlabel('Frequency [Hz]');
+  legend('location', 'southeast');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/simscape_model_decoupled_plant_jacobian.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:simscape_model_decoupled_plant_jacobian
+#+caption: Decoupled Plant using the Jacobian
+#+RESULTS:
+[[file:figs/simscape_model_decoupled_plant_jacobian.png]]
 
 ** Diagonal Controller
 The controller $K$ is a diagonal controller consisting a low pass filters with a crossover frequency $\omega_c$ and a DC gain $C_g$.
@@ -829,6 +881,25 @@ SVD Control
 #+end_src
 
 ** Results
+Let's first verify the stability of the closed-loop systems:
+#+begin_src matlab :results output replace text
+  isstable(G_cen)
+#+end_src
+
+#+RESULTS:
+: ans =
+:   logical
+:    1
+
+#+begin_src matlab :results output replace text
+  isstable(G_svd)
+#+end_src
+
+#+RESULTS:
+: ans =
+:   logical
+:    1
+
 The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure [[fig:stewart_platform_simscape_cl_transmissibility]].
 
 #+begin_src matlab :exports results
