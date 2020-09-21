@@ -573,12 +573,12 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax1 = subplot(2, 1, 1);
   hold on;
-  for i = 1:6
-    plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', i), sprintf('F%i', i)), freqs, 'Hz'))));
+  for ch_i = 1:6
+    plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', ch_i), sprintf('F%i', ch_i)), freqs, 'Hz'))));
   end
-  for i = 1:5
-    for j = i+1:6
-      plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', i), sprintf('F%i', j)), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2]);
+  for out_i = 1:5
+    for in_i = i+1:6
+      plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', out_i), sprintf('F%i', in_i)), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2]);
     end
   end
   hold off;
@@ -587,8 +587,8 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax2 = subplot(2, 1, 2);
   hold on;
-  for i = 1:6
-    plot(freqs, 180/pi*angle(squeeze(freqresp(Gl(sprintf('A%i', i), sprintf('F%i', i)), freqs, 'Hz'))));
+  for ch_i = 1:6
+    plot(freqs, 180/pi*angle(squeeze(freqresp(Gl(sprintf('A%i', ch_i), sprintf('F%i', ch_i)), freqs, 'Hz'))));
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
@@ -717,13 +717,13 @@ Gershgorin Radii for the decoupled plant using the Jacobian:
   plot(freqs, Gr_coupled(:,1), 'DisplayName', 'Coupled');
   plot(freqs, Gr_decoupled(:,1), 'DisplayName', 'SVD');
   plot(freqs, Gr_jacobian(:,1), 'DisplayName', 'Jacobian');
-  for i = 2:6
+  for in_i = 2:6
       set(gca,'ColorOrderIndex',1)
-      plot(freqs, Gr_coupled(:,i), 'HandleVisibility', 'off');
+      plot(freqs, Gr_coupled(:,in_i), 'HandleVisibility', 'off');
       set(gca,'ColorOrderIndex',2)
-      plot(freqs, Gr_decoupled(:,i), 'HandleVisibility', 'off');
+      plot(freqs, Gr_decoupled(:,in_i), 'HandleVisibility', 'off');
       set(gca,'ColorOrderIndex',3)
-      plot(freqs, Gr_jacobian(:,i), 'HandleVisibility', 'off');
+      plot(freqs, Gr_jacobian(:,in_i), 'HandleVisibility', 'off');
   end
   plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
