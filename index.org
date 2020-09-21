@@ -462,6 +462,13 @@ The dynamics is identified from forces applied by each legs to the measured acce
   G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
 #+end_src
 
+#+begin_src matlab :results output replace
+  size(G)
+#+end_src
+
+#+RESULTS:
+: State-space model with 6 outputs, 6 inputs, and 12 states.
+
 Thanks to the Jacobian, we compute the transfer functions in the frame of the legs and in an inertial frame.
 #+begin_src matlab
   Gx = -G*inv(J');

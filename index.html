@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-09-21 lun. 13:07 -->
+<!-- 2020-09-21 lun. 13:14 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <title>SVD Control</title>
 <meta name="generator" content="Org mode" />
@@ -27,27 +27,27 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orga7bd74e">1. Simscape Model - Gravimeter</a>
+<li><a href="#org09b41c5">1. Simscape Model - Gravimeter</a>
 <ul>
-<li><a href="#org2acf438">1.1. Simulink</a></li>
+<li><a href="#orgaf12c1d">1.1. Simulink</a></li>
 </ul>
 </li>
-<li><a href="#org08c4258">2. Simscape Model - Stewart Platform</a>
+<li><a href="#org84efeb7">2. Simscape Model - Stewart Platform</a>
 <ul>
-<li><a href="#orgb618964">2.1. Jacobian</a></li>
-<li><a href="#org5a73bf5">2.2. Simulink</a></li>
+<li><a href="#org157458d">2.1. Jacobian</a></li>
+<li><a href="#org8947fec">2.2. Simulink</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orga7bd74e" class="outline-2">
-<h2 id="orga7bd74e"><span class="section-number-2">1</span> Simscape Model - Gravimeter</h2>
+<div id="outline-container-org09b41c5" class="outline-2">
+<h2 id="org09b41c5"><span class="section-number-2">1</span> Simscape Model - Gravimeter</h2>
 <div class="outline-text-2" id="text-1">
 </div>
-<div id="outline-container-org2acf438" class="outline-3">
-<h3 id="org2acf438"><span class="section-number-3">1.1</span> Simulink</h3>
+<div id="outline-container-orgaf12c1d" class="outline-3">
+<h3 id="orgaf12c1d"><span class="section-number-3">1.1</span> Simulink</h3>
 <div class="outline-text-3" id="text-1-1">
 <div class="org-src-container">
 <pre class="src src-matlab">open('gravimeter.slx')
@@ -89,7 +89,7 @@ State-space model with 4 outputs, 3 inputs, and 6 states.
 
 
 
-<div id="orgfba9d15" class="figure">
+<div id="org1c9b0ec" class="figure">
 <p><img src="figs/open_loop_tf.png" alt="open_loop_tf.png" />
 </p>
 <p><span class="figure-number">Figure 1: </span>Open Loop Transfer Function from 3 Actuators to 4 Accelerometers</p>
@@ -98,12 +98,12 @@ State-space model with 4 outputs, 3 inputs, and 6 states.
 </div>
 </div>
 
-<div id="outline-container-org08c4258" class="outline-2">
-<h2 id="org08c4258"><span class="section-number-2">2</span> Simscape Model - Stewart Platform</h2>
+<div id="outline-container-org84efeb7" class="outline-2">
+<h2 id="org84efeb7"><span class="section-number-2">2</span> Simscape Model - Stewart Platform</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-orgb618964" class="outline-3">
-<h3 id="orgb618964"><span class="section-number-3">2.1</span> Jacobian</h3>
+<div id="outline-container-org157458d" class="outline-3">
+<h3 id="org157458d"><span class="section-number-3">2.1</span> Jacobian</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 First, the position of the &ldquo;joints&rdquo; (points of force application) are estimated and the Jacobian computed.
@@ -146,8 +146,8 @@ save('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 </div>
 </div>
 
-<div id="outline-container-org5a73bf5" class="outline-3">
-<h3 id="org5a73bf5"><span class="section-number-3">2.2</span> Simulink</h3>
+<div id="outline-container-org8947fec" class="outline-3">
+<h3 id="org8947fec"><span class="section-number-3">2.2</span> Simulink</h3>
 <div class="outline-text-3" id="text-2-2">
 <div class="org-src-container">
 <pre class="src src-matlab">open('stewart_platform/drone_platform.slx');
@@ -195,6 +195,16 @@ G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
 </pre>
 </div>
 
+<div class="org-src-container">
+<pre class="src src-matlab">size(G)
+</pre>
+</div>
+
+<pre class="example">
+State-space model with 6 outputs, 6 inputs, and 12 states.
+</pre>
+
+
 <p>
 Thanks to the Jacobian, we compute the transfer functions in the frame of the legs and in an inertial frame.
 </p>
@@ -208,21 +218,21 @@ Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
 </div>
 
 
-<div id="orgc24d97d" class="figure">
+<div id="orgc94fa6a" class="figure">
 <p><img src="figs/stewart_platform_translations.png" alt="stewart_platform_translations.png" />
 </p>
 <p><span class="figure-number">Figure 2: </span>Stewart Platform Plant from forces applied by the legs to the acceleration of the platform</p>
 </div>
 
 
-<div id="orgd85b88a" class="figure">
+<div id="org5e7bd8e" class="figure">
 <p><img src="figs/stewart_platform_rotations.png" alt="stewart_platform_rotations.png" />
 </p>
 <p><span class="figure-number">Figure 3: </span>Stewart Platform Plant from torques applied by the legs to the angular acceleration of the platform</p>
 </div>
 
 
-<div id="org85cf2f1" class="figure">
+<div id="orgce0e5a7" class="figure">
 <p><img src="figs/stewart_platform_legs.png" alt="stewart_platform_legs.png" />
 </p>
 <p><span class="figure-number">Figure 4: </span>Stewart Platform Plant from forces applied by the legs to displacement of the legs</p>
@@ -233,7 +243,7 @@ Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Dehaeze Thomas</p>
-<p class="date">Created: 2020-09-21 lun. 13:07</p>
+<p class="date">Created: 2020-09-21 lun. 13:14</p>
 </div>
 </body>
 </html>
