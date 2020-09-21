@@ -41,7 +41,7 @@
 #+PROPERTY: header-args:latex+ :output-dir figs
 :END:
 
-* Simscape Model
+* Simscape Model - Gravimeter
 ** Matlab Init                                             :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
@@ -74,13 +74,13 @@
 #+end_src
 
 #+begin_src matlab
-  freqs = logspace(-1, 2, 1000);
+  freqs = logspace(-2, 2, 1000);
 
   figure;
   for in_i = 1:3
       for out_i = 1:4
           subplot(4, 3, 3*(out_i-1)+in_i);
-          plot(freqs, abs(squeeze(freqresp(G(out_i,in_i)/s^2, freqs, 'Hz'))), '-');
+          plot(freqs, abs(squeeze(freqresp(G(out_i,in_i), freqs, 'Hz'))), '-');
           set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
       end
   end
@@ -367,4 +367,177 @@
       xdelta = PHI(:,9,9);
       zdelta = PHI(:,10,10);
       rot = PHI(:,11,11);
+#+end_src
+
+* Simscape Model - Stewart Platform
+** Matlab Init                                             :noexport:ignore:
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+  <<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+  <<matlab-init>>
+#+end_src
+
+** Jacobian
+#+begin_src matlab
+  open('stewart_platform/drone_platform_jacobian.slx');
+#+end_src
+
+#+begin_src matlab
+  sim('drone_platform_jacobian');
+#+end_src
+
+#+begin_src matlab
+  Aa = [a1.Data(1,:);
+        a2.Data(1,:);
+        a3.Data(1,:);
+        a4.Data(1,:);
+        a5.Data(1,:);
+        a6.Data(1,:)]';
+
+  Ab = [b1.Data(1,:);
+        b2.Data(1,:);
+        b3.Data(1,:);
+        b4.Data(1,:);
+        b5.Data(1,:);
+        b6.Data(1,:)]';
+
+  As = (Ab - Aa)./vecnorm(Ab - Aa);
+
+  l = vecnorm(Ab - Aa)';
+
+  J = [As' , cross(Ab, As)'];
+
+  save('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
+#+end_src
+
+** Simulink
+#+begin_src matlab
+  open('stewart_platform/drone_platform.slx');
+#+end_src
+
+#+begin_src matlab
+  kx = 50;
+  ky = 50;
+  kz = 50;
+
+  cx = 0.025;
+  cy = 0.025;
+  cz = 0.025;
+#+end_src
+
+#+begin_src matlab
+  load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
+#+end_src
+
+#+begin_src matlab
+  %% Name of the Simulink File
+  mdl = 'drone_platform';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/u'],               1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Inertial Sensor'], 1, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
+  G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
+
+  Gx = -G*inv(J');
+  Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
+
+  Gl = -J*G;
+  Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
+#+end_src
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+
+  ax1 = subplot(2, 1, 1);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(Gx(1, 1), freqs, 'Hz'))), 'DisplayName', '$A_x/F_x$');
+  plot(freqs, abs(squeeze(freqresp(Gx(2, 2), freqs, 'Hz'))), 'DisplayName', '$A_y/F_y$');
+  plot(freqs, abs(squeeze(freqresp(Gx(3, 3), freqs, 'Hz'))), 'DisplayName', '$A_z/F_z$');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Amplitude [m/N]'); set(gca, 'XTickLabel',[]);
+  legend('location', 'southeast');
+
+  ax2 = subplot(2, 1, 2);
+  hold on;
+  for i = 1:3
+    plot(freqs, 180/pi*unwrap(angle(squeeze(freqresp(Gx(i, i), freqs, 'Hz')))));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
+  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
+  ylim([-270, 90]);
+  yticks([-360:90:360]);
+
+  linkaxes([ax1,ax2],'x');
+#+end_src
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+
+  ax1 = subplot(2, 1, 1);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(Gx(4, 4), freqs, 'Hz'))), 'DisplayName', '$A_{R_x}/M_x$');
+  plot(freqs, abs(squeeze(freqresp(Gx(5, 5), freqs, 'Hz'))), 'DisplayName', '$A_{R_y}/M_y$');
+  plot(freqs, abs(squeeze(freqresp(Gx(6, 6), freqs, 'Hz'))), 'DisplayName', '$A_{R_z}/M_z$');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Amplitude [rad/(Nm)]'); set(gca, 'XTickLabel',[]);
+  legend('location', 'southeast');
+
+  ax2 = subplot(2, 1, 2);
+  hold on;
+  for i = 4:6
+    plot(freqs, 180/pi*unwrap(angle(squeeze(freqresp(Gx(i, i), freqs, 'Hz')))));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
+  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
+  ylim([-270, 90]);
+  yticks([-360:90:360]);
+
+  linkaxes([ax1,ax2],'x');
+#+end_src
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+
+  ax1 = subplot(2, 1, 1);
+  hold on;
+  for i = 1:6
+    plot(freqs, abs(squeeze(freqresp(Gl(i, i), freqs, 'Hz'))));
+  end
+  for i = 1:5
+    for j = i+1:6
+      plot(freqs, abs(squeeze(freqresp(Gl(i, j), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2]);
+    end
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Amplitude [m/N]'); set(gca, 'XTickLabel',[]);
+
+  ax2 = subplot(2, 1, 2);
+  hold on;
+  for i = 1:6
+    plot(freqs, 180/pi*unwrap(angle(squeeze(freqresp(Gl(i, i), freqs, 'Hz')))));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
+  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
+  ylim([-270, 90]);
+  yticks([-360:90:360]);
+
+  linkaxes([ax1,ax2],'x');
 #+end_src
