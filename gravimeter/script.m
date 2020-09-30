@@ -139,18 +139,17 @@ g_svd = 1e5;
 
 % System parameters
 
-w0 = 2*pi*.5; % MinusK BM1 tablle
+l  = 0.5; % Length of the mass [m]
+la = 0.5; % Position of Act. [m]
 
-l  = 0.8; % [m]
-la = l;   % [m]
+h  = 1.7; % Height of the mass [m]
+ha = 1.7; % Position of Act. [m]
 
-h  = 1.7; % [m]
-ha = h;   % [m]
+m = 400; % Mass [kg]
+I = 115; % Inertia [kg m^2]
 
-m = 70; % [kg]
-
-k = 3e3; % [N/m]
-I = 10;  % [kg m^2]
+k = 15e3; % Actuator Stiffness [N/m]
+c = 0.03; % Actuator Damping [N/(m/s)]
 
 
 
@@ -197,7 +196,7 @@ Ja = [1 0 ha/2 %Left horizontal actuator
       0 1 la/2]; %Right vertical actuator
 Jta = Ja';
 K = k*Jta*Ja;
-C = 0.06*k*Jta*Ja;
+C = c*Jta*Ja;
 
 E = [1 0 0
      0 1 0
