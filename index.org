@@ -44,6 +44,9 @@
 :END:
 
 * Gravimeter - Simscape Model
+:PROPERTIES:
+:header-args:matlab+: :tangle gravimeter/script.m
+:END:
 ** Matlab Init                                             :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
@@ -53,11 +56,35 @@
   <<matlab-init>>
 #+end_src
 
-** Simulink
+#+begin_src matlab
+  addpath('gravimeter');
+#+end_src
+
+** Simscape Model - Parameters
 #+begin_src matlab
   open('gravimeter.slx')
 #+end_src
 
+Parameters
+#+begin_src matlab
+  l  = 0.5; % Length of the mass [m]
+  la = 0.5; % Position of Act. [m]
+
+  h  = 1.7; % Height of the mass [m]
+  ha = 1.7; % Position of Act. [m]
+
+  m = 400; % Mass [kg]
+  I = 115; % Inertia [kg m^2]
+
+  k = 15e3; % Actuator Stiffness [N/m]
+  c = 0.03; % Actuator Damping [N/(m/s)]
+
+  deq = 0.2; % Length of the actuators [m]
+
+  g = 0; % Gravity [m/s2]
+#+end_src
+
+** System Identification - Without Gravity
 #+begin_src matlab
   %% Name of the Simulink File
   mdl = 'gravimeter';
@@ -77,8 +104,23 @@
   G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
 #+end_src
 
-The plant as 6 states as expected (2 translations + 1 rotation)
+#+begin_src matlab :results output replace :exports results
+  pole(G)
+#+end_src
 
+#+RESULTS:
+#+begin_example
+pole(G)
+ans =
+      -0.000473481142385801 +      21.7596190728632i
+      -0.000473481142385801 -      21.7596190728632i
+      -7.49842879459177e-05 +       8.6593576906982i
+      -7.49842879459177e-05 -       8.6593576906982i
+      -5.15386867925747e-06 +      2.27025295182755i
+      -5.15386867925747e-06 -      2.27025295182755i
+#+end_example
+
+The plant as 6 states as expected (2 translations + 1 rotation)
 #+begin_src matlab :results output replace
   size(G)
 #+end_src
@@ -108,278 +150,544 @@ The plant as 6 states as expected (2 translations + 1 rotation)
 #+RESULTS:
 [[file:figs/open_loop_tf.png]]
 
-** Matlab Code                                                     :noexport:
+** System Identification - With Gravity
 #+begin_src matlab
-  clc;
-  % close all
+  g = 9.80665; % Gravity [m/s2]
+#+end_src
 
-  g = 100000;
+#+begin_src matlab
+  Gg = linearize(mdl, io);
+  Gg.InputName  = {'F1', 'F2', 'F3'};
+  Gg.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+#+end_src
 
+We can now see that the system is unstable due to gravity.
+#+begin_src matlab :results output replace :exports results
+  pole(Gg)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+pole(G)
+ans =
+          -10.9848275341276 +                     0i
+           10.9838836405193 +                     0i
+      -7.49855396089326e-05 +      8.65962885769976i
+      -7.49855396089326e-05 -      8.65962885769976i
+      -6.68819341967921e-06 +      0.83296042226902i
+      -6.68819341967921e-06 -      0.83296042226902i
+#+end_example
+
+#+begin_src matlab :exports none
+  freqs = logspace(-2, 2, 1000);
+
+  figure;
+  for in_i = 1:3
+      for out_i = 1:4
+          subplot(4, 3, 3*(out_i-1)+in_i);
+          hold on;
+          plot(freqs, abs(squeeze(freqresp(G(out_i,in_i), freqs, 'Hz'))), '-');
+          plot(freqs, abs(squeeze(freqresp(Gg(out_i,in_i), freqs, 'Hz'))), '-');
+          hold off;
+          set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+      end
+  end
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/open_loop_tf_g.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:open_loop_tf_g
+#+caption: Open Loop Transfer Function from 3 Actuators to 4 Accelerometers with an without gravity
+#+RESULTS:
+[[file:figs/open_loop_tf_g.png]]
+
+** Analytical Model
+*** Parameters
+Control parameters
+#+begin_src matlab
+  g = 1e5;
+  g_svd = 1e5;
+#+end_src
+
+System parameters
+#+begin_src matlab
   w0 = 2*pi*.5; % MinusK BM1 tablle
-  l = 0.5; %[m]
-  la = 1; %[m]
-  h = 1.7; %[m]
-  ha = 1.7;% %[m]
-  m = 400; %[kg]
-  k = 15e3;%[N/m]
-  kv = k;
-  kh = 15e3;
-  I = 115;%[kg m^2]
-          % c = 0.06;
-          % l = 0.4719; %[m]
-          % la = .477; %[m]
-          % h = 1.8973; %[m]
-          % ha = 1.9060;% %[m]
-          % m = 98.1421; %[kg]
-          % k = 14512;%[N/m]
-          % I = 28.5372;%[kg m^2]
-  cv = 0.03;
-  ch = 0.03;
 
-  %% System definition
-  [Fr, x1, z1, x2, z2, wx, wz, x12, z12, PHIwx, PHIwz,xsum,zsum,xdelta,zdelta,rot]...
-      = modelGeneration(m,I,k,h,ha,l,la,cv,ch,kv,kh);
+  l  = 0.8; % [m]
+  la = l;   % [m]
 
-  %% Bode options
+  h  = 1.7; % [m]
+  ha = h;   % [m]
+
+  m = 70; % [kg]
+ 
+  k = 3e3; % [N/m]
+  I = 10;  % [kg m^2]
+#+end_src
+
+Bode options.
+#+begin_src matlab
   P = bodeoptions;
   P.FreqUnits = 'Hz';
   P.MagUnits = 'abs';
   P.MagScale = 'log';
   P.Grid = 'on';
   P.PhaseWrapping = 'on';
+  P.Title.FontSize = 14;
+  P.XLabel.FontSize = 14;
+  P.YLabel.FontSize = 14;
+  P.TickLabel.FontSize = 12;
   P.Xlim = [1e-1,1e2];
+  P.MagLowerLimMode = 'manual';
+  P.MagLowerLim= 1e-3;
   %P.PhaseVisible = 'off';
-  w = 2*pi*logspace(-1,2,1000);
-
-  %% curves points
-  % slide 4
-  F_sl4 = [2e-1 4e-1 7e-1 1 2 3 5];
-  Amp_sl4 = [ 1 2 4 2.5 1 7e-1 7e-1];
-  F_sl4_phase = [2e-1 4e-1 7e-1 1 ];
-  Phase_sl4 = (180/pi).*[0 0 -0.5 -1.7];
-
-  %slide 6
-  F_sl6 = [2e-1 4e-1 1 2 3 5];
-  Amp_sl6 = [1 1 6e-1 2e-1 3e-1 3e-1];
-  F_sl6_phase = [2e-1 4e-1 1 ];
-  Phase_sl6 = (180/pi).*[0 0 0 ];
-
-  %slide 9
-  F_sl9 = [2.5e-1 4e-1 6e-1 1 1.7 2.2 3 5 10];
-  Amp_sl9 = [3 6 1 5e-1 1 2 7e-1 2.5e-1 7e-2];
-  Phase_sl9 = (180/pi)*[0 -1 -pi 0 -1 -1.5 -pi -pi -pi];
-
-  % slide 14
-  F_sl14 = [ 2e-1 4e-1 6e-1 8e-1 1 2 3 5 10];
-  Amp_sl14 = [9e-1 1.5 1.2 0.35 .3 1.2 .3 .1 5e-2];
-  F_sl14_phase = [ 2e-1 4e-1 6e-1 8e-1 ];
-  Phase_sl14 = (180/pi).*[0 0 -1.7 -2];
-
-  %rotation
-  F_rot = [1e-1 2e-1 4e-1 5e-1 7e-1 1 2 3 6.5 10 20];
-  Amp_rot = [7e-8 2.2e-7 3e-7 1e-7 2e-8 9e-9 3e-8 9e-9 1e-9 4e-10 8e-11];
-
-  %% Plots
-  % %slide 3
-  % figure
-  % loglog(Fr,abs(x2).^.5,Fr,abs(x1).^.5,Fr,abs(xsum).^.5,Fr,abs(xdelta).^.5)
-  % xlabel('Frequency [Hz]');ylabel('Acceleration [m/s^2/rtHz]')
-  % legend('Top sensor','Bottom sensor','Half sum','Half difference');
-  % title('Horizontal')
-  % xlim([7e-2 1e1]);
-
-  %slide 4
-  figure
-  subplot 211
-  loglog(Fr, abs(x12)./abs(x1));hold on;
-  loglog(F_sl4,Amp_sl4,'*');
-  xlabel('Frequency [Hz]');ylabel('Amplitude [-]');
-  title('X direction Top/bottom sensor');
-  xlim([7e-2 1e1]);
-  subplot 212
-  semilogx(Fr, (180/pi).*angle(x12./abs(x1)));hold on;
-  loglog(F_sl4_phase,Phase_sl4,'*');
-  xlabel('Frequency [Hz]');ylabel('Phase [deg]');
-  xlim([7e-2 1e1]);
-
-  %slide 6
-  figure
-  subplot 211
-  loglog(Fr, abs(z12)./abs(z1));hold on;
-  loglog(F_sl6,Amp_sl6,'*');
-  xlabel('Frequency [Hz]');ylabel('Amplitude [-]');
-  title('Z direction Top/bottom sensor');
-  xlim([7e-2 1e1]);
-  subplot 212
-  semilogx(Fr, (180/pi).*angle(z12./abs(z1)));hold on;
-  loglog(F_sl6_phase,Phase_sl6,'*');
-  xlabel('Frequency [Hz]');ylabel('Phase [deg]');
-  xlim([7e-2 1e1]);ylim([-180 180]);
-
-  % %slide 6
-  % figure
-  % loglog(Fr,abs(z2).^.5,Fr,abs(z1).^.5,Fr,abs(zsum).^.5,Fr,abs(zdelta).^.5)
-  % xlabel('Frequency [Hz]');ylabel('Acceleration [m/s^2/rtHz]')
-  % legend('Top sensor','Bottom sensor','Half sum','Half difference');
-  % title('Vertical')
-  % xlim([7e-2 1e1]);
-
-  %slide 9
-  figure
-  subplot 211
-  loglog(Fr, abs(PHIwx)./abs(wx));hold on;
-  loglog(F_sl9,Amp_sl9,'*');
-  xlabel('Frequency [Hz]');ylabel('Amplitude [-]');
-  title('X direction bottom/ground sensor');
-  xlim([7e-2 1e1]);
-  ylim([0.01 10]);
-  subplot 212
-  semilogx(Fr, (180/pi).*angle(PHIwx./abs(wx)));hold on;
-  loglog(F_sl9,Phase_sl9,'*');
-  xlabel('Frequency [Hz]');ylabel('Phase [deg]');
-  xlim([7e-2 1e1]);
-
-  % %slide 8
-  % figure
-  % loglog(Fr,abs(wx).^.5,Fr,abs(x1).^.5,'-.',Fr,abs(x2).^.5,'.');
-  % grid on;xlabel('Frequency [Hz]');
-  % ylabel('ASD [m/s^2/rtHz]');
-  % xlim([7e-2 1e1]);
-  % legend('Ground','Bottom sensor','Top sensor');
-  % title('Horizontal');
-  %
-  % %slide 13
-  % figure
-  % loglog(Fr,abs(wz).^.5,Fr,abs(z1).^.5,'-.',Fr,abs(z2).^.5,'.');
-  % grid on;xlabel('Frequency [Hz]');
-  % ylabel('ASD [m/s^2/rtHz]');
-  % xlim([7e-2 1e1]);
-  % legend('Ground','Bottom sensor','Top sensor');
-  % title('Vertical');
-
-  %slide 14
-  figure
-  subplot 211
-  loglog(Fr, abs(PHIwz)./abs(wz));hold on;
-  loglog(F_sl14,Amp_sl14,'*');
-  xlabel('Frequency [Hz]');ylabel('Amplitude [-]');
-  title('Z direction bottom/ground sensor');
-  xlim([7e-2 1e1]);
-  ylim([0.01 10]);
-  subplot 212
-  semilogx(Fr, (180/pi).*angle(PHIwz./abs(wz)));hold on;
-  loglog(F_sl14_phase,Phase_sl14,'*');
-  xlabel('Frequency [Hz]');ylabel('Phase [deg]');
-  xlim([7e-2 1e1]);
-
-  %rotation
-  figure
-  loglog(Fr,abs(rot).^.5./((2*pi*Fr').^2),F_rot,Amp_rot,'*');
-  xlabel('Frequency [Hz]');ylabel('Rotation [rad/rtHz]')
-  xlim([7e-2 1e1]);
 #+end_src
 
-** Model Generation                                                :noexport:
+Frequency vector.
 #+begin_src matlab
-  function [Fr, x1, z1, x2, z2, wx, wz, x12, z12, PHIwx, PHIwz,xsum,zsum,xdelta,zdelta,rot] = modelGeneration(m,I,k,h,ha,l,la,dampv,damph,kv,kh)
-      %% generation of the state space model
-      M = [m 0 0
-           0 m 0
-           0 0 I];
+  w = 2*pi*logspace(-1,2,1000); % [rad/s]
+#+end_src
 
-      %Jacobian of the bottom sensor
-      Js1 = [1 0 h/2
-             0 1 -l/2];
-      %Jacobian of the top sensor
-      Js2 = [1 0 -h/2
-             0 1 0];
+*** generation of the state space model
+#+begin_src matlab
+  M = [m 0 0
+       0 m 0
+       0 0 I];
 
-      %Jacobian of the actuators
-      Ja = [1 0 ha/2 %Left horizontal actuator
-                     %1 0 h/2 %Right horizontal actuator
-            0 1 -la/2 %Left vertical actuator
-            0 1 la/2]; %Right vertical actuator
-      Jah = [1 0 ha/2];
-      Jav = [0 1 -la/2 %Left vertical actuator
-             0 1 la/2]; %Right vertical actuator
-      Jta = Ja';
-      Jtah = Jah';
-      Jtav = Jav';
-      K = kv*Jtav*Jav + kh*Jtah*Jah;
-      C = dampv*kv*Jtav*Jav+damph*kh*Jtah*Jah;
+  %Jacobian of the bottom sensor
+  Js1 = [1 0 h/2
+         0 1 -l/2];
+  %Jacobian of the top sensor
+  Js2 = [1 0 -h/2
+         0 1 0];
 
-      E = [1 0 0
-           0 1 0
-           0 0 1]; %projecting ground motion in the directions of the legs
+  %Jacobian of the actuators
+  Ja = [1 0 ha/2 %Left horizontal actuator
+                 %1 0 h/2 %Right horizontal actuator
+        0 1 -la/2 %Left vertical actuator
+        0 1 la/2]; %Right vertical actuator
+  Jta = Ja';
+  K = k*Jta*Ja;
+  C = 0.06*k*Jta*Ja;
 
-      AA = [zeros(3) eye(3)
-            -M\K -M\C];
+  E = [1 0 0
+       0 1 0
+       0 0 1]; %projecting ground motion in the directions of the legs
 
-      BB = [zeros(3,6)
-            M\Jta M\(k*Jta*E)];
+  AA = [zeros(3) eye(3)
+        -M\K -M\C];
 
-      CC = [[Js1;Js2] zeros(4,3);
-            zeros(2,6)
-            (Js1+Js2)./2 zeros(2,3)
-            (Js1-Js2)./2 zeros(2,3)
-            (Js1-Js2)./(2*h) zeros(2,3)];
+  BB = [zeros(3,6)
+        M\Jta M\(k*Jta*E)];
 
-      DD = [zeros(4,6)
-            zeros(2,3) eye(2,3)
-            zeros(6,6)];
+  % BB = [zeros(3,3)
+  %     M\Jta ];
+  %
+  % CC = [Ja zeros(3)];
+  % DD = zeros(3,3);
 
-      system_dec = ss(AA,BB,CC,DD);
-      %input = three actuators and three ground motions
-      %output = the bottom sensor; the top sensor; the ground motion; the half
-      %sum; the half difference; the rotation
+  CC = [[Js1;Js2] zeros(4,3);
+        zeros(2,6)
+        (Js1+Js2)./2 zeros(2,3)
+        (Js1-Js2)./2 zeros(2,3)
+        (Js1-Js2)./(2*h) zeros(2,3)];
 
-      %% Injecting ground motion in the system to have the output
-      Fr = logspace(-2,3,1e3);
-      w=2*pi*Fr*1i;
-      %fit of the ground motion data in m/s^2/rtHz
-      Fr_ground_x = [0.07 0.1 0.15 0.3 0.7 0.8 0.9 1.2 5 10];
-      n_ground_x1 = [4e-7 4e-7 2e-6 1e-6 5e-7 5e-7 5e-7 1e-6 1e-5 3.5e-5];
-      Fr_ground_v = [0.07 0.08 0.1 0.11 0.12 0.15 0.25 0.6 0.8 1 1.2 1.6 2 6 10];
-      n_ground_v1 = [7e-7 7e-7 7e-7 1e-6 1.2e-6 1.5e-6 1e-6 9e-7 7e-7 7e-7 7e-7 1e-6 2e-6 1e-5 3e-5];
+  DD = [zeros(4,6)
+        zeros(2,3) eye(2,3)
+        zeros(6,6)];
 
-      n_ground_x = interp1(Fr_ground_x,n_ground_x1,Fr,'linear');
-      n_ground_v = interp1(Fr_ground_v,n_ground_v1,Fr,'linear');
-      % figure
-      % loglog(Fr,abs(n_ground_v),Fr_ground_v,n_ground_v1,'*');
-      % xlabel('Frequency [Hz]');ylabel('ASD [m/s^2 /rtHz]');
-      % return
+  system_dec = ss(AA,BB,CC,DD);
+#+end_src
 
-      %converting into PSD
-      n_ground_x = (n_ground_x).^2;
-      n_ground_v = (n_ground_v).^2;
+- Input = three actuators and three ground motions
+- Output = the bottom sensor; the top sensor; the ground motion; the half sum; the half difference; the rotation
 
-      %Injecting ground motion in the system and getting the outputs
-      system_dec_f = (freqresp(system_dec,abs(w)));
-      PHI = zeros(size(Fr,2),12,12);
-      for p = 1:size(Fr,2)
-          Sw=zeros(6,6);
-          Iact = zeros(3,3);
-          Sw(4,4) = n_ground_x(p);
-          Sw(5,5) = n_ground_v(p);
-          Sw(6,6) = n_ground_v(p);
-          Sw(1:3,1:3) = Iact;
-          PHI(p,:,:) = (system_dec_f(:,:,p))*Sw(:,:)*(system_dec_f(:,:,p))';
+#+begin_src matlab :results output replace
+  size(system_dec)
+#+end_src
+
+#+RESULTS:
+: State-space model with 12 outputs, 6 inputs, and 6 states.
+
+*** Comparison with the Simscape Model
+#+begin_src matlab :exports none
+  freqs = logspace(-2, 2, 1000);
+
+  figure;
+  for in_i = 1:3
+      for out_i = 1:4
+          subplot(4, 3, 3*(out_i-1)+in_i);
+          hold on;
+          plot(freqs, abs(squeeze(freqresp(G(out_i,in_i), freqs, 'Hz'))), '-');
+          plot(freqs, abs(squeeze(freqresp(system_dec(out_i,in_i)*s^2, freqs, 'Hz'))), '-');
+          hold off;
+          set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
       end
-      x1 = PHI(:,1,1);
-      z1 = PHI(:,2,2);
-      x2 = PHI(:,3,3);
-      z2 = PHI(:,4,4);
-      wx = PHI(:,5,5);
-      wz = PHI(:,6,6);
-      x12 = PHI(:,1,3);
-      z12 = PHI(:,2,4);
-      PHIwx = PHI(:,1,5);
-      PHIwz = PHI(:,2,6);
-      xsum = PHI(:,7,7);
-      zsum = PHI(:,8,8);
-      xdelta = PHI(:,9,9);
-      zdelta = PHI(:,10,10);
-      rot = PHI(:,11,11);
+  end
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_analytical_system_open_loop_models.pdf', 'width', 'full', 'height', 'full');
+#+end_src
+
+#+name: fig:gravimeter_analytical_system_open_loop_models
+#+caption: Comparison of the analytical and the Simscape models
+#+RESULTS:
+[[file:figs/gravimeter_analytical_system_open_loop_models.png]]
+
+*** Analysis
+#+begin_src matlab
+  % figure
+  % bode(system_dec,P);
+  % return
+#+end_src
+
+#+begin_src matlab
+  %% svd decomposition
+  % system_dec_freq = freqresp(system_dec,w);
+  % S = zeros(3,length(w));
+  % for m = 1:length(w)
+  %     S(:,m) = svd(system_dec_freq(1:4,1:3,m));
+  % end
+  % figure
+  % loglog(w./(2*pi), S);hold on;
+  % % loglog(w./(2*pi), abs(Val(1,:)),w./(2*pi), abs(Val(2,:)),w./(2*pi), abs(Val(3,:)));
+  % xlabel('Frequency [Hz]');ylabel('Singular Value [-]');
+  % legend('\sigma_1','\sigma_2','\sigma_3');%,'\sigma_4','\sigma_5','\sigma_6');
+  % ylim([1e-8 1e-2]);
+  %
+  % %condition number
+  % figure
+  % loglog(w./(2*pi), S(1,:)./S(3,:));hold on;
+  % % loglog(w./(2*pi), abs(Val(1,:)),w./(2*pi), abs(Val(2,:)),w./(2*pi), abs(Val(3,:)));
+  % xlabel('Frequency [Hz]');ylabel('Condition number [-]');
+  % % legend('\sigma_1','\sigma_2','\sigma_3');%,'\sigma_4','\sigma_5','\sigma_6');
+  %
+  % %performance indicator
+  % system_dec_svd = freqresp(system_dec(1:4,1:3),2*pi*10);
+  % [U,S,V] = svd(system_dec_svd);
+  % H_svd_OL = -eye(3,4);%-[zpk(-2*pi*10,-2*pi*40,40/10) 0 0 0; 0 10*zpk(-2*pi*40,-2*pi*200,40/200) 0 0; 0 0 zpk(-2*pi*2,-2*pi*10,10/2) 0];% - eye(3,4);%
+  % H_svd = pinv(V')*H_svd_OL*pinv(U);
+  % % system_dec_control_svd_ = feedback(system_dec,g*pinv(V')*H*pinv(U));
+  %
+  % OL_dec = g_svd*H_svd*system_dec(1:4,1:3);
+  % OL_freq = freqresp(OL_dec,w); % OL = G*H
+  % CL_system = feedback(eye(3),-g_svd*H_svd*system_dec(1:4,1:3));
+  % CL_freq = freqresp(CL_system,w); % CL = (1+G*H)^-1
+  % % CL_system_2 = feedback(system_dec,H);
+  % % CL_freq_2 = freqresp(CL_system_2,w); % CL = G/(1+G*H)
+  % for i = 1:size(w,2)
+  %     OL(:,i) = svd(OL_freq(:,:,i));
+  %     CL (:,i) = svd(CL_freq(:,:,i));
+  %     %CL2 (:,i) = svd(CL_freq_2(:,:,i));
+  % end
+  %
+  % un = ones(1,length(w));
+  % figure
+  % loglog(w./(2*pi),OL(3,:)+1,'k',w./(2*pi),OL(3,:)-1,'b',w./(2*pi),1./CL(1,:),'r--',w./(2*pi),un,'k:');hold on;%
+  % % loglog(w./(2*pi), 1./(CL(2,:)),w./(2*pi), 1./(CL(3,:)));
+  % % semilogx(w./(2*pi), 1./(CL2(1,:)),w./(2*pi), 1./(CL2(2,:)),w./(2*pi), 1./(CL2(3,:)));
+  % xlabel('Frequency [Hz]');ylabel('Singular Value [-]');
+  % legend('GH \sigma_{inf} +1 ','GH \sigma_{inf} -1','S 1/\sigma_{sup}');%,'\lambda_1','\lambda_2','\lambda_3');
+  %
+  % figure
+  % loglog(w./(2*pi),OL(1,:)+1,'k',w./(2*pi),OL(1,:)-1,'b',w./(2*pi),1./CL(3,:),'r--',w./(2*pi),un,'k:');hold on;%
+  % % loglog(w./(2*pi), 1./(CL(2,:)),w./(2*pi), 1./(CL(3,:)));
+  % % semilogx(w./(2*pi), 1./(CL2(1,:)),w./(2*pi), 1./(CL2(2,:)),w./(2*pi), 1./(CL2(3,:)));
+  % xlabel('Frequency [Hz]');ylabel('Singular Value [-]');
+  % legend('GH \sigma_{sup} +1 ','GH \sigma_{sup} -1','S 1/\sigma_{inf}');%,'\lambda_1','\lambda_2','\lambda_3');
+#+end_src
+
+*** Control Section
+#+begin_src matlab
+  system_dec_10Hz = freqresp(system_dec,2*pi*10);
+  system_dec_0Hz = freqresp(system_dec,0);
+
+  system_decReal_10Hz = pinv(align(system_dec_10Hz));
+  [Ureal,Sreal,Vreal] = svd(system_decReal_10Hz(1:4,1:3));
+  normalizationMatrixReal = abs(pinv(Ureal)*system_dec_0Hz(1:4,1:3)*pinv(Vreal'));
+
+  [U,S,V] = svd(system_dec_10Hz(1:4,1:3));
+  normalizationMatrix = abs(pinv(U)*system_dec_0Hz(1:4,1:3)*pinv(V'));
+
+  H_dec = ([zpk(-2*pi*5,-2*pi*30,30/5) 0 0 0
+            0 zpk(-2*pi*4,-2*pi*20,20/4) 0 0
+            0 0 0 zpk(-2*pi,-2*pi*10,10)]);
+  H_cen_OL = [zpk(-2*pi,-2*pi*10,10) 0 0; 0 zpk(-2*pi,-2*pi*10,10) 0;
+              0 0 zpk(-2*pi*5,-2*pi*30,30/5)];
+  H_cen = pinv(Jta)*H_cen_OL*pinv([Js1; Js2]);
+  % H_svd_OL = -[1/normalizationMatrix(1,1) 0 0 0
+  %     0 1/normalizationMatrix(2,2) 0 0
+  %     0 0 1/normalizationMatrix(3,3) 0];
+  % H_svd_OL_real = -[1/normalizationMatrixReal(1,1) 0 0 0
+  %     0 1/normalizationMatrixReal(2,2) 0 0
+  %     0 0 1/normalizationMatrixReal(3,3) 0];
+  H_svd_OL = -[1/normalizationMatrix(1,1)*zpk(-2*pi*10,-2*pi*60,60/10) 0 0 0
+               0 1/normalizationMatrix(2,2)*zpk(-2*pi*5,-2*pi*30,30/5) 0 0
+               0 0 1/normalizationMatrix(3,3)*zpk(-2*pi*2,-2*pi*10,10/2) 0];
+  H_svd_OL_real = -[1/normalizationMatrixReal(1,1)*zpk(-2*pi*10,-2*pi*60,60/10) 0 0 0
+                    0 1/normalizationMatrixReal(2,2)*zpk(-2*pi*5,-2*pi*30,30/5) 0 0
+                    0 0 1/normalizationMatrixReal(3,3)*zpk(-2*pi*2,-2*pi*10,10/2) 0];
+  % H_svd_OL_real = -[zpk(-2*pi*10,-2*pi*40,40/10) 0 0 0; 0 10*zpk(-2*pi*10,-2*pi*100,100/10) 0 0; 0 0 zpk(-2*pi*2,-2*pi*10,10/2) 0];%-eye(3,4);
+  % H_svd_OL = -[zpk(-2*pi*10,-2*pi*40,40/10) 0 0 0; 0 zpk(-2*pi*4,-2*pi*20,4/20) 0 0; 0 0 zpk(-2*pi*2,-2*pi*10,10/2) 0];% - eye(3,4);%
+  H_svd = pinv(V')*H_svd_OL*pinv(U);
+  H_svd_real = pinv(Vreal')*H_svd_OL_real*pinv(Ureal);
+
+  OL_dec = g*H_dec*system_dec(1:4,1:3);
+  OL_cen = g*H_cen_OL*pinv([Js1; Js2])*system_dec(1:4,1:3)*pinv(Jta);
+  OL_svd = 100*H_svd_OL*pinv(U)*system_dec(1:4,1:3)*pinv(V');
+  OL_svd_real = 100*H_svd_OL_real*pinv(Ureal)*system_dec(1:4,1:3)*pinv(Vreal');
+#+end_src
+
+#+begin_src matlab
+  % figure
+  % bode(OL_dec,w,P);title('OL Decentralized');
+  % figure
+  % bode(OL_cen,w,P);title('OL Centralized');
+#+end_src
+
+#+begin_src matlab
+  figure
+  bode(g*system_dec(1:4,1:3),w,P);
+  title('gain * Plant');
+#+end_src
+
+#+begin_src matlab
+  figure
+  bode(OL_svd,OL_svd_real,w,P);
+  title('OL SVD');
+  legend('SVD of Complex plant','SVD of real approximation of the complex plant')
+#+end_src
+
+#+begin_src matlab
+  figure
+  bode(system_dec(1:4,1:3),pinv(U)*system_dec(1:4,1:3)*pinv(V'),P);
+#+end_src
+
+#+begin_src matlab
+  CL_dec = feedback(system_dec,g*H_dec,[1 2 3],[1 2 3 4]);
+  CL_cen = feedback(system_dec,g*H_cen,[1 2 3],[1 2 3 4]);
+  CL_svd = feedback(system_dec,100*H_svd,[1 2 3],[1 2 3 4]);
+  CL_svd_real = feedback(system_dec,100*H_svd_real,[1 2 3],[1 2 3 4]);
+#+end_src
+
+#+begin_src matlab
+  pzmap_testCL(system_dec,H_dec,g,[1 2 3],[1 2 3 4])
+  title('Decentralized control');
+#+end_src
+
+#+begin_src matlab
+  pzmap_testCL(system_dec,H_cen,g,[1 2 3],[1 2 3 4])
+  title('Centralized control');
+#+end_src
+
+#+begin_src matlab
+  pzmap_testCL(system_dec,H_svd,100,[1 2 3],[1 2 3 4])
+  title('SVD control');
+#+end_src
+
+#+begin_src matlab
+  pzmap_testCL(system_dec,H_svd_real,100,[1 2 3],[1 2 3 4])
+  title('Real approximation SVD control');
+#+end_src
+
+#+begin_src matlab
+  P.Ylim = [1e-8 1e-3];
+  figure
+  bodemag(system_dec(1:4,1:3),CL_dec(1:4,1:3),CL_cen(1:4,1:3),CL_svd(1:4,1:3),CL_svd_real(1:4,1:3),P);
+  title('Motion/actuator')
+  legend('Control OFF','Decentralized control','Centralized control','SVD control','SVD control real appr.');
+#+end_src
+
+#+begin_src matlab
+  P.Ylim = [1e-5 1e1];
+  figure
+  bodemag(system_dec(1:4,4:6),CL_dec(1:4,4:6),CL_cen(1:4,4:6),CL_svd(1:4,4:6),CL_svd_real(1:4,4:6),P);
+  title('Transmissibility');
+  legend('Control OFF','Decentralized control','Centralized control','SVD control','SVD control real appr.');
+#+end_src
+
+#+begin_src matlab
+  figure
+  bodemag(system_dec([7 9],4:6),CL_dec([7 9],4:6),CL_cen([7 9],4:6),CL_svd([7 9],4:6),CL_svd_real([7 9],4:6),P);
+  title('Transmissibility from half sum and half difference in the X direction');
+  legend('Control OFF','Decentralized control','Centralized control','SVD control','SVD control real appr.');
+#+end_src
+
+#+begin_src matlab
+  figure
+  bodemag(system_dec([8 10],4:6),CL_dec([8 10],4:6),CL_cen([8 10],4:6),CL_svd([8 10],4:6),CL_svd_real([8 10],4:6),P);
+  title('Transmissibility from half sum and half difference in the Z direction');
+  legend('Control OFF','Decentralized control','Centralized control','SVD control','SVD control real appr.');
+#+end_src
+
+*** Greshgorin radius
+#+begin_src matlab
+  system_dec_freq = freqresp(system_dec,w);
+  x1 = zeros(1,length(w));
+  z1 = zeros(1,length(w));
+  x2 = zeros(1,length(w));
+  S1 = zeros(1,length(w));
+  S2 = zeros(1,length(w));
+  S3 = zeros(1,length(w));
+
+  for t = 1:length(w)
+      x1(t) = (abs(system_dec_freq(1,2,t))+abs(system_dec_freq(1,3,t)))/abs(system_dec_freq(1,1,t));
+      z1(t) = (abs(system_dec_freq(2,1,t))+abs(system_dec_freq(2,3,t)))/abs(system_dec_freq(2,2,t));
+      x2(t) = (abs(system_dec_freq(3,1,t))+abs(system_dec_freq(3,2,t)))/abs(system_dec_freq(3,3,t));
+      system_svd = pinv(Ureal)*system_dec_freq(1:4,1:3,t)*pinv(Vreal');
+      S1(t) = (abs(system_svd(1,2))+abs(system_svd(1,3)))/abs(system_svd(1,1));
+      S2(t) = (abs(system_svd(2,1))+abs(system_svd(2,3)))/abs(system_svd(2,2));
+      S2(t) = (abs(system_svd(3,1))+abs(system_svd(3,2)))/abs(system_svd(3,3));
+  end
+
+  limit = 0.5*ones(1,length(w));
+#+end_src
+
+#+begin_src matlab
+  figure
+  loglog(w./(2*pi),x1,w./(2*pi),z1,w./(2*pi),x2,w./(2*pi),limit,'--');
+  legend('x_1','z_1','x_2','Limit');
+  xlabel('Frequency [Hz]');
+  ylabel('Greshgorin radius [-]');
+#+end_src
+
+#+begin_src matlab
+  figure
+  loglog(w./(2*pi),S1,w./(2*pi),S2,w./(2*pi),S3,w./(2*pi),limit,'--');
+  legend('S1','S2','S3','Limit');
+  xlabel('Frequency [Hz]');
+  ylabel('Greshgorin radius [-]');
+  % set(gcf,'color','w')
+#+end_src
+
+*** Injecting ground motion in the system to have the output
+#+begin_src matlab
+  Fr = logspace(-2,3,1e3);
+  w=2*pi*Fr*1i;
+  %fit of the ground motion data in m/s^2/rtHz
+  Fr_ground_x = [0.07 0.1 0.15 0.3 0.7 0.8 0.9 1.2 5 10];
+  n_ground_x1 = [4e-7 4e-7 2e-6 1e-6 5e-7 5e-7 5e-7 1e-6 1e-5 3.5e-5];
+  Fr_ground_v = [0.07 0.08 0.1 0.11 0.12 0.15 0.25 0.6 0.8 1 1.2 1.6 2 6 10];
+  n_ground_v1 = [7e-7 7e-7 7e-7 1e-6 1.2e-6 1.5e-6 1e-6 9e-7 7e-7 7e-7 7e-7 1e-6 2e-6 1e-5 3e-5];
+
+  n_ground_x = interp1(Fr_ground_x,n_ground_x1,Fr,'linear');
+  n_ground_v = interp1(Fr_ground_v,n_ground_v1,Fr,'linear');
+  % figure
+  % loglog(Fr,abs(n_ground_v),Fr_ground_v,n_ground_v1,'*');
+  % xlabel('Frequency [Hz]');ylabel('ASD [m/s^2 /rtHz]');
+  % return
+
+  %converting into PSD
+  n_ground_x = (n_ground_x).^2;
+  n_ground_v = (n_ground_v).^2;
+
+  %Injecting ground motion in the system and getting the outputs
+  system_dec_f = (freqresp(system_dec,abs(w)));
+  PHI = zeros(size(Fr,2),12,12);
+  for p = 1:size(Fr,2)
+      Sw=zeros(6,6);
+      Iact = zeros(3,3);
+      Sw(4,4) = n_ground_x(p);
+      Sw(5,5) = n_ground_v(p);
+      Sw(6,6) = n_ground_v(p);
+      Sw(1:3,1:3) = Iact;
+      PHI(p,:,:) = (system_dec_f(:,:,p))*Sw(:,:)*(system_dec_f(:,:,p))';
+  end
+  x1 = PHI(:,1,1);
+  z1 = PHI(:,2,2);
+  x2 = PHI(:,3,3);
+  z2 = PHI(:,4,4);
+  wx = PHI(:,5,5);
+  wz = PHI(:,6,6);
+  x12 = PHI(:,1,3);
+  z12 = PHI(:,2,4);
+  PHIwx = PHI(:,1,5);
+  PHIwz = PHI(:,2,6);
+  xsum = PHI(:,7,7);
+  zsum = PHI(:,8,8);
+  xdelta = PHI(:,9,9);
+  zdelta = PHI(:,10,10);
+  rot = PHI(:,11,11);
+#+end_src
+
+* Gravimeter - Functions
+:PROPERTIES:
+:header-args:matlab+: :comments none :mkdirp yes :eval no
+:END:
+** =align=
+:PROPERTIES:
+:header-args:matlab+: :tangle gravimeter/align.m
+:END:
+<<sec:align>>
+
+This Matlab function is accessible [[file:gravimeter/align.m][here]].
+
+#+begin_src matlab
+  function [A] = align(V)
+  %A!ALIGN(V) returns a constat matrix A which is the real alignment of the
+  %INVERSE of the complex input matrix V
+  %from Mohit slides
+
+      if (nargin ==0) || (nargin > 1)
+          disp('usage: mat_inv_real = align(mat)')
+          return
+      end
+
+      D = pinv(real(V'*V));
+      A = D*real(V'*diag(exp(1i * angle(diag(V*D*V.'))/2)));
+
+
+  end
+#+end_src
+
+
+** =pzmap_testCL=
+:PROPERTIES:
+:header-args:matlab+: :tangle gravimeter/pzmap_testCL.m
+:END:
+<<sec:pzmap_testCL>>
+
+This Matlab function is accessible [[file:gravimeter/pzmap_testCL.m][here]].
+
+#+begin_src matlab
+  function [] = pzmap_testCL(system,H,gain,feedin,feedout)
+  % evaluate and plot the pole-zero map for the closed loop system for
+  % different values of the gain
+
+      [~, n] = size(gain);
+      [m1, n1, ~] = size(H);
+      [~,n2] = size(feedin);
+
+      figure
+      for i = 1:n
+          %     if n1 == n2
+          system_CL = feedback(system,gain(i)*H,feedin,feedout);
+
+          [P,Z] = pzmap(system_CL);
+          plot(real(P(:)),imag(P(:)),'x',real(Z(:)),imag(Z(:)),'o');hold on
+          xlabel('Real axis (s^{-1})');ylabel('Imaginary Axis (s^{-1})');
+          %         clear P Z
+          %     else
+          %         system_CL = feedback(system,gain(i)*H(:,1+(i-1)*m1:m1+(i-1)*m1),feedin,feedout);
+          %
+          %         [P,Z] = pzmap(system_CL);
+          %         plot(real(P(:)),imag(P(:)),'x',real(Z(:)),imag(Z(:)),'o');hold on
+          %         xlabel('Real axis (s^{-1})');ylabel('Imaginary Axis (s^{-1})');
+          %         clear P Z
+          %     end
+      end
+      str = {strcat('gain = ' , num2str(gain(1)))};  % at the end of first loop, z being loop output
+      str = [str , strcat('gain = ' , num2str(gain(1)))]; % after 2nd loop
+      for i = 2:n
+          str = [str , strcat('gain = ' , num2str(gain(i)))]; % after 2nd loop
+          str = [str , strcat('gain = ' , num2str(gain(i)))]; % after 2nd loop
+      end
+      legend(str{:})
+  end
+
 #+end_src
 
 * Stewart Platform - Simscape Model
@@ -975,7 +1283,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 #+RESULTS:
 [[file:figs/stewart_platform_simscape_cl_transmissibility.png]]
 
-* Stewart Platform - Analytical Model
+* Stewart Platform - Analytical Model                               :noexport:
 ** Matlab Init                                              :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
