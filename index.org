@@ -47,7 +47,13 @@
 :PROPERTIES:
 :header-args:matlab+: :tangle gravimeter/script.m
 :END:
-** Matlab Init                                             :noexport:ignore:
+** Introduction
+
+#+name: fig:gravimeter_model
+#+caption: Model of the gravimeter
+[[file:figs/gravimeter_model.png]]
+
+** Matlab Init                                              :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
 #+end_src
@@ -67,11 +73,11 @@
 
 Parameters
 #+begin_src matlab
-  l  = 0.5/2; % Length of the mass [m]
-  la = 0.5/2; % Position of Act. [m]
+  l  = 1.0; % Length of the mass [m]
+  la = 0.5; % Position of Act. [m]
 
-  h  = 1.7/2; % Height of the mass [m]
-  ha = 1.7/2; % Position of Act. [m]
+  h  = 3.4; % Height of the mass [m]
+  ha = 1.7; % Position of Act. [m]
 
   m = 400; % Mass [kg]
   I = 115; % Inertia [kg m^2]
@@ -112,12 +118,12 @@ Parameters
 #+begin_example
 pole(G)
 ans =
-      -0.000143694057817022 +      11.9872485389527i
-      -0.000143694057817022 -      11.9872485389527i
-      -7.49842879371933e-05 +      8.65931816830372i
-      -7.49842879371933e-05 -      8.65931816830372i
-      -4.25202990156283e-06 +      2.06202312114216i
-      -4.25202990156283e-06 -      2.06202312114216i
+      -0.000473481142385795 +      21.7596190728632i
+      -0.000473481142385795 -      21.7596190728632i
+      -7.49842879459172e-05 +       8.6593576906982i
+      -7.49842879459172e-05 -       8.6593576906982i
+       -5.1538686792578e-06 +      2.27025295182756i
+       -5.1538686792578e-06 -      2.27025295182756i
 #+end_example
 
 The plant as 6 states as expected (2 translations + 1 rotation)
@@ -170,12 +176,12 @@ We can now see that the system is unstable due to gravity.
 #+begin_example
 pole(Gg)
 ans =
-      -7.49842906813125e-05 +       8.6594885739673i
-      -7.49842906813125e-05 -       8.6594885739673i
-           7.08960832564352 +                     0i
-          -7.08989438800737 +                     0i
-           1.70627135943515 +                     0i
-          -1.70628118924799 +                     0i
+          -10.9848275341252 +                     0i
+           10.9838836405201 +                     0i
+      -7.49855379478109e-05 +      8.65962885770051i
+      -7.49855379478109e-05 -      8.65962885770051i
+      -6.68819548733559e-06 +     0.832960422243848i
+      -6.68819548733559e-06 -     0.832960422243848i
 #+end_example
 
 #+begin_src matlab :exports none
@@ -205,27 +211,6 @@ ans =
 
 ** Analytical Model
 *** Parameters
-Control parameters
-#+begin_src matlab
-  g = 1e5;
-  g_svd = 1e5;
-#+end_src
-
-System parameters
-#+begin_src matlab
-  l  = 0.5; % Length of the mass [m]
-  la = 0.5; % Position of Act. [m]
-
-  h  = 1.7; % Height of the mass [m]
-  ha = 1.7; % Position of Act. [m]
-
-  m = 400; % Mass [kg]
-  I = 115; % Inertia [kg m^2]
-
-  k = 15e3; % Actuator Stiffness [N/m]
-  c = 0.03; % Actuator Damping [N/(m/s)]
-#+end_src
-
 Bode options.
 #+begin_src matlab
   P = bodeoptions;
@@ -256,17 +241,16 @@ Frequency vector.
        0 0 I];
 
   %Jacobian of the bottom sensor
-  Js1 = [1 0 h/2
+  Js1 = [1 0  h/2
          0 1 -l/2];
   %Jacobian of the top sensor
   Js2 = [1 0 -h/2
-         0 1 0];
+         0 1  0];
 
   %Jacobian of the actuators
-  Ja = [1 0 ha/2 %Left horizontal actuator
-                 %1 0 h/2 %Right horizontal actuator
-        0 1 -la/2 %Left vertical actuator
-        0 1 la/2]; %Right vertical actuator
+  Ja = [1 0  ha   % Left horizontal actuator
+        0 1 -la   % Left vertical actuator
+        0 1  la]; % Right vertical actuator
   Jta = Ja';
   K = k*Jta*Ja;
   C = c*Jta*Ja;

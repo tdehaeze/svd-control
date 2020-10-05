@@ -14,11 +14,11 @@ open('gravimeter.slx')
 
 % Parameters
 
-l  = 0.5; % Length of the mass [m]
-la = 0.5; % Position of Act. [m]
+l  = 0.5/2; % Length of the mass [m]
+la = 0.5/2; % Position of Act. [m]
 
-h  = 1.7; % Height of the mass [m]
-ha = 1.7; % Position of Act. [m]
+h  = 1.7/2; % Height of the mass [m]
+ha = 1.7/2; % Position of Act. [m]
 
 m = 400; % Mass [kg]
 I = 115; % Inertia [kg m^2]
@@ -33,7 +33,7 @@ g = 0; % Gravity [m/s2]
 % System Identification - Without Gravity
 
 %% Name of the Simulink File
-mdl = 'gravimeter';
+mdl = 'gravimeterplanarjoints2020a';
 
 %% Input/Output definition
 clear io; io_i = 1;
@@ -57,12 +57,12 @@ pole(G)
 % #+begin_example
 % pole(G)
 % ans =
-%       -0.000473481142385801 +      21.7596190728632i
-%       -0.000473481142385801 -      21.7596190728632i
-%       -7.49842879459177e-05 +       8.6593576906982i
-%       -7.49842879459177e-05 -       8.6593576906982i
-%       -5.15386867925747e-06 +      2.27025295182755i
-%       -5.15386867925747e-06 -      2.27025295182755i
+%       -0.000143694057817022 +      11.9872485389527i
+%       -0.000143694057817022 -      11.9872485389527i
+%       -7.49842879371933e-05 +      8.65931816830372i
+%       -7.49842879371933e-05 -      8.65931816830372i
+%       -4.25202990156283e-06 +      2.06202312114216i
+%       -4.25202990156283e-06 -      2.06202312114216i
 % #+end_example
 
 % The plant as 6 states as expected (2 translations + 1 rotation)
@@ -104,14 +104,14 @@ pole(Gg)
 
 % #+RESULTS:
 % #+begin_example
-% pole(G)
+% pole(Gg)
 % ans =
-%           -10.9848275341276 +                     0i
-%            10.9838836405193 +                     0i
-%       -7.49855396089326e-05 +      8.65962885769976i
-%       -7.49855396089326e-05 -      8.65962885769976i
-%       -6.68819341967921e-06 +      0.83296042226902i
-%       -6.68819341967921e-06 -      0.83296042226902i
+%       -7.49842906813125e-05 +       8.6594885739673i
+%       -7.49842906813125e-05 -       8.6594885739673i
+%            7.08960832564352 +                     0i
+%           -7.08989438800737 +                     0i
+%            1.70627135943515 +                     0i
+%           -1.70628118924799 +                     0i
 % #+end_example
 
 
