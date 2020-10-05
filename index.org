@@ -226,7 +226,6 @@ Bode options.
   P.Xlim = [1e-1,1e2];
   P.MagLowerLimMode = 'manual';
   P.MagLowerLim= 1e-3;
-  %P.PhaseVisible = 'off';
 #+end_src
 
 Frequency vector.
@@ -234,27 +233,42 @@ Frequency vector.
   w = 2*pi*logspace(-1,2,1000); % [rad/s]
 #+end_src
 
-*** generation of the state space model
+*** Generation of the State Space Model
+Mass matrix
 #+begin_src matlab
   M = [m 0 0
        0 m 0
        0 0 I];
+#+end_src
 
-  %Jacobian of the bottom sensor
+Jacobian of the bottom sensor
+#+begin_src matlab
   Js1 = [1 0  h/2
          0 1 -l/2];
-  %Jacobian of the top sensor
+#+end_src
+
+Jacobian of the top sensor
+#+begin_src matlab
   Js2 = [1 0 -h/2
          0 1  0];
+#+end_src
 
-  %Jacobian of the actuators
+Jacobian of the actuators
+#+begin_src matlab
   Ja = [1 0  ha   % Left horizontal actuator
         0 1 -la   % Left vertical actuator
         0 1  la]; % Right vertical actuator
   Jta = Ja';
+#+end_src
+
+Stiffness and Damping matrices
+#+begin_src matlab
   K = k*Jta*Ja;
   C = c*Jta*Ja;
+#+end_src
 
+State Space Matrices
+#+begin_src matlab
   E = [1 0 0
        0 1 0
        0 0 1]; %projecting ground motion in the directions of the legs
@@ -265,12 +279,6 @@ Frequency vector.
   BB = [zeros(3,6)
         M\Jta M\(k*Jta*E)];
 
-  % BB = [zeros(3,3)
-  %     M\Jta ];
-  %
-  % CC = [Ja zeros(3)];
-  % DD = zeros(3,3);
-
   CC = [[Js1;Js2] zeros(4,3);
         zeros(2,6)
         (Js1+Js2)./2 zeros(2,3)
@@ -280,12 +288,16 @@ Frequency vector.
   DD = [zeros(4,6)
         zeros(2,3) eye(2,3)
         zeros(6,6)];
+#+end_src
 
+State Space model:
+- Input = three actuators and three ground motions
+- Output = the bottom sensor; the top sensor; the ground motion; the half sum; the half difference; the rotation
+
+#+begin_src matlab
   system_dec = ss(AA,BB,CC,DD);
 #+end_src
 
-- Input = three actuators and three ground motions
-- Output = the bottom sensor; the top sensor; the ground motion; the half sum; the half difference; the rotation
 
 #+begin_src matlab :results output replace
   size(system_dec)
