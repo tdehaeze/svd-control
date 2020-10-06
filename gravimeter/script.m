@@ -14,11 +14,11 @@ open('gravimeter.slx')
 
 % Parameters
 
-l  = 0.5/2; % Length of the mass [m]
-la = 0.5/2; % Position of Act. [m]
+l  = 1.0; % Length of the mass [m]
+la = 0.5; % Position of Act. [m]
 
-h  = 1.7/2; % Height of the mass [m]
-ha = 1.7/2; % Position of Act. [m]
+h  = 3.4; % Height of the mass [m]
+ha = 1.7; % Position of Act. [m]
 
 m = 400; % Mass [kg]
 I = 115; % Inertia [kg m^2]
@@ -33,7 +33,7 @@ g = 0; % Gravity [m/s2]
 % System Identification - Without Gravity
 
 %% Name of the Simulink File
-mdl = 'gravimeterplanarjoints2020a';
+mdl = 'gravimeter';
 
 %% Input/Output definition
 clear io; io_i = 1;
@@ -57,12 +57,12 @@ pole(G)
 % #+begin_example
 % pole(G)
 % ans =
-%       -0.000143694057817022 +      11.9872485389527i
-%       -0.000143694057817022 -      11.9872485389527i
-%       -7.49842879371933e-05 +      8.65931816830372i
-%       -7.49842879371933e-05 -      8.65931816830372i
-%       -4.25202990156283e-06 +      2.06202312114216i
-%       -4.25202990156283e-06 -      2.06202312114216i
+%       -0.000473481142385795 +      21.7596190728632i
+%       -0.000473481142385795 -      21.7596190728632i
+%       -7.49842879459172e-05 +       8.6593576906982i
+%       -7.49842879459172e-05 -       8.6593576906982i
+%        -5.1538686792578e-06 +      2.27025295182756i
+%        -5.1538686792578e-06 -      2.27025295182756i
 % #+end_example
 
 % The plant as 6 states as expected (2 translations + 1 rotation)
@@ -106,12 +106,12 @@ pole(Gg)
 % #+begin_example
 % pole(Gg)
 % ans =
-%       -7.49842906813125e-05 +       8.6594885739673i
-%       -7.49842906813125e-05 -       8.6594885739673i
-%            7.08960832564352 +                     0i
-%           -7.08989438800737 +                     0i
-%            1.70627135943515 +                     0i
-%           -1.70628118924799 +                     0i
+%           -10.9848275341252 +                     0i
+%            10.9838836405201 +                     0i
+%       -7.49855379478109e-05 +      8.65962885770051i
+%       -7.49855379478109e-05 -      8.65962885770051i
+%       -6.68819548733559e-06 +     0.832960422243848i
+%       -6.68819548733559e-06 -     0.832960422243848i
 % #+end_example
 
 
@@ -130,29 +130,6 @@ for in_i = 1:3
 end
 
 % Parameters
-% Control parameters
-
-g = 1e5;
-g_svd = 1e5;
-
-
-
-% System parameters
-
-l  = 0.5; % Length of the mass [m]
-la = 0.5; % Position of Act. [m]
-
-h  = 1.7; % Height of the mass [m]
-ha = 1.7; % Position of Act. [m]
-
-m = 400; % Mass [kg]
-I = 115; % Inertia [kg m^2]
-
-k = 15e3; % Actuator Stiffness [N/m]
-c = 0.03; % Actuator Damping [N/(m/s)]
-
-
-
 % Bode options.
 
 P = bodeoptions;
@@ -168,7 +145,6 @@ P.TickLabel.FontSize = 12;
 P.Xlim = [1e-1,1e2];
 P.MagLowerLimMode = 'manual';
 P.MagLowerLim= 1e-3;
-%P.PhaseVisible = 'off';
 
 
 
@@ -176,27 +152,46 @@ P.MagLowerLim= 1e-3;
 
 w = 2*pi*logspace(-1,2,1000); % [rad/s]
 
-% generation of the state space model
+% Generation of the State Space Model
+% Mass matrix
 
 M = [m 0 0
      0 m 0
      0 0 I];
 
-%Jacobian of the bottom sensor
-Js1 = [1 0 h/2
-       0 1 -l/2];
-%Jacobian of the top sensor
-Js2 = [1 0 -h/2
-       0 1 0];
 
-%Jacobian of the actuators
-Ja = [1 0 ha/2 %Left horizontal actuator
-               %1 0 h/2 %Right horizontal actuator
-      0 1 -la/2 %Left vertical actuator
-      0 1 la/2]; %Right vertical actuator
+
+% Jacobian of the bottom sensor
+
+Js1 = [1 0  h/2
+       0 1 -l/2];
+
+
+
+% Jacobian of the top sensor
+
+Js2 = [1 0 -h/2
+       0 1  0];
+
+
+
+% Jacobian of the actuators
+
+Ja = [1 0  ha   % Left horizontal actuator
+      0 1 -la   % Left vertical actuator
+      0 1  la]; % Right vertical actuator
 Jta = Ja';
+
+
+
+% Stiffness and Damping matrices
+
 K = k*Jta*Ja;
 C = c*Jta*Ja;
+
+
+
+% State Space Matrices
 
 E = [1 0 0
      0 1 0
@@ -208,12 +203,6 @@ AA = [zeros(3) eye(3)
 BB = [zeros(3,6)
       M\Jta M\(k*Jta*E)];
 
-% BB = [zeros(3,3)
-%     M\Jta ];
-%
-% CC = [Ja zeros(3)];
-% DD = zeros(3,3);
-
 CC = [[Js1;Js2] zeros(4,3);
       zeros(2,6)
       (Js1+Js2)./2 zeros(2,3)
@@ -224,13 +213,14 @@ DD = [zeros(4,6)
       zeros(2,3) eye(2,3)
       zeros(6,6)];
 
-system_dec = ss(AA,BB,CC,DD);
 
 
-
+% State Space model:
 % - Input = three actuators and three ground motions
 % - Output = the bottom sensor; the top sensor; the ground motion; the half sum; the half difference; the rotation
 
+
+system_dec = ss(AA,BB,CC,DD);
 
 size(system_dec)
 
