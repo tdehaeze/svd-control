@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2020-10-09 ven. 16:21 -->
+<!-- 2020-10-13 mar. 14:53 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <title>SVD Control</title>
 <meta name="generator" content="Org mode" />
@@ -35,75 +35,75 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org90d7008">1. Gravimeter - Simscape Model</a>
+<li><a href="#org6dd65c1">1. Gravimeter - Simscape Model</a>
 <ul>
-<li><a href="#org29b9308">1.1. Introduction</a></li>
-<li><a href="#orgd333b87">1.2. Simscape Model - Parameters</a></li>
-<li><a href="#org09b581d">1.3. System Identification - Without Gravity</a></li>
-<li><a href="#org4f091cc">1.4. System Identification - With Gravity</a></li>
-<li><a href="#org7c4effc">1.5. Analytical Model</a>
+<li><a href="#org85dbe5c">1.1. Introduction</a></li>
+<li><a href="#org0b31481">1.2. Simscape Model - Parameters</a></li>
+<li><a href="#org949338c">1.3. System Identification - Without Gravity</a></li>
+<li><a href="#org3e8d708">1.4. System Identification - With Gravity</a></li>
+<li><a href="#org8263a33">1.5. Analytical Model</a>
 <ul>
-<li><a href="#org20ea2aa">1.5.1. Parameters</a></li>
-<li><a href="#org02cb447">1.5.2. Generation of the State Space Model</a></li>
-<li><a href="#org9417f40">1.5.3. Comparison with the Simscape Model</a></li>
-<li><a href="#org6c56e64">1.5.4. Analysis</a></li>
-<li><a href="#orgeb20c08">1.5.5. Control Section</a></li>
-<li><a href="#org931022f">1.5.6. Greshgorin radius</a></li>
-<li><a href="#org1d56ec4">1.5.7. Injecting ground motion in the system to have the output</a></li>
+<li><a href="#org5ce809b">1.5.1. Parameters</a></li>
+<li><a href="#org485b7e0">1.5.2. Generation of the State Space Model</a></li>
+<li><a href="#orgb77d12b">1.5.3. Comparison with the Simscape Model</a></li>
+<li><a href="#orgbede3a4">1.5.4. Analysis</a></li>
+<li><a href="#org00d06a7">1.5.5. Control Section</a></li>
+<li><a href="#org8d48657">1.5.6. Greshgorin radius</a></li>
+<li><a href="#org7348f99">1.5.7. Injecting ground motion in the system to have the output</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#org36d6b85">2. Gravimeter - Functions</a>
+<li><a href="#org534f1d2">2. Gravimeter - Functions</a>
 <ul>
-<li><a href="#orgbb4529b">2.1. <code>align</code></a></li>
-<li><a href="#orge0ed8bf">2.2. <code>pzmap_testCL</code></a></li>
+<li><a href="#org8fd3468">2.1. <code>align</code></a></li>
+<li><a href="#org7fc9d1b">2.2. <code>pzmap_testCL</code></a></li>
 </ul>
 </li>
-<li><a href="#org5afd29d">3. Stewart Platform - Simscape Model</a>
+<li><a href="#orga726921">3. Stewart Platform - Simscape Model</a>
 <ul>
-<li><a href="#orgff944f3">3.1. Jacobian</a></li>
-<li><a href="#org07ffe6c">3.2. Simscape Model</a></li>
-<li><a href="#org9aaf0d3">3.3. Identification of the plant</a></li>
-<li><a href="#orgb0b01e3">3.4. Obtained Dynamics</a></li>
-<li><a href="#org1de55ce">3.5. Real Approximation of \(G\) at the decoupling frequency</a></li>
-<li><a href="#org53d60e1">3.6. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
-<li><a href="#org40c1d24">3.7. Decoupled Plant</a></li>
-<li><a href="#orgdfcd158">3.8. Diagonal Controller</a></li>
-<li><a href="#org25e3b35">3.9. Centralized Control</a></li>
-<li><a href="#org4d83793">3.10. SVD Control</a></li>
-<li><a href="#org7cece79">3.11. Results</a></li>
+<li><a href="#org0f4c378">3.1. Jacobian</a></li>
+<li><a href="#org8e93915">3.2. Simscape Model</a></li>
+<li><a href="#orga80ad9d">3.3. Identification of the plant</a></li>
+<li><a href="#org820395d">3.4. Obtained Dynamics</a></li>
+<li><a href="#org531c180">3.5. Real Approximation of \(G\) at the decoupling frequency</a></li>
+<li><a href="#org04886ad">3.6. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
+<li><a href="#org96683a8">3.7. Decoupled Plant</a></li>
+<li><a href="#orgde9fab8">3.8. Diagonal Controller</a></li>
+<li><a href="#org47bbca8">3.9. Centralized Control</a></li>
+<li><a href="#org2c1e3f7">3.10. SVD Control</a></li>
+<li><a href="#orgd6985da">3.11. Results</a></li>
 </ul>
 </li>
-<li><a href="#org8b11aba">4. Stewart Platform - Analytical Model</a>
+<li><a href="#org99c6262">4. Stewart Platform - Analytical Model</a>
 <ul>
-<li><a href="#org2a175f6">4.1. Characteristics</a></li>
-<li><a href="#org9efa4f4">4.2. Mass Matrix</a></li>
-<li><a href="#org97bc497">4.3. Jacobian Matrix</a></li>
-<li><a href="#org7c9679d">4.4. Stifnness matrix and Damping matrix</a></li>
-<li><a href="#org00e8691">4.5. State Space System</a></li>
-<li><a href="#org8a70996">4.6. Transmissibility</a></li>
-<li><a href="#org12c95c9">4.7. Real approximation of \(G(j\omega)\) at decoupling frequency</a></li>
-<li><a href="#orgc58b81c">4.8. Coupled and Decoupled Plant &ldquo;Gershgorin Radii&rdquo;</a></li>
-<li><a href="#org2ba91f6">4.9. Decoupled Plant</a></li>
-<li><a href="#orgc73a283">4.10. Controller</a></li>
-<li><a href="#org9c82ee4">4.11. Closed Loop System</a></li>
-<li><a href="#org80cd406">4.12. Results</a></li>
+<li><a href="#org6e044dd">4.1. Characteristics</a></li>
+<li><a href="#org20b7c2e">4.2. Mass Matrix</a></li>
+<li><a href="#org2f016df">4.3. Jacobian Matrix</a></li>
+<li><a href="#org2c9ff6d">4.4. Stifnness and Damping matrices</a></li>
+<li><a href="#orgffba0a8">4.5. State Space System</a></li>
+<li><a href="#org42b1b07">4.6. Transmissibility</a></li>
+<li><a href="#org38c8159">4.7. Real approximation of \(G(j\omega)\) at decoupling frequency</a></li>
+<li><a href="#org477b3ce">4.8. Coupled and Decoupled Plant &ldquo;Gershgorin Radii&rdquo;</a></li>
+<li><a href="#orgde4eec1">4.9. Decoupled Plant</a></li>
+<li><a href="#org11b0182">4.10. Controller</a></li>
+<li><a href="#org5c893a8">4.11. Closed Loop System</a></li>
+<li><a href="#orgb1c0711">4.12. Results</a></li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org90d7008" class="outline-2">
-<h2 id="org90d7008"><span class="section-number-2">1</span> Gravimeter - Simscape Model</h2>
+<div id="outline-container-org6dd65c1" class="outline-2">
+<h2 id="org6dd65c1"><span class="section-number-2">1</span> Gravimeter - Simscape Model</h2>
 <div class="outline-text-2" id="text-1">
 </div>
-<div id="outline-container-org29b9308" class="outline-3">
-<h3 id="org29b9308"><span class="section-number-3">1.1</span> Introduction</h3>
+<div id="outline-container-org85dbe5c" class="outline-3">
+<h3 id="org85dbe5c"><span class="section-number-3">1.1</span> Introduction</h3>
 <div class="outline-text-3" id="text-1-1">
 
-<div id="org7df72f4" class="figure">
+<div id="org02345c4" class="figure">
 <p><img src="figs/gravimeter_model.png" alt="gravimeter_model.png" />
 </p>
 <p><span class="figure-number">Figure 1: </span>Model of the gravimeter</p>
@@ -111,8 +111,8 @@
 </div>
 </div>
 
-<div id="outline-container-orgd333b87" class="outline-3">
-<h3 id="orgd333b87"><span class="section-number-3">1.2</span> Simscape Model - Parameters</h3>
+<div id="outline-container-org0b31481" class="outline-3">
+<h3 id="org0b31481"><span class="section-number-3">1.2</span> Simscape Model - Parameters</h3>
 <div class="outline-text-3" id="text-1-2">
 <div class="org-src-container">
 <pre class="src src-matlab">open(<span class="org-string">'gravimeter.slx'</span>)
@@ -143,8 +143,8 @@ g = 0; <span class="org-comment">% Gravity [m/s2]</span>
 </div>
 </div>
 
-<div id="outline-container-org09b581d" class="outline-3">
-<h3 id="org09b581d"><span class="section-number-3">1.3</span> System Identification - Without Gravity</h3>
+<div id="outline-container-org949338c" class="outline-3">
+<h3 id="org949338c"><span class="section-number-3">1.3</span> System Identification - Without Gravity</h3>
 <div class="outline-text-3" id="text-1-3">
 <div class="org-src-container">
 <pre class="src src-matlab"><span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
@@ -191,7 +191,7 @@ State-space model with 4 outputs, 3 inputs, and 6 states.
 
 
 
-<div id="orgdd275bb" class="figure">
+<div id="orga082635" class="figure">
 <p><img src="figs/open_loop_tf.png" alt="open_loop_tf.png" />
 </p>
 <p><span class="figure-number">Figure 2: </span>Open Loop Transfer Function from 3 Actuators to 4 Accelerometers</p>
@@ -199,8 +199,8 @@ State-space model with 4 outputs, 3 inputs, and 6 states.
 </div>
 </div>
 
-<div id="outline-container-org4f091cc" class="outline-3">
-<h3 id="org4f091cc"><span class="section-number-3">1.4</span> System Identification - With Gravity</h3>
+<div id="outline-container-org3e8d708" class="outline-3">
+<h3 id="org3e8d708"><span class="section-number-3">1.4</span> System Identification - With Gravity</h3>
 <div class="outline-text-3" id="text-1-4">
 <div class="org-src-container">
 <pre class="src src-matlab">g = 9.80665; <span class="org-comment">% Gravity [m/s2]</span>
@@ -229,7 +229,7 @@ ans =
 </pre>
 
 
-<div id="org392bf82" class="figure">
+<div id="org1a94741" class="figure">
 <p><img src="figs/open_loop_tf_g.png" alt="open_loop_tf_g.png" />
 </p>
 <p><span class="figure-number">Figure 3: </span>Open Loop Transfer Function from 3 Actuators to 4 Accelerometers with an without gravity</p>
@@ -237,12 +237,12 @@ ans =
 </div>
 </div>
 
-<div id="outline-container-org7c4effc" class="outline-3">
-<h3 id="org7c4effc"><span class="section-number-3">1.5</span> Analytical Model</h3>
+<div id="outline-container-org8263a33" class="outline-3">
+<h3 id="org8263a33"><span class="section-number-3">1.5</span> Analytical Model</h3>
 <div class="outline-text-3" id="text-1-5">
 </div>
-<div id="outline-container-org20ea2aa" class="outline-4">
-<h4 id="org20ea2aa"><span class="section-number-4">1.5.1</span> Parameters</h4>
+<div id="outline-container-org5ce809b" class="outline-4">
+<h4 id="org5ce809b"><span class="section-number-4">1.5.1</span> Parameters</h4>
 <div class="outline-text-4" id="text-1-5-1">
 <p>
 Bode options.
@@ -274,8 +274,8 @@ Frequency vector.
 </div>
 </div>
 
-<div id="outline-container-org02cb447" class="outline-4">
-<h4 id="org02cb447"><span class="section-number-4">1.5.2</span> Generation of the State Space Model</h4>
+<div id="outline-container-org485b7e0" class="outline-4">
+<h4 id="org485b7e0"><span class="section-number-4">1.5.2</span> Generation of the State Space Model</h4>
 <div class="outline-text-4" id="text-1-5-2">
 <p>
 Mass matrix
@@ -376,11 +376,11 @@ State-space model with 12 outputs, 6 inputs, and 6 states.
 </div>
 </div>
 
-<div id="outline-container-org9417f40" class="outline-4">
-<h4 id="org9417f40"><span class="section-number-4">1.5.3</span> Comparison with the Simscape Model</h4>
+<div id="outline-container-orgb77d12b" class="outline-4">
+<h4 id="orgb77d12b"><span class="section-number-4">1.5.3</span> Comparison with the Simscape Model</h4>
 <div class="outline-text-4" id="text-1-5-3">
 
-<div id="orga6f165d" class="figure">
+<div id="org7bbc6ef" class="figure">
 <p><img src="figs/gravimeter_analytical_system_open_loop_models.png" alt="gravimeter_analytical_system_open_loop_models.png" />
 </p>
 <p><span class="figure-number">Figure 4: </span>Comparison of the analytical and the Simscape models</p>
@@ -388,8 +388,8 @@ State-space model with 12 outputs, 6 inputs, and 6 states.
 </div>
 </div>
 
-<div id="outline-container-org6c56e64" class="outline-4">
-<h4 id="org6c56e64"><span class="section-number-4">1.5.4</span> Analysis</h4>
+<div id="outline-container-orgbede3a4" class="outline-4">
+<h4 id="orgbede3a4"><span class="section-number-4">1.5.4</span> Analysis</h4>
 <div class="outline-text-4" id="text-1-5-4">
 <div class="org-src-container">
 <pre class="src src-matlab"><span class="org-comment">% figure</span>
@@ -457,8 +457,8 @@ State-space model with 12 outputs, 6 inputs, and 6 states.
 </div>
 </div>
 
-<div id="outline-container-orgeb20c08" class="outline-4">
-<h4 id="orgeb20c08"><span class="section-number-4">1.5.5</span> Control Section</h4>
+<div id="outline-container-org00d06a7" class="outline-4">
+<h4 id="org00d06a7"><span class="section-number-4">1.5.5</span> Control Section</h4>
 <div class="outline-text-4" id="text-1-5-5">
 <div class="org-src-container">
 <pre class="src src-matlab">system_dec_10Hz = freqresp(system_dec,2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>10);
@@ -598,8 +598,8 @@ legend(<span class="org-string">'Control OFF'</span>,<span class="org-string">'D
 </div>
 </div>
 
-<div id="outline-container-org931022f" class="outline-4">
-<h4 id="org931022f"><span class="section-number-4">1.5.6</span> Greshgorin radius</h4>
+<div id="outline-container-org8d48657" class="outline-4">
+<h4 id="org8d48657"><span class="section-number-4">1.5.6</span> Greshgorin radius</h4>
 <div class="outline-text-4" id="text-1-5-6">
 <div class="org-src-container">
 <pre class="src src-matlab">system_dec_freq = freqresp(system_dec,w);
@@ -645,8 +645,8 @@ ylabel(<span class="org-string">'Greshgorin radius [-]'</span>);
 </div>
 </div>
 
-<div id="outline-container-org1d56ec4" class="outline-4">
-<h4 id="org1d56ec4"><span class="section-number-4">1.5.7</span> Injecting ground motion in the system to have the output</h4>
+<div id="outline-container-org7348f99" class="outline-4">
+<h4 id="org7348f99"><span class="section-number-4">1.5.7</span> Injecting ground motion in the system to have the output</h4>
 <div class="outline-text-4" id="text-1-5-7">
 <div class="org-src-container">
 <pre class="src src-matlab">Fr = logspace(<span class="org-type">-</span>2,3,1e3);
@@ -702,15 +702,15 @@ rot = PHI(<span class="org-type">:</span>,11,11);
 </div>
 </div>
 
-<div id="outline-container-org36d6b85" class="outline-2">
-<h2 id="org36d6b85"><span class="section-number-2">2</span> Gravimeter - Functions</h2>
+<div id="outline-container-org534f1d2" class="outline-2">
+<h2 id="org534f1d2"><span class="section-number-2">2</span> Gravimeter - Functions</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-orgbb4529b" class="outline-3">
-<h3 id="orgbb4529b"><span class="section-number-3">2.1</span> <code>align</code></h3>
+<div id="outline-container-org8fd3468" class="outline-3">
+<h3 id="org8fd3468"><span class="section-number-3">2.1</span> <code>align</code></h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
-<a id="orgf2b803a"></a>
+<a id="org95a25f3"></a>
 </p>
 
 <p>
@@ -739,11 +739,11 @@ This Matlab function is accessible <a href="gravimeter/align.m">here</a>.
 </div>
 
 
-<div id="outline-container-orge0ed8bf" class="outline-3">
-<h3 id="orge0ed8bf"><span class="section-number-3">2.2</span> <code>pzmap_testCL</code></h3>
+<div id="outline-container-org7fc9d1b" class="outline-3">
+<h3 id="org7fc9d1b"><span class="section-number-3">2.2</span> <code>pzmap_testCL</code></h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
-<a id="orgf08bacf"></a>
+<a id="orge776d7f"></a>
 </p>
 
 <p>
@@ -792,12 +792,12 @@ This Matlab function is accessible <a href="gravimeter/pzmap_testCL.m">here</a>.
 </div>
 </div>
 
-<div id="outline-container-org5afd29d" class="outline-2">
-<h2 id="org5afd29d"><span class="section-number-2">3</span> Stewart Platform - Simscape Model</h2>
+<div id="outline-container-orga726921" class="outline-2">
+<h2 id="orga726921"><span class="section-number-2">3</span> Stewart Platform - Simscape Model</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-orgff944f3" class="outline-3">
-<h3 id="orgff944f3"><span class="section-number-3">3.1</span> Jacobian</h3>
+<div id="outline-container-org0f4c378" class="outline-3">
+<h3 id="org0f4c378"><span class="section-number-3">3.1</span> Jacobian</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 First, the position of the &ldquo;joints&rdquo; (points of force application) are estimated and the Jacobian computed.
@@ -839,11 +839,11 @@ save(<span class="org-string">'./jacobian.mat'</span>, <span class="org-string">
 </div>
 </div>
 
-<div id="outline-container-org07ffe6c" class="outline-3">
-<h3 id="org07ffe6c"><span class="section-number-3">3.2</span> Simscape Model</h3>
+<div id="outline-container-org8e93915" class="outline-3">
+<h3 id="org8e93915"><span class="section-number-3">3.2</span> Simscape Model</h3>
 <div class="outline-text-3" id="text-3-2">
 <div class="org-src-container">
-<pre class="src src-matlab">open(<span class="org-string">'stewart_platform/drone_platform.slx'</span>);
+<pre class="src src-matlab">open(<span class="org-string">'drone_platform.slx'</span>);
 </pre>
 </div>
 
@@ -851,9 +851,9 @@ save(<span class="org-string">'./jacobian.mat'</span>, <span class="org-string">
 Definition of spring parameters
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">kx = 50; <span class="org-comment">% [N/m]</span>
-ky = 50;
-kz = 50;
+<pre class="src src-matlab">kx = 0.5<span class="org-type">*</span>1e3<span class="org-type">/</span>3; <span class="org-comment">% [N/m]</span>
+ky = 0.5<span class="org-type">*</span>1e3<span class="org-type">/</span>3;
+kz = 1e3<span class="org-type">/</span>3;
 
 cx = 0.025; <span class="org-comment">% [Nm/rad]</span>
 cy = 0.025;
@@ -871,8 +871,8 @@ We load the Jacobian.
 </div>
 </div>
 
-<div id="outline-container-org9aaf0d3" class="outline-3">
-<h3 id="org9aaf0d3"><span class="section-number-3">3.3</span> Identification of the plant</h3>
+<div id="outline-container-orga80ad9d" class="outline-3">
+<h3 id="orga80ad9d"><span class="section-number-3">3.3</span> Identification of the plant</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
 The dynamics is identified from forces applied by each legs to the measured acceleration of the top platform.
@@ -929,32 +929,32 @@ Gl.OutputName  = {<span class="org-string">'A1'</span>, <span class="org-string"
 </div>
 </div>
 
-<div id="outline-container-orgb0b01e3" class="outline-3">
-<h3 id="orgb0b01e3"><span class="section-number-3">3.4</span> Obtained Dynamics</h3>
+<div id="outline-container-org820395d" class="outline-3">
+<h3 id="org820395d"><span class="section-number-3">3.4</span> Obtained Dynamics</h3>
 <div class="outline-text-3" id="text-3-4">
 
-<div id="org15e1aeb" class="figure">
+<div id="orgf45efb1" class="figure">
 <p><img src="figs/stewart_platform_translations.png" alt="stewart_platform_translations.png" />
 </p>
 <p><span class="figure-number">Figure 5: </span>Stewart Platform Plant from forces applied by the legs to the acceleration of the platform</p>
 </div>
 
 
-<div id="org1a9b1c6" class="figure">
+<div id="org7a9f376" class="figure">
 <p><img src="figs/stewart_platform_rotations.png" alt="stewart_platform_rotations.png" />
 </p>
 <p><span class="figure-number">Figure 6: </span>Stewart Platform Plant from torques applied by the legs to the angular acceleration of the platform</p>
 </div>
 
 
-<div id="org2c0cea0" class="figure">
+<div id="org01ccd4c" class="figure">
 <p><img src="figs/stewart_platform_legs.png" alt="stewart_platform_legs.png" />
 </p>
 <p><span class="figure-number">Figure 7: </span>Stewart Platform Plant from forces applied by the legs to displacement of the legs</p>
 </div>
 
 
-<div id="org46a471a" class="figure">
+<div id="org18ecae5" class="figure">
 <p><img src="figs/stewart_platform_transmissibility.png" alt="stewart_platform_transmissibility.png" />
 </p>
 <p><span class="figure-number">Figure 8: </span>Transmissibility</p>
@@ -962,8 +962,8 @@ Gl.OutputName  = {<span class="org-string">'A1'</span>, <span class="org-string"
 </div>
 </div>
 
-<div id="outline-container-org1de55ce" class="outline-3">
-<h3 id="org1de55ce"><span class="section-number-3">3.5</span> Real Approximation of \(G\) at the decoupling frequency</h3>
+<div id="outline-container-org531c180" class="outline-3">
+<h3 id="org531c180"><span class="section-number-3">3.5</span> Real Approximation of \(G\) at the decoupling frequency</h3>
 <div class="outline-text-3" id="text-3-5">
 <p>
 Let&rsquo;s compute a real approximation of the complex matrix \(H_1\) which corresponds to the the transfer function \(G_c(j\omega_c)\) from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency \(\omega_c\).
@@ -989,8 +989,8 @@ H1 = inv(D<span class="org-type">*</span>real(H1<span class="org-type">'*</span>
 </div>
 </div>
 
-<div id="outline-container-org53d60e1" class="outline-3">
-<h3 id="org53d60e1"><span class="section-number-3">3.6</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
+<div id="outline-container-org04886ad" class="outline-3">
+<h3 id="org04886ad"><span class="section-number-3">3.6</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
 <div class="outline-text-3" id="text-3-6">
 <p>
 First, the Singular Value Decomposition of \(H_1\) is performed:
@@ -1058,7 +1058,7 @@ H = abs(squeeze(freqresp(Gj, freqs, <span class="org-string">'Hz'</span>)));
 </div>
 
 
-<div id="org6065705" class="figure">
+<div id="org98d0c86" class="figure">
 <p><img src="figs/simscape_model_gershgorin_radii.png" alt="simscape_model_gershgorin_radii.png" />
 </p>
 <p><span class="figure-number">Figure 9: </span>Gershgorin Radii of the Coupled and Decoupled plants</p>
@@ -1066,8 +1066,8 @@ H = abs(squeeze(freqresp(Gj, freqs, <span class="org-string">'Hz'</span>)));
 </div>
 </div>
 
-<div id="outline-container-org40c1d24" class="outline-3">
-<h3 id="org40c1d24"><span class="section-number-3">3.7</span> Decoupled Plant</h3>
+<div id="outline-container-org96683a8" class="outline-3">
+<h3 id="org96683a8"><span class="section-number-3">3.7</span> Decoupled Plant</h3>
 <div class="outline-text-3" id="text-3-7">
 <p>
 Let&rsquo;s see the bode plot of the decoupled plant \(G_d(s)\).
@@ -1075,14 +1075,14 @@ Let&rsquo;s see the bode plot of the decoupled plant \(G_d(s)\).
 </p>
 
 
-<div id="orgbfa07c9" class="figure">
+<div id="org2351e85" class="figure">
 <p><img src="figs/simscape_model_decoupled_plant_svd.png" alt="simscape_model_decoupled_plant_svd.png" />
 </p>
 <p><span class="figure-number">Figure 10: </span>Decoupled Plant using SVD</p>
 </div>
 
 
-<div id="org28978a4" class="figure">
+<div id="org6699d5a" class="figure">
 <p><img src="figs/simscape_model_decoupled_plant_jacobian.png" alt="simscape_model_decoupled_plant_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 11: </span>Decoupled Plant using the Jacobian</p>
@@ -1090,8 +1090,8 @@ Let&rsquo;s see the bode plot of the decoupled plant \(G_d(s)\).
 </div>
 </div>
 
-<div id="outline-container-orgdfcd158" class="outline-3">
-<h3 id="orgdfcd158"><span class="section-number-3">3.8</span> Diagonal Controller</h3>
+<div id="outline-container-orgde9fab8" class="outline-3">
+<h3 id="orgde9fab8"><span class="section-number-3">3.8</span> Diagonal Controller</h3>
 <div class="outline-text-3" id="text-3-8">
 <p>
 The controller \(K\) is a diagonal controller consisting a low pass filters with a crossover frequency \(\omega_c\) and a DC gain \(C_g\).
@@ -1107,8 +1107,8 @@ K = eye(6)<span class="org-type">*</span>C_g<span class="org-type">/</span>(s<sp
 </div>
 </div>
 
-<div id="outline-container-org25e3b35" class="outline-3">
-<h3 id="org25e3b35"><span class="section-number-3">3.9</span> Centralized Control</h3>
+<div id="outline-container-org47bbca8" class="outline-3">
+<h3 id="org47bbca8"><span class="section-number-3">3.9</span> Centralized Control</h3>
 <div class="outline-text-3" id="text-3-9">
 <p>
 The control diagram for the centralized control is shown below.
@@ -1132,8 +1132,8 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 </div>
 </div>
 
-<div id="outline-container-org4d83793" class="outline-3">
-<h3 id="org4d83793"><span class="section-number-3">3.10</span> SVD Control</h3>
+<div id="outline-container-org2c1e3f7" class="outline-3">
+<h3 id="org2c1e3f7"><span class="section-number-3">3.10</span> SVD Control</h3>
 <div class="outline-text-3" id="text-3-10">
 <p>
 The SVD control architecture is shown below.
@@ -1156,8 +1156,8 @@ SVD Control
 </div>
 </div>
 
-<div id="outline-container-org7cece79" class="outline-3">
-<h3 id="org7cece79"><span class="section-number-3">3.11</span> Results</h3>
+<div id="outline-container-orgd6985da" class="outline-3">
+<h3 id="orgd6985da"><span class="section-number-3">3.11</span> Results</h3>
 <div class="outline-text-3" id="text-3-11">
 <p>
 Let&rsquo;s first verify the stability of the closed-loop systems:
@@ -1182,16 +1182,16 @@ ans =
 <pre class="example">
 ans =
   logical
-   1
+   0
 </pre>
 
 
 <p>
-The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#org62fae46">14</a>.
+The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#org0856618">14</a>.
 </p>
 
 
-<div id="org62fae46" class="figure">
+<div id="org0856618" class="figure">
 <p><img src="figs/stewart_platform_simscape_cl_transmissibility.png" alt="stewart_platform_simscape_cl_transmissibility.png" />
 </p>
 <p><span class="figure-number">Figure 14: </span>Obtained Transmissibility</p>
@@ -1200,83 +1200,85 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 </div>
 </div>
 
-<div id="outline-container-org8b11aba" class="outline-2">
-<h2 id="org8b11aba"><span class="section-number-2">4</span> Stewart Platform - Analytical Model</h2>
+<div id="outline-container-org99c6262" class="outline-2">
+<h2 id="org99c6262"><span class="section-number-2">4</span> Stewart Platform - Analytical Model</h2>
 <div class="outline-text-2" id="text-4">
 </div>
-<div id="outline-container-org2a175f6" class="outline-3">
-<h3 id="org2a175f6"><span class="section-number-3">4.1</span> Characteristics</h3>
+<div id="outline-container-org6e044dd" class="outline-3">
+<h3 id="org6e044dd"><span class="section-number-3">4.1</span> Characteristics</h3>
 <div class="outline-text-3" id="text-4-1">
 <div class="org-src-container">
-<pre class="src src-matlab">L  = 0.055;
-Zc = 0;
-m  = 0.2;
-k  = 1e3;
-c  = 2<span class="org-type">*</span>0.1<span class="org-type">*</span>sqrt(k<span class="org-type">*</span>m);
+<pre class="src src-matlab">L  = 0.055; <span class="org-comment">% Leg length [m]</span>
+Zc = 0;     <span class="org-comment">% ?</span>
+m  = 0.2;   <span class="org-comment">% Top platform mass [m]</span>
+k  = 1e3;   <span class="org-comment">% Total vertical stiffness [N/m]</span>
+c  = 2<span class="org-type">*</span>0.1<span class="org-type">*</span>sqrt(k<span class="org-type">*</span>m); <span class="org-comment">% Damping ? [N/(m/s)]</span>
 
-Rx = 0.04;
-Rz = 0.04;
-Ix = m<span class="org-type">*</span>Rx<span class="org-type">^</span>2;
-Iy = m<span class="org-type">*</span>Rx<span class="org-type">^</span>2;
-Iz = m<span class="org-type">*</span>Rz<span class="org-type">^</span>2;
+Rx = 0.04; <span class="org-comment">% ?</span>
+Rz = 0.04; <span class="org-comment">% ?</span>
+Ix = m<span class="org-type">*</span>Rx<span class="org-type">^</span>2; <span class="org-comment">% ?</span>
+Iy = m<span class="org-type">*</span>Rx<span class="org-type">^</span>2; <span class="org-comment">% ?</span>
+Iz = m<span class="org-type">*</span>Rz<span class="org-type">^</span>2; <span class="org-comment">% ?</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org9efa4f4" class="outline-3">
-<h3 id="org9efa4f4"><span class="section-number-3">4.2</span> Mass Matrix</h3>
+<div id="outline-container-org20b7c2e" class="outline-3">
+<h3 id="org20b7c2e"><span class="section-number-3">4.2</span> Mass Matrix</h3>
 <div class="outline-text-3" id="text-4-2">
 <div class="org-src-container">
-<pre class="src src-matlab">M = m<span class="org-type">*</span>[1 0 0 0 Zc 0;
-       0 1 0 <span class="org-type">-</span>Zc 0 0;
-       0 0 1 0 0 0;
-       0 <span class="org-type">-</span>Zc 0 Rx<span class="org-type">^</span>2<span class="org-type">+</span>Zc<span class="org-type">^</span>2 0 0;
-       Zc 0 0 0 Rx<span class="org-type">^</span>2<span class="org-type">+</span>Zc<span class="org-type">^</span>2 0;
-       0 0 0 0 0 Rz<span class="org-type">^</span>2];
+<pre class="src src-matlab">M = m<span class="org-type">*</span>[1   0 0  0         Zc        0;
+       0   1 0 <span class="org-type">-</span>Zc        0         0;
+       0   0 1  0         0         0;
+       0 <span class="org-type">-</span>Zc 0  Rx<span class="org-type">^</span>2<span class="org-type">+</span>Zc<span class="org-type">^</span>2 0         0;
+       Zc  0 0  0         Rx<span class="org-type">^</span>2<span class="org-type">+</span>Zc<span class="org-type">^</span>2 0;
+       0   0 0  0         0         Rz<span class="org-type">^</span>2];
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org97bc497" class="outline-3">
-<h3 id="org97bc497"><span class="section-number-3">4.3</span> Jacobian Matrix</h3>
+<div id="outline-container-org2f016df" class="outline-3">
+<h3 id="org2f016df"><span class="section-number-3">4.3</span> Jacobian Matrix</h3>
 <div class="outline-text-3" id="text-4-3">
 <div class="org-src-container">
-<pre class="src src-matlab">Bj=1<span class="org-type">/</span>sqrt(6)<span class="org-type">*</span>[ 1 1 <span class="org-type">-</span>2 1 1 <span class="org-type">-</span>2;
-               sqrt<span class="org-type">(3) -sqrt(3) 0 sqrt(3) -sqrt(3) 0;</span>
-               sqrt<span class="org-type">(2) sqrt(2) sqrt(2) sqrt(2) sqrt(2) sqrt(2);</span>
-               0 0 L L <span class="org-type">-</span>L <span class="org-type">-</span>L;
-               <span class="org-type">-</span>L<span class="org-type">*</span>2<span class="org-type">/</span>sqrt(3) <span class="org-type">-</span>L<span class="org-type">*</span>2<span class="org-type">/</span>sqrt(3) L<span class="org-type">/</span>sqrt(3) L<span class="org-type">/</span>sqrt(3) L<span class="org-type">/</span>sqrt(3) L<span class="org-type">/</span>sqrt(3);
-               L<span class="org-type">*</span>sqrt(2) <span class="org-type">-</span>L<span class="org-type">*</span>sqrt(2) L<span class="org-type">*</span>sqrt(2) <span class="org-type">-</span>L<span class="org-type">*</span>sqrt(2) L<span class="org-type">*</span>sqrt(2) <span class="org-type">-</span>L<span class="org-type">*</span>sqrt(2)];
+<pre class="src src-matlab">Bj=1<span class="org-type">/</span>sqrt(6)<span class="org-type">*</span>[ 1             1          <span class="org-type">-</span>2          1         1        <span class="org-type">-</span>2;
+               sqrt<span class="org-type">(3)      -sqrt(3)     0          sqrt(3)  -sqrt(3)   0;</span>
+               sqrt<span class="org-type">(2)       sqrt(2)     sqrt(2)    sqrt(2)   sqrt(2)   sqrt(2);</span>
+               0             0           L          L        <span class="org-type">-</span>L         <span class="org-type">-</span>L;
+               <span class="org-type">-</span>L<span class="org-type">*</span>2<span class="org-type">/</span>sqrt(3) <span class="org-type">-</span>L<span class="org-type">*</span>2<span class="org-type">/</span>sqrt(3) L<span class="org-type">/</span>sqrt(3)  L<span class="org-type">/</span>sqrt(3) L<span class="org-type">/</span>sqrt(3)  L<span class="org-type">/</span>sqrt(3);
+               L<span class="org-type">*</span>sqrt(2)    <span class="org-type">-</span>L<span class="org-type">*</span>sqrt(2)   L<span class="org-type">*</span>sqrt(2) <span class="org-type">-</span>L<span class="org-type">*</span>sqrt(2) L<span class="org-type">*</span>sqrt(2) <span class="org-type">-</span>L<span class="org-type">*</span>sqrt(2)];
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org7c9679d" class="outline-3">
-<h3 id="org7c9679d"><span class="section-number-3">4.4</span> Stifnness matrix and Damping matrix</h3>
+<div id="outline-container-org2c9ff6d" class="outline-3">
+<h3 id="org2c9ff6d"><span class="section-number-3">4.4</span> Stifnness and Damping matrices</h3>
 <div class="outline-text-3" id="text-4-4">
 <div class="org-src-container">
-<pre class="src src-matlab">kv = k<span class="org-type">/</span>3; <span class="org-comment">% [N/m]</span>
-kh = 0.5<span class="org-type">*</span>k<span class="org-type">/</span>3; <span class="org-comment">% [N/m]</span>
+<pre class="src src-matlab">kv = k<span class="org-type">/</span>3;     <span class="org-comment">% Vertical Stiffness of the springs [N/m]</span>
+kh = 0.5<span class="org-type">*</span>k<span class="org-type">/</span>3; <span class="org-comment">% Horizontal Stiffness of the springs [N/m]</span>
 
-K = diag([3<span class="org-type">*</span>kh,3<span class="org-type">*</span>kh,3<span class="org-type">*</span>kv,3<span class="org-type">*</span>kv<span class="org-type">*</span>Rx<span class="org-type">^</span>2<span class="org-type">/</span>2,3<span class="org-type">*</span>kv<span class="org-type">*</span>Rx<span class="org-type">^</span>2<span class="org-type">/</span>2,3<span class="org-type">*</span>kh<span class="org-type">*</span>Rx<span class="org-type">^</span>2]); <span class="org-comment">% Stiffness Matrix</span>
-
+K = diag([3<span class="org-type">*</span>kh, 3<span class="org-type">*</span>kh, 3<span class="org-type">*</span>kv, 3<span class="org-type">*</span>kv<span class="org-type">*</span>Rx<span class="org-type">^</span>2<span class="org-type">/</span>2, 3<span class="org-type">*</span>kv<span class="org-type">*</span>Rx<span class="org-type">^</span>2<span class="org-type">/</span>2, 3<span class="org-type">*</span>kh<span class="org-type">*</span>Rx<span class="org-type">^</span>2]); <span class="org-comment">% Stiffness Matrix</span>
 C = c<span class="org-type">*</span>K<span class="org-type">/</span>100000; <span class="org-comment">% Damping Matrix</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org00e8691" class="outline-3">
-<h3 id="org00e8691"><span class="section-number-3">4.5</span> State Space System</h3>
+<div id="outline-container-orgffba0a8" class="outline-3">
+<h3 id="orgffba0a8"><span class="section-number-3">4.5</span> State Space System</h3>
 <div class="outline-text-3" id="text-4-5">
 <div class="org-src-container">
-<pre class="src src-matlab">A  = [zeros(6) eye(6); <span class="org-type">-</span>M<span class="org-type">\</span>K <span class="org-type">-</span>M<span class="org-type">\</span>C];
+<pre class="src src-matlab">A  = [ zeros(6) eye(6); ...
+      <span class="org-type">-</span>M<span class="org-type">\</span>K     <span class="org-type">-</span>M<span class="org-type">\</span>C];
 Bw = [zeros(6); <span class="org-type">-</span>eye(6)];
 Bu = [zeros(6); M<span class="org-type">\</span>Bj];
+
 Co = [<span class="org-type">-</span>M<span class="org-type">\</span>K <span class="org-type">-</span>M<span class="org-type">\</span>C];
+
 D  = [zeros(6) M<span class="org-type">\</span>Bj];
 
 ST = ss(A,[Bw Bu],Co,D);
@@ -1291,16 +1293,18 @@ ST = ss(A,[Bw Bu],Co,D);
 <div class="org-src-container">
 <pre class="src src-matlab">ST.StateName = {<span class="org-string">'x'</span>;<span class="org-string">'y'</span>;<span class="org-string">'z'</span>;<span class="org-string">'theta_x'</span>;<span class="org-string">'theta_y'</span>;<span class="org-string">'theta_z'</span>;...
                 <span class="org-string">'dx'</span>;<span class="org-string">'dy'</span>;<span class="org-string">'dz'</span>;<span class="org-string">'dtheta_x'</span>;<span class="org-string">'dtheta_y'</span>;<span class="org-string">'dtheta_z'</span>};
+
 ST.InputName = {<span class="org-string">'w1'</span>;<span class="org-string">'w2'</span>;<span class="org-string">'w3'</span>;<span class="org-string">'w4'</span>;<span class="org-string">'w5'</span>;<span class="org-string">'w6'</span>;...
                 <span class="org-string">'u1'</span>;<span class="org-string">'u2'</span>;<span class="org-string">'u3'</span>;<span class="org-string">'u4'</span>;<span class="org-string">'u5'</span>;<span class="org-string">'u6'</span>};
+
 ST.OutputName = {<span class="org-string">'ax'</span>;<span class="org-string">'ay'</span>;<span class="org-string">'az'</span>;<span class="org-string">'atheta_x'</span>;<span class="org-string">'atheta_y'</span>;<span class="org-string">'atheta_z'</span>};
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org8a70996" class="outline-3">
-<h3 id="org8a70996"><span class="section-number-3">4.6</span> Transmissibility</h3>
+<div id="outline-container-org42b1b07" class="outline-3">
+<h3 id="org42b1b07"><span class="section-number-3">4.6</span> Transmissibility</h3>
 <div class="outline-text-3" id="text-4-6">
 <div class="org-src-container">
 <pre class="src src-matlab">TR=ST<span class="org-type">*</span>[eye(6); zeros(6)];
@@ -1310,22 +1314,22 @@ ST.OutputName = {<span class="org-string">'ax'</span>;<span class="org-string">'
 <div class="org-src-container">
 <pre class="src src-matlab"><span class="org-type">figure</span>
 subplot(231)
-bodemag(TR(1,1),opts);
+bodemag(TR(1,1));
 subplot(232)
-bodemag(TR(2,2),opts);
+bodemag(TR(2,2));
 subplot(233)
-bodemag(TR(3,3),opts);
+bodemag(TR(3,3));
 subplot(234)
-bodemag(TR(4,4),opts);
+bodemag(TR(4,4));
 subplot(235)
-bodemag(TR(5,5),opts);
+bodemag(TR(5,5));
 subplot(236)
-bodemag(TR(6,6),opts);
+bodemag(TR(6,6));
 </pre>
 </div>
 
 
-<div id="org6ce913c" class="figure">
+<div id="orgd9b6731" class="figure">
 <p><img src="figs/stewart_platform_analytical_transmissibility.png" alt="stewart_platform_analytical_transmissibility.png" />
 </p>
 <p><span class="figure-number">Figure 15: </span>Transmissibility</p>
@@ -1333,8 +1337,8 @@ bodemag(TR(6,6),opts);
 </div>
 </div>
 
-<div id="outline-container-org12c95c9" class="outline-3">
-<h3 id="org12c95c9"><span class="section-number-3">4.7</span> Real approximation of \(G(j\omega)\) at decoupling frequency</h3>
+<div id="outline-container-org38c8159" class="outline-3">
+<h3 id="org38c8159"><span class="section-number-3">4.7</span> Real approximation of \(G(j\omega)\) at decoupling frequency</h3>
 <div class="outline-text-3" id="text-4-7">
 <div class="org-src-container">
 <pre class="src src-matlab">sys1 = ST<span class="org-type">*</span>[zeros(6); eye(6)]; <span class="org-comment">% take only the forces inputs</span>
@@ -1362,8 +1366,8 @@ wf = logspace(<span class="org-type">-</span>1,2,1000);
 </div>
 </div>
 
-<div id="outline-container-orgc58b81c" class="outline-3">
-<h3 id="orgc58b81c"><span class="section-number-3">4.8</span> Coupled and Decoupled Plant &ldquo;Gershgorin Radii&rdquo;</h3>
+<div id="outline-container-org477b3ce" class="outline-3">
+<h3 id="org477b3ce"><span class="section-number-3">4.8</span> Coupled and Decoupled Plant &ldquo;Gershgorin Radii&rdquo;</h3>
 <div class="outline-text-3" id="text-4-8">
 <div class="org-src-container">
 <pre class="src src-matlab"><span class="org-type">figure</span>;
@@ -1375,7 +1379,7 @@ xlabel(<span class="org-string">'Frequency (Hz)'</span>); ylabel(<span class="or
 </div>
 
 
-<div id="org20fc2fd" class="figure">
+<div id="org1416731" class="figure">
 <p><img src="figs/gershorin_raddii_coupled_analytical.png" alt="gershorin_raddii_coupled_analytical.png" />
 </p>
 <p><span class="figure-number">Figure 16: </span>Gershorin Raddi for the coupled plant</p>
@@ -1391,7 +1395,7 @@ xlabel(<span class="org-string">'Frequency (Hz)'</span>); ylabel(<span class="or
 </div>
 
 
-<div id="org586d327" class="figure">
+<div id="orgdfe4880" class="figure">
 <p><img src="figs/gershorin_raddii_decoupled_analytical.png" alt="gershorin_raddii_decoupled_analytical.png" />
 </p>
 <p><span class="figure-number">Figure 17: </span>Gershorin Raddi for the decoupled plant</p>
@@ -1399,8 +1403,8 @@ xlabel(<span class="org-string">'Frequency (Hz)'</span>); ylabel(<span class="or
 </div>
 </div>
 
-<div id="outline-container-org2ba91f6" class="outline-3">
-<h3 id="org2ba91f6"><span class="section-number-3">4.9</span> Decoupled Plant</h3>
+<div id="outline-container-orgde4eec1" class="outline-3">
+<h3 id="orgde4eec1"><span class="section-number-3">4.9</span> Decoupled Plant</h3>
 <div class="outline-text-3" id="text-4-9">
 <div class="org-src-container">
 <pre class="src src-matlab"><span class="org-type">figure</span>;
@@ -1409,7 +1413,7 @@ bodemag(U<span class="org-type">'*</span>sys1<span class="org-type">*</span>V,op
 </div>
 
 
-<div id="org5cd203f" class="figure">
+<div id="orge835f28" class="figure">
 <p><img src="figs/stewart_platform_analytical_decoupled_plant.png" alt="stewart_platform_analytical_decoupled_plant.png" />
 </p>
 <p><span class="figure-number">Figure 18: </span>Decoupled Plant</p>
@@ -1417,8 +1421,8 @@ bodemag(U<span class="org-type">'*</span>sys1<span class="org-type">*</span>V,op
 </div>
 </div>
 
-<div id="outline-container-orgc73a283" class="outline-3">
-<h3 id="orgc73a283"><span class="section-number-3">4.10</span> Controller</h3>
+<div id="outline-container-org11b0182" class="outline-3">
+<h3 id="org11b0182"><span class="section-number-3">4.10</span> Controller</h3>
 <div class="outline-text-3" id="text-4-10">
 <div class="org-src-container">
 <pre class="src src-matlab">fc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>0.1; <span class="org-comment">% Crossover Frequency [rad/s]</span>
@@ -1430,8 +1434,8 @@ cont = eye(6)<span class="org-type">*</span>c_gain<span class="org-type">/</span
 </div>
 </div>
 
-<div id="outline-container-org9c82ee4" class="outline-3">
-<h3 id="org9c82ee4"><span class="section-number-3">4.11</span> Closed Loop System</h3>
+<div id="outline-container-org5c893a8" class="outline-3">
+<h3 id="org5c893a8"><span class="section-number-3">4.11</span> Closed Loop System</h3>
 <div class="outline-text-3" id="text-4-11">
 <div class="org-src-container">
 <pre class="src src-matlab">FEEDIN  = [7<span class="org-type">:</span>12]; <span class="org-comment">% Input of controller</span>
@@ -1459,8 +1463,8 @@ TRsvd = STsvd<span class="org-type">*</span>[eye(6); zeros(6)];
 </div>
 </div>
 
-<div id="outline-container-org80cd406" class="outline-3">
-<h3 id="org80cd406"><span class="section-number-3">4.12</span> Results</h3>
+<div id="outline-container-orgb1c0711" class="outline-3">
+<h3 id="orgb1c0711"><span class="section-number-3">4.12</span> Results</h3>
 <div class="outline-text-3" id="text-4-12">
 <div class="org-src-container">
 <pre class="src src-matlab"><span class="org-type">figure</span>
@@ -1486,7 +1490,7 @@ legend(<span class="org-string">'OL'</span>,<span class="org-string">'Centralize
 </div>
 
 
-<div id="orgfadf6e5" class="figure">
+<div id="orgb680082" class="figure">
 <p><img src="figs/stewart_platform_analytical_svd_cen_comp.png" alt="stewart_platform_analytical_svd_cen_comp.png" />
 </p>
 <p><span class="figure-number">Figure 19: </span>Comparison of the obtained transmissibility for the centralized control and the SVD control</p>
@@ -1497,7 +1501,7 @@ legend(<span class="org-string">'OL'</span>,<span class="org-string">'Centralize
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Dehaeze Thomas</p>
-<p class="date">Created: 2020-10-09 ven. 16:21</p>
+<p class="date">Created: 2020-10-13 mar. 14:53</p>
 </div>
 </body>
 </html>

@@ -686,6 +686,9 @@ This Matlab function is accessible [[file:gravimeter/pzmap_testCL.m][here]].
 #+end_src
 
 * Stewart Platform - Simscape Model
+:PROPERTIES:
+:header-args:matlab+: :tangle stewart_platform/simscape_model.m
+:END:
 ** Matlab Init                                             :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
@@ -698,6 +701,10 @@ This Matlab function is accessible [[file:gravimeter/pzmap_testCL.m][here]].
 #+begin_src matlab :tangle no
   addpath('stewart_platform');
   addpath('stewart_platform/STEP');
+#+end_src
+
+#+begin_src matlab :eval no
+  addpath('STEP');
 #+end_src
 
 ** Jacobian
@@ -1292,6 +1299,9 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 [[file:figs/stewart_platform_simscape_cl_transmissibility.png]]
 
 * Stewart Platform - Analytical Model
+:PROPERTIES:
+:header-args:matlab+: :tangle stewart_platform/analytical_model.m
+:END:
 ** Matlab Init                                              :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
