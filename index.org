@@ -695,10 +695,15 @@ This Matlab function is accessible [[file:gravimeter/pzmap_testCL.m][here]].
   <<matlab-init>>
 #+end_src
 
+#+begin_src matlab :tangle no
+  addpath('stewart_platform');
+  addpath('stewart_platform/STEP');
+#+end_src
+
 ** Jacobian
 First, the position of the "joints" (points of force application) are estimated and the Jacobian computed.
 #+begin_src matlab
-  open('stewart_platform/drone_platform_jacobian.slx');
+  open('drone_platform_jacobian.slx');
 #+end_src
 
 #+begin_src matlab
@@ -731,14 +736,14 @@ First, the position of the "joints" (points of force application) are estimated 
 
 ** Simscape Model
 #+begin_src matlab
-  open('stewart_platform/drone_platform.slx');
+  open('drone_platform.slx');
 #+end_src
 
 Definition of spring parameters
 #+begin_src matlab
-  kx = 50; % [N/m]
-  ky = 50;
-  kz = 50;
+  kx = 0.5*1e3/3; % [N/m]
+  ky = 0.5*1e3/3;
+  kz = 1e3/3;
 
   cx = 0.025; % [Nm/rad]
   cy = 0.025;
@@ -876,13 +881,13 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax1 = subplot(2, 1, 1);
   hold on;
-  for ch_i = 1:6
-    plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', ch_i), sprintf('F%i', ch_i)), freqs, 'Hz'))));
-  end
   for out_i = 1:5
     for in_i = i+1:6
       plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', out_i), sprintf('F%i', in_i)), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2]);
     end
+  end
+  for ch_i = 1:6
+    plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', ch_i), sprintf('F%i', ch_i)), freqs, 'Hz'))));
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -918,9 +923,13 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax1 = subplot(2, 1, 1);
   hold on;
-  plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
+  % plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
+  % plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
+  % plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
+  set(gca,'ColorOrderIndex',1)
+  plot(freqs, abs(squeeze(freqresp(TR(1,1), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(TR(2,2), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(TR(3,3), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Transmissibility - Translations');  xlabel('Frequency [Hz]');
@@ -928,9 +937,13 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax2 = subplot(2, 1, 2);
   hold on;
-  plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
+  % plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
+  % plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
+  % plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
+  set(gca,'ColorOrderIndex',1)
+  plot(freqs, abs(squeeze(freqresp(TR(4,4), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(TR(5,5), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(TR(6,6), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Transmissibility - Rotations');  xlabel('Frequency [Hz]');
@@ -1124,7 +1137,7 @@ The control diagram for the centralized control is shown below.
 The controller $K_c$ is "working" in an cartesian frame.
 The Jacobian is used to convert forces in the cartesian frame to forces applied by the actuators.
 
-#+begin_src latex :file centralized_control.pdf
+#+begin_src latex :file centralized_control.pdf :tangle no
   \begin{tikzpicture}
     \node[block={2cm}{1.5cm}] (G) {$G$};
     \node[block, below right=0.6 and -0.5 of G] (K) {$K_c$};
@@ -1154,7 +1167,7 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 The SVD control architecture is shown below.
 The matrices $U$ and $V$ are used to decoupled the plant $G$.
 
-#+begin_src latex :file svd_control.pdf
+#+begin_src latex :file svd_control.pdf :tangle no
   \begin{tikzpicture}
     \node[block={2cm}{1.5cm}] (G) {$G$};
     \node[block, below right=0.6 and 0 of G] (U) {$U^{-1}$};
@@ -1201,7 +1214,7 @@ Let's first verify the stability of the closed-loop systems:
 #+RESULTS:
 : ans =
 :   logical
-:    1
+:    0
 
 The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure [[fig:stewart_platform_simscape_cl_transmissibility]].
 
@@ -1278,7 +1291,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 #+RESULTS:
 [[file:figs/stewart_platform_simscape_cl_transmissibility.png]]
 
-* Stewart Platform - Analytical Model                               :noexport:
+* Stewart Platform - Analytical Model
 ** Matlab Init                                              :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
@@ -1300,55 +1313,57 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 
 ** Characteristics
 #+begin_src matlab
-  L  = 0.055;
-  Zc = 0;
-  m  = 0.2;
-  k  = 1e3;
-  c  = 2*0.1*sqrt(k*m);
+  L  = 0.055; % Leg length [m]
+  Zc = 0;     % ?
+  m  = 0.2;   % Top platform mass [m]
+  k  = 1e3;   % Total vertical stiffness [N/m]
+  c  = 2*0.1*sqrt(k*m); % Damping ? [N/(m/s)]
 
-  Rx = 0.04;
-  Rz = 0.04;
-  Ix = m*Rx^2;
-  Iy = m*Rx^2;
-  Iz = m*Rz^2;
+  Rx = 0.04; % ?
+  Rz = 0.04; % ?
+  Ix = m*Rx^2; % ?
+  Iy = m*Rx^2; % ?
+  Iz = m*Rz^2; % ?
 #+end_src
 
 ** Mass Matrix
 #+begin_src matlab
-  M = m*[1 0 0 0 Zc 0;
-         0 1 0 -Zc 0 0;
-         0 0 1 0 0 0;
-         0 -Zc 0 Rx^2+Zc^2 0 0;
-         Zc 0 0 0 Rx^2+Zc^2 0;
-         0 0 0 0 0 Rz^2];
+  M = m*[1   0 0  0         Zc        0;
+         0   1 0 -Zc        0         0;
+         0   0 1  0         0         0;
+         0 -Zc 0  Rx^2+Zc^2 0         0;
+         Zc  0 0  0         Rx^2+Zc^2 0;
+         0   0 0  0         0         Rz^2];
 #+end_src
 
 ** Jacobian Matrix
 #+begin_src matlab
-  Bj=1/sqrt(6)*[ 1 1 -2 1 1 -2;
-                 sqrt(3) -sqrt(3) 0 sqrt(3) -sqrt(3) 0;
-                 sqrt(2) sqrt(2) sqrt(2) sqrt(2) sqrt(2) sqrt(2);
-                 0 0 L L -L -L;
-                 -L*2/sqrt(3) -L*2/sqrt(3) L/sqrt(3) L/sqrt(3) L/sqrt(3) L/sqrt(3);
-                 L*sqrt(2) -L*sqrt(2) L*sqrt(2) -L*sqrt(2) L*sqrt(2) -L*sqrt(2)];
+  Bj=1/sqrt(6)*[ 1             1          -2          1         1        -2;
+                 sqrt(3)      -sqrt(3)     0          sqrt(3)  -sqrt(3)   0;
+                 sqrt(2)       sqrt(2)     sqrt(2)    sqrt(2)   sqrt(2)   sqrt(2);
+                 0             0           L          L        -L         -L;
+                 -L*2/sqrt(3) -L*2/sqrt(3) L/sqrt(3)  L/sqrt(3) L/sqrt(3)  L/sqrt(3);
+                 L*sqrt(2)    -L*sqrt(2)   L*sqrt(2) -L*sqrt(2) L*sqrt(2) -L*sqrt(2)];
 #+end_src
 
-** Stifnness matrix and Damping matrix
+** Stifnness and Damping matrices
 #+begin_src matlab
-  kv = k/3; % [N/m]
-  kh = 0.5*k/3; % [N/m]
+  kv = k/3;     % Vertical Stiffness of the springs [N/m]
+  kh = 0.5*k/3; % Horizontal Stiffness of the springs [N/m]
 
-  K = diag([3*kh,3*kh,3*kv,3*kv*Rx^2/2,3*kv*Rx^2/2,3*kh*Rx^2]); % Stiffness Matrix
-
+  K = diag([3*kh, 3*kh, 3*kv, 3*kv*Rx^2/2, 3*kv*Rx^2/2, 3*kh*Rx^2]); % Stiffness Matrix
   C = c*K/100000; % Damping Matrix
 #+end_src
 
 ** State Space System
 #+begin_src matlab
-  A  = [zeros(6) eye(6); -M\K -M\C];
+  A  = [ zeros(6) eye(6); ...
+        -M\K     -M\C];
   Bw = [zeros(6); -eye(6)];
   Bu = [zeros(6); M\Bj];
+
   Co = [-M\K -M\C];
+ 
   D  = [zeros(6) M\Bj];
  
   ST = ss(A,[Bw Bu],Co,D);
@@ -1360,8 +1375,10 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 #+begin_src matlab
   ST.StateName = {'x';'y';'z';'theta_x';'theta_y';'theta_z';...
                   'dx';'dy';'dz';'dtheta_x';'dtheta_y';'dtheta_z'};
+
   ST.InputName = {'w1';'w2';'w3';'w4';'w5';'w6';...
                   'u1';'u2';'u3';'u4';'u5';'u6'};
+
   ST.OutputName = {'ax';'ay';'az';'atheta_x';'atheta_y';'atheta_z'};
 #+end_src
 
@@ -1373,17 +1390,17 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 #+begin_src matlab
   figure
   subplot(231)
-  bodemag(TR(1,1),opts);
+  bodemag(TR(1,1));
   subplot(232)
-  bodemag(TR(2,2),opts);
+  bodemag(TR(2,2));
   subplot(233)
-  bodemag(TR(3,3),opts);
+  bodemag(TR(3,3));
   subplot(234)
-  bodemag(TR(4,4),opts);
+  bodemag(TR(4,4));
   subplot(235)
-  bodemag(TR(5,5),opts);
+  bodemag(TR(5,5));
   subplot(236)
-  bodemag(TR(6,6),opts);
+  bodemag(TR(6,6));
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
