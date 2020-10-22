@@ -757,6 +757,10 @@ Definition of spring parameters
   cz = 0.025;
 #+end_src
 
+#+begin_src matlab
+  g = 9.8;
+#+end_src
+
 We load the Jacobian.
 #+begin_src matlab
   load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
