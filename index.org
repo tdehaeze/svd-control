@@ -758,7 +758,7 @@ Definition of spring parameters
 #+end_src
 
 #+begin_src matlab
-  g = 9.8;
+  g = 0;
 #+end_src
 
 We load the Jacobian.
@@ -804,8 +804,8 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
   Gx.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
                    'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
 
-  Gl = J*G;
-  Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
+  % Gl = J*G;
+  % Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
 #+end_src
 
 ** Obtained Dynamics
@@ -934,13 +934,13 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax1 = subplot(2, 1, 1);
   hold on;
-  % plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
-  % plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
-  % plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
-  set(gca,'ColorOrderIndex',1)
-  plot(freqs, abs(squeeze(freqresp(TR(1,1), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(TR(2,2), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(TR(3,3), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
+  % set(gca,'ColorOrderIndex',1)
+  % plot(freqs, abs(squeeze(freqresp(TR(1,1), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  % plot(freqs, abs(squeeze(freqresp(TR(2,2), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  % plot(freqs, abs(squeeze(freqresp(TR(3,3), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Transmissibility - Translations');  xlabel('Frequency [Hz]');
@@ -948,13 +948,13 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 
   ax2 = subplot(2, 1, 2);
   hold on;
-  % plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
-  % plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
-  % plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
-  set(gca,'ColorOrderIndex',1)
-  plot(freqs, abs(squeeze(freqresp(TR(4,4), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(TR(5,5), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(TR(6,6), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
+  % set(gca,'ColorOrderIndex',1)
+  % plot(freqs, abs(squeeze(freqresp(TR(4,4), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  % plot(freqs, abs(squeeze(freqresp(TR(5,5), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+  % plot(freqs, abs(squeeze(freqresp(TR(6,6), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Transmissibility - Rotations');  xlabel('Frequency [Hz]');
@@ -975,7 +975,7 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 ** Real Approximation of $G$ at the decoupling frequency
 Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_c(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
 #+begin_src matlab
-  wc = 2*pi*20; % Decoupling frequency [rad/s]
+  wc = 2*pi*30; % Decoupling frequency [rad/s]
 
   Gc = G({'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'}, ...
          {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'}); % Transfer function to find a real approximation
