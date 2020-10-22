@@ -51,6 +51,8 @@ cx = 0.025; % [Nm/rad]
 cy = 0.025;
 cz = 0.025;
 
+g = 0;
+
 
 
 % We load the Jacobian.
@@ -98,8 +100,8 @@ Gx = G*blkdiag(eye(6), inv(J'));
 Gx.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
                  'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
 
-Gl = J*G;
-Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
+% Gl = J*G;
+% Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
 
 % Obtained Dynamics
 
@@ -218,13 +220,13 @@ figure;
 
 ax1 = subplot(2, 1, 1);
 hold on;
-% plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
-% plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
-% plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
-set(gca,'ColorOrderIndex',1)
-plot(freqs, abs(squeeze(freqresp(TR(1,1), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-plot(freqs, abs(squeeze(freqresp(TR(2,2), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-plot(freqs, abs(squeeze(freqresp(TR(3,3), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
+plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
+plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
+% set(gca,'ColorOrderIndex',1)
+% plot(freqs, abs(squeeze(freqresp(TR(1,1), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+% plot(freqs, abs(squeeze(freqresp(TR(2,2), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+% plot(freqs, abs(squeeze(freqresp(TR(3,3), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility - Translations');  xlabel('Frequency [Hz]');
@@ -232,13 +234,13 @@ legend('location', 'northeast');
 
 ax2 = subplot(2, 1, 2);
 hold on;
-% plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
-% plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
-% plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
-set(gca,'ColorOrderIndex',1)
-plot(freqs, abs(squeeze(freqresp(TR(4,4), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-plot(freqs, abs(squeeze(freqresp(TR(5,5), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-plot(freqs, abs(squeeze(freqresp(TR(6,6), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
+plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
+plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
+% set(gca,'ColorOrderIndex',1)
+% plot(freqs, abs(squeeze(freqresp(TR(4,4), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+% plot(freqs, abs(squeeze(freqresp(TR(5,5), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
+% plot(freqs, abs(squeeze(freqresp(TR(6,6), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility - Rotations');  xlabel('Frequency [Hz]');
@@ -249,7 +251,7 @@ linkaxes([ax1,ax2],'x');
 % Real Approximation of $G$ at the decoupling frequency
 % Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_c(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
 
-wc = 2*pi*20; % Decoupling frequency [rad/s]
+wc = 2*pi*30; % Decoupling frequency [rad/s]
 
 Gc = G({'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'}, ...
        {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'}); % Transfer function to find a real approximation
