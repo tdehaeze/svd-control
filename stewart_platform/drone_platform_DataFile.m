@@ -126,8 +126,8 @@ smiData.Solid(1).ID = 'Spring cylinder.CATPart*:*Default';
 
 %Inertia Type - Custom
 %Visual Properties - Simple
-smiData.Solid(2).mass = 0.032807859410420866;  % kg
-smiData.Solid(2).CoM = [4.3204111866222267e-05 6.4929928363256894e-06 22.029956321592298];  % mm
+smiData.Solid(2).mass = 0.200;  % kg
+smiData.Solid(2).CoM = [0 0 22.029956321592298];  % mm
 smiData.Solid(2).MoI = [10.958807269683136 10.958651478878741 21.418645161274547];  % kg*mm^2
 smiData.Solid(2).PoI = [-2.7272640778847972e-06 2.0116845742236026e-06 2.0925824216820959e-06];  % kg*mm^2
 smiData.Solid(2).color = [0 1 1];
