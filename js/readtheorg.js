@@ -9,6 +9,8 @@ $(function() {
     $('.hint').before("<p class='admonition-title hint'>Hint</p>");
     $('.error').before("<p class='admonition-title error'>Error</p>");
     $('.danger').before("<p class='admonition-title danger'>Danger</p>");
+    $('.question').before("<p class='admonition-title question'>Question</p>");
+    $('.summary').before("<p class='admonition-title hint'>Summary</p>");
 });
 
 $( document ).ready(function() {

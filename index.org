@@ -11,7 +11,7 @@
 
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./css/htmlize.css"/>
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./css/readtheorg.css"/>
-#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./css/zenburn.css"/>
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./css/custom.css"/>
 #+HTML_HEAD: <script type="text/javascript" src="./js/jquery.min.js"></script>
 #+HTML_HEAD: <script type="text/javascript" src="./js/bootstrap.min.js"></script>
 #+HTML_HEAD: <script type="text/javascript" src="./js/jquery.stickytableheaders.min.js"></script>
