@@ -727,15 +727,15 @@ The analysis of the SVD control applied to the Stewart platform is performed in 
 
 ** Jacobian                                                        :noexport:
 First, the position of the "joints" (points of force application) are estimated and the Jacobian computed.
-#+begin_src matlab
+#+begin_src matlab :tangle no
   open('drone_platform_jacobian.slx');
 #+end_src
 
-#+begin_src matlab
+#+begin_src matlab :tangle no
   sim('drone_platform_jacobian');
 #+end_src
 
-#+begin_src matlab
+#+begin_src matlab :tangle no
   Aa = [a1.Data(1,:);
         a2.Data(1,:);
         a3.Data(1,:);
@@ -804,7 +804,7 @@ The dynamics is identified from forces applied by each legs to the measured acce
   %% Input/Output definition
   clear io; io_i = 1;
   io(io_i) = linio([mdl, '/Dw'],              1, 'openinput');  io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/u'],               1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/V-T'],             1, 'openinput');  io_i = io_i + 1;
   io(io_i) = linio([mdl, '/Inertial Sensor'], 1, 'openoutput'); io_i = io_i + 1;
 
   G = linearize(mdl, io);
