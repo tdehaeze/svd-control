@@ -945,7 +945,7 @@ The real approximation is computed as follows:
 |  220.6 | -220.6 |  220.6 | -220.6 | 220.6 | -220.6 |
 
 
-Please not that the plant $G$ at $\omega_c$ is already an almost real matrix.
+Note that the plant $G$ at $\omega_c$ is already an almost real matrix.
 This can be seen on the Bode plots where the phase is close to 1.
 This can be verified below where only the real value of $G(\omega_c)$ is shown
 
@@ -1031,10 +1031,11 @@ Gershgorin Radii for the decoupled plant using the Jacobian:
   hold off;
   xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
   legend('location', 'northeast');
+  ylim([1e-3, 1e3]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/simscape_model_gershgorin_radii.pdf', 'width', 'full', 'height', 'full');
+  exportFig('figs/simscape_model_gershgorin_radii.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
 #+end_src
 
 #+name: fig:simscape_model_gershgorin_radii
@@ -1066,11 +1067,12 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Magnitude'); xlabel('Frequency [Hz]');
-  legend('location', 'southeast');
+  legend('location', 'northwest');
+  ylim([1e-3, 1e5]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/simscape_model_decoupled_plant_svd.pdf', 'width', 'full', 'height', 'full');
+  exportFig('figs/simscape_model_decoupled_plant_svd.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
 #+end_src
 
 #+name: fig:simscape_model_decoupled_plant_svd
@@ -1096,11 +1098,12 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Magnitude'); xlabel('Frequency [Hz]');
-  legend('location', 'southeast');
+  legend('location', 'northwest');
+  ylim([1e-3, 1e6]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/simscape_model_decoupled_plant_jacobian.pdf', 'width', 'full', 'height', 'full');
+  exportFig('figs/simscape_model_decoupled_plant_jacobian.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
 #+end_src
 
 #+name: fig:simscape_model_decoupled_plant_jacobian
@@ -1212,71 +1215,73 @@ Let's first verify the stability of the closed-loop systems:
 The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure [[fig:stewart_platform_simscape_cl_transmissibility]].
 
 #+begin_src matlab :exports results
-  freqs = logspace(-3, 3, 1000);
+  freqs = logspace(-2, 2, 1000);
 
-  figure
+  figure;
+  tiledlayout(2, 2, 'TileSpacing', 'None', 'Padding', 'None');
 
-  ax1 = subplot(2, 3, 1);
+  ax1 = nexttile;
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
   plot(freqs, abs(squeeze(freqresp(G_cen('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
   plot(freqs, abs(squeeze(freqresp(G_svd('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'SVD');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - $D_x/D_{w,x}$');  xlabel('Frequency [Hz]');
+  ylabel('$D_x/D_{w,x}$, $D_y/D_{w, y}$'); set(gca, 'XTickLabel',[]);
   legend('location', 'southwest');
 
-  ax2 = subplot(2, 3, 2);
-  hold on;
-  plot(freqs, abs(squeeze(freqresp(G(    'Ay', 'Dwy')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_cen('Ay', 'Dwy')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))));
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - $D_y/D_{w,y}$');  xlabel('Frequency [Hz]');
+  % ax2 = nexttile;
+  % hold on;
+  % plot(freqs, abs(squeeze(freqresp(G(    'Ay', 'Dwy')/s^2, freqs, 'Hz'))));
+  % plot(freqs, abs(squeeze(freqresp(G_cen('Ay', 'Dwy')/s^2, freqs, 'Hz'))));
+  % plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))));
+  % hold off;
+  % set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  % ylabel('Transmissibility - $D_y/D_{w,y}$');  xlabel('Frequency [Hz]');
 
-  ax3 = subplot(2, 3, 3);
+  ax3 = nexttile;
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Az', 'Dwz')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_cen('Az', 'Dwz')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_svd('Az', 'Dwz')/s^2, freqs, 'Hz'))));
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - $D_z/D_{w,z}$');  xlabel('Frequency [Hz]');
+  ylabel('$D_z/D_{w,z}$'); set(gca, 'XTickLabel',[]);
 
-  ax4 = subplot(2, 3, 4);
+  ax4 = nexttile;
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Arx', 'Rwx')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_cen('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_svd('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - $R_x/R_{w,x}$');  xlabel('Frequency [Hz]');
+  ylabel('$R_x/R_{w,x}$, $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
 
-  ax5 = subplot(2, 3, 5);
-  hold on;
-  plot(freqs, abs(squeeze(freqresp(G(    'Ary', 'Rwy')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_cen('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
+  % ax5 = nexttile;
+  % hold on;
+  % plot(freqs, abs(squeeze(freqresp(G(    'Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  % plot(freqs, abs(squeeze(freqresp(G_cen('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  % plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  % hold off;
+  % set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  % ylabel('Transmissibility - $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
 
-  ax6 = subplot(2, 3, 6);
+  ax6 = nexttile;
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Arz', 'Rwz')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_cen('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_svd('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - $R_z/R_{w,z}$');  xlabel('Frequency [Hz]');
+  ylabel('$R_z/R_{w,z}$');  xlabel('Frequency [Hz]');
 
-  linkaxes([ax1,ax2,ax3,ax4,ax5,ax6],'x');
+  linkaxes([ax1,ax2,ax3,ax4,ax5,ax6],'xy');
   xlim([freqs(1), freqs(end)]);
+  ylim([1e-5, 1e2]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/stewart_platform_simscape_cl_transmissibility.pdf', 'width', 1600, 'height', 'full');
+  exportFig('figs/stewart_platform_simscape_cl_transmissibility.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
 #+end_src
 
 #+name: fig:stewart_platform_simscape_cl_transmissibility
