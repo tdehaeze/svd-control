@@ -1229,9 +1229,7 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
 ** Diagonal Controller
 <<sec:stewart_diagonal_control>>
 
-The controller $K_c$ is a diagonal controller consisting a low pass filters with a crossover frequency $\omega_c$ and a DC gain $C_g$.
-
-#+begin_src matlab
+#+begin_src matlab :exports none :tangle no
   wc = 2*pi*0.1; % Crossover Frequency [rad/s]
   C_g = 50; % DC Gain
 
@@ -1268,11 +1266,6 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 #+RESULTS:
 [[file:figs/centralized_control.png]]
 
-The feedback system is computed as shown below.
-#+begin_src matlab
-  G_cen = feedback(G, inv(J')*Kc, [7:12], [1:6]);
-#+end_src
-
 The SVD control architecture is shown in Figure [[fig:svd_control]].
 The matrices $U$ and $V$ are used to decoupled the plant $G$.
 #+begin_src latex :file svd_control.pdf :tangle no :exports results
@@ -1301,16 +1294,88 @@ The matrices $U$ and $V$ are used to decoupled the plant $G$.
 #+RESULTS:
 [[file:figs/svd_control.png]]
 
-The feedback system is computed as shown below.
+
+We choose the controller to be a low pass filter:
+\[ K_c(s) = \frac{G_0}{1 + \frac{s}{\omega_0}} \]
+
+$G_0$ is tuned such that the crossover frequency corresponding to the diagonal terms of the loop gain is equal to $\omega_c$
+
 #+begin_src matlab
-  G_svd = feedback(G, pinv(V')*Kc*pinv(U), [7:12], [1:6]);
+  wc = 2*pi*80;
+  w0 = 2*pi*0.1;
 #+end_src
 
-Let's look at the Loop Gains.
+#+begin_src matlab
+  K_cen = diag(1./diag(abs(evalfr(Gx, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
+  L_cen = K_cen*Gx;
+  G_cen = feedback(G, pinv(J')*K_cen, [7:12], [1:6]);
+#+end_src
 
 #+begin_src matlab
-  L_svd =
+  K_svd = diag(1./diag(abs(evalfr(Gd, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
+  L_svd = K_svd*Gd;
+  G_svd = feedback(G, pinv(V')*K_svd*pinv(U), [7:12], [1:6]);
 #+end_src
+
+The obtained diagonal elements of the loop gains are shown in Figure [[fig:stewart_comp_loop_gain_diagonal]].
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+  tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
+
+  % Magnitude
+  ax1 = nexttile([2, 1]);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(L_svd(1, 1), freqs, 'Hz'))), 'DisplayName', '$L_{SVD}(i,i)$');
+  for i_in_out = 2:6
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, abs(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+  end
+
+  set(gca,'ColorOrderIndex',2)
+  plot(freqs, abs(squeeze(freqresp(L_cen(1, 1), freqs, 'Hz'))), ...
+       'DisplayName', '$L_{J}(i,i)$');
+  for i_in_out = 2:6
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, abs(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Magnitude'); set(gca, 'XTickLabel',[]);
+  legend('location', 'northwest');
+  ylim([5e-2, 2e3])
+
+  % Phase
+  ax2 = nexttile;
+  hold on;
+  for i_in_out = 1:6
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))));
+  end
+  set(gca,'ColorOrderIndex',2)
+  for i_in_out = 1:6
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
+  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
+  ylim([-180, 180]);
+  yticks([-180:90:360]);
+
+  linkaxes([ax1,ax2],'x');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/stewart_comp_loop_gain_diagonal.pdf', 'width', 'wide', 'height', 'tall');
+#+end_src
+
+#+name: fig:stewart_comp_loop_gain_diagonal
+#+caption: Comparison of the diagonal elements of the loop gains for the SVD control architecture and the Jacobian one
+#+RESULTS:
+[[file:figs/stewart_comp_loop_gain_diagonal.png]]
 
 ** Closed-Loop system Performances
 <<sec:stewart_closed_loop_results>>
@@ -1389,7 +1454,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 
   linkaxes([ax1,ax2,ax3,ax4],'xy');
   xlim([freqs(1), freqs(end)]);
-  ylim([1e-5, 1e2]);
+  ylim([1e-3, 1e2]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
