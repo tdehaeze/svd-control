@@ -689,6 +689,24 @@ This Matlab function is accessible [[file:gravimeter/pzmap_testCL.m][here]].
 :PROPERTIES:
 :header-args:matlab+: :tangle stewart_platform/simscape_model.m
 :END:
+** Introduction                                                      :ignore:
+
+In this analysis, we wish to applied SVD control to the Stewart Platform shown in Figure [[fig:SP_assembly]].
+
+#+name: fig:SP_assembly
+#+caption: Stewart Platform CAD View
+[[file:figs/SP_assembly.png]]
+
+The analysis of the SVD control applied to the Stewart platform is performed in the following sections:
+- Section [[sec:stewart_simscape]]: The parameters of the Simscape model of the Stewart platform are defined
+- Section [[sec:stewart_identification]]: The plant is identified from the Simscape model and the centralized plant is computed thanks to the Jacobian
+- Section [[sec:stewart_dynamics]]: The identified Dynamics is shown
+- Section [[sec:stewart_real_approx]]: A real approximation of the plant is computed for further decoupling using the Singular Value Decomposition (SVD)
+- Section [[sec:stewart_svd_decoupling]]: The decoupling is performed thanks to the SVD. The effectiveness of the decoupling is verified using the Gershorin Radii
+- Section [[sec:stewart_decoupled_plant]]: The dynamics of the decoupled plant is shown
+- Section [[sec:stewart_diagonal_control]]: A diagonal controller is defined to control the decoupled plant
+- Section [[sec:stewart_closed_loop_results]]: Finally, the closed loop system properties are studied
+
 ** Matlab Init                                             :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
@@ -707,7 +725,7 @@ This Matlab function is accessible [[file:gravimeter/pzmap_testCL.m][here]].
   addpath('STEP');
 #+end_src
 
-** Jacobian
+** Jacobian                                                        :noexport:
 First, the position of the "joints" (points of force application) are estimated and the Jacobian computed.
 #+begin_src matlab
   open('drone_platform_jacobian.slx');
@@ -741,7 +759,8 @@ First, the position of the "joints" (points of force application) are estimated 
   save('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 #+end_src
 
-** Simscape Model
+** Simscape Model - Parameters
+<<sec:stewart_simscape>>
 #+begin_src matlab
   open('drone_platform.slx');
 #+end_src
@@ -757,16 +776,19 @@ Definition of spring parameters
   cz = 0.025;
 #+end_src
 
+Gravity:
 #+begin_src matlab
   g = 0;
 #+end_src
 
-We load the Jacobian.
+We load the Jacobian (previously computed from the geometry).
 #+begin_src matlab
   load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 #+end_src
 
 ** Identification of the plant
+<<sec:stewart_identification>>
+
 The dynamics is identified from forces applied by each legs to the measured acceleration of the top platform.
 #+begin_src matlab
   %% Name of the Simulink File
@@ -792,39 +814,41 @@ There are 24 states (6dof for the bottom platform + 6dof for the top platform).
 #+RESULTS:
 : State-space model with 6 outputs, 12 inputs, and 24 states.
 
-#+begin_src matlab
-  % G = G*blkdiag(inv(J), eye(6));
-  % G.InputName  = {'Dw1', 'Dw2', 'Dw3', 'Dw4', 'Dw5', 'Dw6', ...
-  %                 'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
-#+end_src
+The "centralized" plant $\bm{G}_x$ is now computed (Figure [[fig:centralized_control]]).
 
-Thanks to the Jacobian, we compute the transfer functions in the frame of the legs and in an inertial frame.
+#+name: fig:centralized_control
+#+caption: Centralized control architecture
+[[file:figs/centralized_control.png]]
+
+Thanks to the Jacobian, we compute the transfer functions in the inertial frame (transfer function from forces and torques applied to the top platform to the absolute acceleration of the top platform).
 #+begin_src matlab
   Gx = G*blkdiag(eye(6), inv(J'));
   Gx.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
                    'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
-
-  % Gl = J*G;
-  % Gl.OutputName  = {'A1', 'A2', 'A3', 'A4', 'A5', 'A6'};
 #+end_src
 
 ** Obtained Dynamics
+<<sec:stewart_dynamics>>
+
 #+begin_src matlab :exports none
   freqs = logspace(-1, 2, 1000);
 
   figure;
+  tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
 
-  ax1 = subplot(2, 1, 1);
+  % Magnitude
+  ax1 = nexttile([2, 1]);
   hold on;
   plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Fx'), freqs, 'Hz'))), 'DisplayName', '$A_x/F_x$');
   plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Fy'), freqs, 'Hz'))), 'DisplayName', '$A_y/F_y$');
   plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Fz'), freqs, 'Hz'))), 'DisplayName', '$A_z/F_z$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Amplitude [m/N]'); set(gca, 'XTickLabel',[]);
+  ylabel('Magnitude [m/N]'); set(gca, 'XTickLabel',[]);
   legend('location', 'southeast');
 
-  ax2 = subplot(2, 1, 2);
+  % Phase
+  ax2 = nexttile;
   hold on;
   plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ax', 'Fx'), freqs, 'Hz'))));
   plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ay', 'Fy'), freqs, 'Hz'))));
@@ -839,7 +863,7 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/stewart_platform_translations.pdf', 'width', 'full', 'height', 'full');
+  exportFig('figs/stewart_platform_translations.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
 #+end_src
 
 #+name: fig:stewart_platform_translations
@@ -851,18 +875,21 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
   freqs = logspace(-1, 2, 1000);
 
   figure;
+  tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
 
-  ax1 = subplot(2, 1, 1);
+  % Magnitude
+  ax1 = nexttile([2, 1]);
   hold on;
   plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Mx'), freqs, 'Hz'))), 'DisplayName', '$A_{R_x}/M_x$');
   plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'My'), freqs, 'Hz'))), 'DisplayName', '$A_{R_y}/M_y$');
   plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Mz'), freqs, 'Hz'))), 'DisplayName', '$A_{R_z}/M_z$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Amplitude [rad/(Nm)]'); set(gca, 'XTickLabel',[]);
+  ylabel('Magnitude [rad/(Nm)]'); set(gca, 'XTickLabel',[]);
   legend('location', 'southeast');
 
-  ax2 = subplot(2, 1, 2);
+  % Phase
+  ax2 = nexttile;
   hold on;
   plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Arx', 'Mx'), freqs, 'Hz'))));
   plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ary', 'My'), freqs, 'Hz'))));
@@ -877,7 +904,7 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/stewart_platform_rotations.pdf', 'width', 'full', 'height', 'full');
+  exportFig('figs/stewart_platform_rotations.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
 #+end_src
 
 #+name: fig:stewart_platform_rotations
@@ -885,94 +912,9 @@ Thanks to the Jacobian, we compute the transfer functions in the frame of the le
 #+RESULTS:
 [[file:figs/stewart_platform_rotations.png]]
 
-#+begin_src matlab :exports none
-  freqs = logspace(-1, 2, 1000);
-
-  figure;
-
-  ax1 = subplot(2, 1, 1);
-  hold on;
-  for out_i = 1:5
-    for in_i = i+1:6
-      plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', out_i), sprintf('F%i', in_i)), freqs, 'Hz'))), 'color', [0, 0, 0, 0.2]);
-    end
-  end
-  for ch_i = 1:6
-    plot(freqs, abs(squeeze(freqresp(Gl(sprintf('A%i', ch_i), sprintf('F%i', ch_i)), freqs, 'Hz'))));
-  end
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Amplitude [m/N]'); set(gca, 'XTickLabel',[]);
-
-  ax2 = subplot(2, 1, 2);
-  hold on;
-  for ch_i = 1:6
-    plot(freqs, 180/pi*angle(squeeze(freqresp(Gl(sprintf('A%i', ch_i), sprintf('F%i', ch_i)), freqs, 'Hz'))));
-  end
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
-  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
-  ylim([-180, 180]);
-  yticks([-360:90:360]);
-
-  linkaxes([ax1,ax2],'x');
-#+end_src
-
-#+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/stewart_platform_legs.pdf', 'width', 'full', 'height', 'full');
-#+end_src
-
-#+name: fig:stewart_platform_legs
-#+caption: Stewart Platform Plant from forces applied by the legs to displacement of the legs
-#+RESULTS:
-[[file:figs/stewart_platform_legs.png]]
-
-#+begin_src matlab :exports none
-  freqs = logspace(-1, 2, 1000);
-
-  figure;
-
-  ax1 = subplot(2, 1, 1);
-  hold on;
-  plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_x/D_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_y/D_{w,y}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Dwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$D_z/D_{w,z}$');
-  % set(gca,'ColorOrderIndex',1)
-  % plot(freqs, abs(squeeze(freqresp(TR(1,1), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  % plot(freqs, abs(squeeze(freqresp(TR(2,2), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  % plot(freqs, abs(squeeze(freqresp(TR(3,3), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - Translations');  xlabel('Frequency [Hz]');
-  legend('location', 'northeast');
-
-  ax2 = subplot(2, 1, 2);
-  hold on;
-  plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Rwx')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_x/R_{w,x}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'Rwy')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_y/R_{w,y}$');
-  plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Rwz')/s^2, freqs, 'Hz'))), 'DisplayName', '$R_z/R_{w,z}$');
-  % set(gca,'ColorOrderIndex',1)
-  % plot(freqs, abs(squeeze(freqresp(TR(4,4), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  % plot(freqs, abs(squeeze(freqresp(TR(5,5), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  % plot(freqs, abs(squeeze(freqresp(TR(6,6), freqs, 'Hz'))), '--', 'DisplayName', '$D_x/D_{w,x}$');
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Transmissibility - Rotations');  xlabel('Frequency [Hz]');
-  legend('location', 'northeast');
-
-  linkaxes([ax1,ax2],'x');
-#+end_src
-
-#+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/stewart_platform_transmissibility.pdf', 'width', 'full', 'height', 'full');
-#+end_src
-
-#+name: fig:stewart_platform_transmissibility
-#+caption: Transmissibility
-#+RESULTS:
-[[file:figs/stewart_platform_transmissibility.png]]
-
 ** Real Approximation of $G$ at the decoupling frequency
+<<sec:stewart_real_approx>>
+
 Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_c(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
 #+begin_src matlab
   wc = 2*pi*30; % Decoupling frequency [rad/s]
@@ -989,7 +931,39 @@ The real approximation is computed as follows:
   H1 = inv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
 #+end_src
 
+#+begin_src matlab :exports results :results value table replace :tangle no
+  data2orgtable(H1, {}, {}, ' %.1f ');
+#+end_src
+
+#+caption: Real approximate of $G$ at the decoupling frequency $\omega_c$
+#+RESULTS:
+|    4.4 |   -2.1 |   -2.1 |    4.4 |  -2.4 |   -2.4 |
+|   -0.2 |   -3.9 |    3.9 |    0.2 |  -3.8 |    3.8 |
+|    3.4 |    3.4 |    3.4 |    3.4 |   3.4 |    3.4 |
+| -367.1 | -323.8 |  323.8 |  367.1 |  43.3 |  -43.3 |
+| -162.0 | -237.0 | -237.0 | -162.0 | 398.9 |  398.9 |
+|  220.6 | -220.6 |  220.6 | -220.6 | 220.6 | -220.6 |
+
+
+Please not that the plant $G$ at $\omega_c$ is already an almost real matrix.
+This can be seen on the Bode plots where the phase is close to 1.
+This can be verified below where only the real value of $G(\omega_c)$ is shown
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+  data2orgtable(real(evalfr(Gc, j*wc)), {}, {}, ' %.1f ');
+#+end_src
+
+#+RESULTS:
+|    4.4 |   -2.1 |   -2.1 |    4.4 |  -2.4 |   -2.4 |
+|   -0.2 |   -3.9 |    3.9 |    0.2 |  -3.8 |    3.8 |
+|    3.4 |    3.4 |    3.4 |    3.4 |   3.4 |    3.4 |
+| -367.1 | -323.8 |  323.8 |  367.1 |  43.3 |  -43.3 |
+| -162.0 | -237.0 | -237.0 | -162.0 | 398.9 |  398.9 |
+|  220.6 | -220.6 |  220.6 | -220.6 | 220.6 | -220.6 |
+
 ** Verification of the decoupling using the "Gershgorin Radii"
+<<sec:stewart_svd_decoupling>>
+
 First, the Singular Value Decomposition of $H_1$ is performed:
 \[ H_1 = U \Sigma V^H \]
 
@@ -1069,6 +1043,8 @@ Gershgorin Radii for the decoupled plant using the Jacobian:
 [[file:figs/simscape_model_gershgorin_radii.png]]
 
 ** Decoupled Plant
+<<sec:stewart_decoupled_plant>>
+
 Let's see the bode plot of the decoupled plant $G_d(s)$.
 \[ G_d(s) = U^T G_c(s) V \]
 
@@ -1089,7 +1065,7 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Amplitude'); xlabel('Frequency [Hz]');
+  ylabel('Magnitude'); xlabel('Frequency [Hz]');
   legend('location', 'southeast');
 #+end_src
 
@@ -1119,7 +1095,7 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  ylabel('Amplitude'); xlabel('Frequency [Hz]');
+  ylabel('Magnitude'); xlabel('Frequency [Hz]');
   legend('location', 'southeast');
 #+end_src
 
@@ -1133,6 +1109,8 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
 [[file:figs/simscape_model_decoupled_plant_jacobian.png]]
 
 ** Diagonal Controller
+<<sec:stewart_diagonal_control>>
+
 The controller $K$ is a diagonal controller consisting a low pass filters with a crossover frequency $\omega_c$ and a DC gain $C_g$.
 
 #+begin_src matlab
@@ -1142,13 +1120,12 @@ The controller $K$ is a diagonal controller consisting a low pass filters with a
   K = eye(6)*C_g/(s+wc);
 #+end_src
 
-** Centralized Control
-The control diagram for the centralized control is shown below.
+The control diagram for the centralized control is shown in Figure [[fig:centralized_control]].
 
 The controller $K_c$ is "working" in an cartesian frame.
 The Jacobian is used to convert forces in the cartesian frame to forces applied by the actuators.
 
-#+begin_src latex :file centralized_control.pdf :tangle no
+#+begin_src latex :file centralized_control.pdf :tangle no :exports results
   \begin{tikzpicture}
     \node[block={2cm}{1.5cm}] (G) {$G$};
     \node[block, below right=0.6 and -0.5 of G] (K) {$K_c$};
@@ -1167,18 +1144,19 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
   \end{tikzpicture}
 #+end_src
 
+#+name: fig:centralized_control
+#+caption: Control Diagram for the Centralized control
 #+RESULTS:
 [[file:figs/centralized_control.png]]
 
+The feedback system is computed as shown below.
 #+begin_src matlab
   G_cen = feedback(G, inv(J')*K, [7:12], [1:6]);
 #+end_src
 
-** SVD Control
-The SVD control architecture is shown below.
+The SVD control architecture is shown in Figure [[fig:svd_control]].
 The matrices $U$ and $V$ are used to decoupled the plant $G$.
-
-#+begin_src latex :file svd_control.pdf :tangle no
+#+begin_src latex :file svd_control.pdf :tangle no :exports results
   \begin{tikzpicture}
     \node[block={2cm}{1.5cm}] (G) {$G$};
     \node[block, below right=0.6 and 0 of G] (U) {$U^{-1}$};
@@ -1199,15 +1177,19 @@ The matrices $U$ and $V$ are used to decoupled the plant $G$.
   \end{tikzpicture}
 #+end_src
 
+#+name: fig:svd_control
+#+caption: Control Diagram for the SVD control
 #+RESULTS:
 [[file:figs/svd_control.png]]
 
-SVD Control
+The feedback system is computed as shown below.
 #+begin_src matlab
   G_svd = feedback(G, pinv(V')*K*pinv(U), [7:12], [1:6]);
 #+end_src
 
-** Results
+** Closed-Loop system Performances
+<<sec:stewart_closed_loop_results>>
+
 Let's first verify the stability of the closed-loop systems:
 #+begin_src matlab :results output replace text
   isstable(G_cen)
@@ -1302,7 +1284,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 #+RESULTS:
 [[file:figs/stewart_platform_simscape_cl_transmissibility.png]]
 
-* Stewart Platform - Analytical Model
+* Stewart Platform - Analytical Model                               :noexport:
 :PROPERTIES:
 :header-args:matlab+: :tangle stewart_platform/analytical_model.m
 :END:
