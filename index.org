@@ -1068,11 +1068,11 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Magnitude'); xlabel('Frequency [Hz]');
   legend('location', 'northwest');
-  ylim([1e-3, 1e5]);
+  ylim([1e-3, 1e4]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/simscape_model_decoupled_plant_svd.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
+  exportFig('figs/simscape_model_decoupled_plant_svd.pdf', 'eps', true, 'width', 'wide', 'height', 'normal');
 #+end_src
 
 #+name: fig:simscape_model_decoupled_plant_svd
@@ -1099,11 +1099,12 @@ Let's see the bode plot of the decoupled plant $G_d(s)$.
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Magnitude'); xlabel('Frequency [Hz]');
   legend('location', 'northwest');
-  ylim([1e-3, 1e6]);
+  ylim([1e-1, 1e6]);
+  set(gca, 'YMinorTick', 'on');
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
-  exportFig('figs/simscape_model_decoupled_plant_jacobian.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
+  exportFig('figs/simscape_model_decoupled_plant_jacobian.pdf', 'eps', true, 'width', 'wide', 'height', 'normal');
 #+end_src
 
 #+name: fig:simscape_model_decoupled_plant_jacobian
