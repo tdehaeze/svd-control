@@ -786,6 +786,13 @@ We load the Jacobian (previously computed from the geometry).
   load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 #+end_src
 
+We initialize other parameters:
+#+begin_src matlab
+  U = eye(6);
+  V = eye(6);
+  Kc = tf(zeros(6));
+#+end_src
+
 ** Identification of the plant
 <<sec:stewart_identification>>
 
@@ -1121,7 +1128,7 @@ The controller $K$ is a diagonal controller consisting a low pass filters with a
   wc = 2*pi*0.1; % Crossover Frequency [rad/s]
   C_g = 50; % DC Gain
 
-  K = eye(6)*C_g/(s+wc);
+  Kc = eye(6)*C_g/(s+wc);
 #+end_src
 
 The control diagram for the centralized control is shown in Figure [[fig:centralized_control]].
@@ -1155,7 +1162,7 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 
 The feedback system is computed as shown below.
 #+begin_src matlab
-  G_cen = feedback(G, inv(J')*K, [7:12], [1:6]);
+  G_cen = feedback(G, inv(J')*Kc, [7:12], [1:6]);
 #+end_src
 
 The SVD control architecture is shown in Figure [[fig:svd_control]].
@@ -1188,7 +1195,7 @@ The matrices $U$ and $V$ are used to decoupled the plant $G$.
 
 The feedback system is computed as shown below.
 #+begin_src matlab
-  G_svd = feedback(G, pinv(V')*K*pinv(U), [7:12], [1:6]);
+  G_svd = feedback(G, pinv(V')*Kc*pinv(U), [7:12], [1:6]);
 #+end_src
 
 ** Closed-Loop system Performances
