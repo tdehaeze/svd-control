@@ -799,6 +799,14 @@ We initialize other parameters:
   Kc = tf(zeros(6));
 #+end_src
 
+#+name: fig:stewart_simscape
+#+caption: General view of the Simscape Model
+[[file:figs/stewart_simscape.png]]
+
+#+name: fig:stewart_platform_details
+#+caption: Simscape model of the Stewart platform
+[[file:figs/stewart_platform_details.png]]
+
 ** Identification of the plant
 <<sec:stewart_identification>>
 
@@ -1296,6 +1304,12 @@ The matrices $U$ and $V$ are used to decoupled the plant $G$.
 The feedback system is computed as shown below.
 #+begin_src matlab
   G_svd = feedback(G, pinv(V')*Kc*pinv(U), [7:12], [1:6]);
+#+end_src
+
+Let's look at the Loop Gains.
+
+#+begin_src matlab
+  L_svd =
 #+end_src
 
 ** Closed-Loop system Performances
