@@ -1015,8 +1015,8 @@ The obtained matrices $U$ and $V$ are used to decouple the system as shown in Fi
     \coordinate[] (inputd) at ($(G.south west)!0.75!(G.north west)$);
     \coordinate[] (inputu) at ($(G.south west)!0.25!(G.north west)$);
 
-    \node[block, left=0.6 of inputu] (V) {$V$};
-    \node[block, right=0.6 of G.east] (U) {$U^T$};
+    \node[block, left=0.6 of inputu] (V) {$V^{-T}$};
+    \node[block, right=0.6 of G.east] (U) {$U^{-1}$};
 
     % Connections and labels
     \draw[<-] (inputd) -- ++(-0.8, 0) node[above right]{$D_w$};
@@ -1038,7 +1038,7 @@ The obtained matrices $U$ and $V$ are used to decouple the system as shown in Fi
 [[file:figs/plant_decouple_svd.png]]
 
 The decoupled plant is then:
-\[ G_{SVD}(s) = U^T G(s) V \]
+\[ G_{SVD}(s) = U^{-1} G(s) V^{-H} \]
 
 ** Verification of the decoupling using the "Gershgorin Radii"
 <<sec:comp_decoupling>>
@@ -1060,7 +1060,7 @@ This is computed over the following frequencies.
   end
 
   % Gershgorin Radii for the decoupled plant using SVD:
-  Gd = U'*Gc*V;
+  Gd = inv(U)*Gc*inv(V');
   Gr_decoupled = zeros(length(freqs), size(Gd,2));
 
   H = abs(squeeze(freqresp(Gd, freqs, 'Hz')));
@@ -1268,6 +1268,7 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 
 The SVD control architecture is shown in Figure [[fig:svd_control]].
 The matrices $U$ and $V$ are used to decoupled the plant $G$.
+
 #+begin_src latex :file svd_control.pdf :tangle no :exports results
   \begin{tikzpicture}
     \node[block={2cm}{1.5cm}] (G) {$G$};
@@ -1306,15 +1307,15 @@ $G_0$ is tuned such that the crossover frequency corresponding to the diagonal t
 #+end_src
 
 #+begin_src matlab
-  K_cen = diag(1./diag(abs(evalfr(Gx, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
-  L_cen = K_cen*Gx;
+  K_cen = diag(1./diag(abs(evalfr(Gx(1:6, 7:12), j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
+  L_cen = K_cen*Gx(1:6, 7:12);
   G_cen = feedback(G, pinv(J')*K_cen, [7:12], [1:6]);
 #+end_src
 
 #+begin_src matlab
   K_svd = diag(1./diag(abs(evalfr(Gd, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
   L_svd = K_svd*Gd;
-  G_svd = feedback(G, pinv(V')*K_svd*pinv(U), [7:12], [1:6]);
+  G_svd = feedback(G, inv(V')*K_svd*inv(U), [7:12], [1:6]);
 #+end_src
 
 The obtained diagonal elements of the loop gains are shown in Figure [[fig:stewart_comp_loop_gain_diagonal]].
@@ -1411,11 +1412,11 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
   plot(freqs, abs(squeeze(freqresp(G_cen('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
-  plot(freqs, abs(squeeze(freqresp(G_svd('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'SVD');
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ax', 'Dwx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
   set(gca,'ColorOrderIndex',1)
   plot(freqs, abs(squeeze(freqresp(G(    'Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
   plot(freqs, abs(squeeze(freqresp(G_cen('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
-  plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))), '--', 'HandleVisibility', 'off');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('$D_x/D_{w,x}$, $D_y/D_{w, y}$'); set(gca, 'XTickLabel',[]);
@@ -1425,7 +1426,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Az', 'Dwz')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_cen('Az', 'Dwz')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_svd('Az', 'Dwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Az', 'Dwz')/s^2, freqs, 'Hz'))), '--');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('$D_z/D_{w,z}$'); set(gca, 'XTickLabel',[]);
@@ -1434,11 +1435,11 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Arx', 'Rwx')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_cen('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_svd('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Arx', 'Rwx')/s^2, freqs, 'Hz'))), '--');
   set(gca,'ColorOrderIndex',1)
   plot(freqs, abs(squeeze(freqresp(G(    'Ary', 'Rwy')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_cen('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))), '--');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('$R_x/R_{w,x}$, $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
@@ -1447,7 +1448,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
   hold on;
   plot(freqs, abs(squeeze(freqresp(G(    'Arz', 'Rwz')/s^2, freqs, 'Hz'))));
   plot(freqs, abs(squeeze(freqresp(G_cen('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
-  plot(freqs, abs(squeeze(freqresp(G_svd('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Arz', 'Rwz')/s^2, freqs, 'Hz'))), '--');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('$R_z/R_{w,z}$');  xlabel('Frequency [Hz]');
