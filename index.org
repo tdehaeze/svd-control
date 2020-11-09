@@ -713,7 +713,7 @@ The analysis of the SVD control applied to the Stewart platform is performed in 
 - Section [[sec:stewart_diagonal_control]]: A diagonal controller is defined to control the decoupled plant
 - Section [[sec:stewart_closed_loop_results]]: Finally, the closed loop system properties are studied
 
-** Matlab Init                                             :noexport:ignore:
+** Matlab Init                                              :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
   <<matlab-dir>>
 #+end_src
@@ -820,7 +820,7 @@ The outputs are the 6 accelerations measured by the inertial unit.
 
 #+begin_src latex :file stewart_platform_plant.pdf :tangle no :exports results
   \begin{tikzpicture}
-    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G\end{bmatrix}$};
+    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G_u\end{bmatrix}$};
     \node[above] at (G.north) {$\bm{G}$};
 
     % Inputs of the controllers
@@ -835,7 +835,7 @@ The outputs are the 6 accelerations measured by the inertial unit.
 #+end_src
 
 #+name: fig:stewart_platform_plant
-#+caption: Considered plant $\bm{G} = \begin{bmatrix}G_d\\G\end{bmatrix}$. $D_w$ is the translation/rotation of the support, $\tau$ the actuator forces, $a$ the acceleration/angular acceleration of the top platform
+#+caption: Considered plant $\bm{G} = \begin{bmatrix}G_d\\G_u\end{bmatrix}$. $D_w$ is the translation/rotation of the support, $\tau$ the actuator forces, $a$ the acceleration/angular acceleration of the top platform
 #+RESULTS:
 [[file:figs/stewart_platform_plant.png]]
 
@@ -853,6 +853,11 @@ The outputs are the 6 accelerations measured by the inertial unit.
   G.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
                   'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
   G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
+
+  % Plant
+  Gu = G(:, {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'});
+  % Disturbance dynamics
+  Gd = G(:, {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz'});
 #+end_src
 
 There are 24 states (6dof for the bottom platform + 6dof for the top platform).
@@ -876,15 +881,15 @@ One can easily see that the system is strongly coupled.
   hold on;
   for i_in = 1:6
       for i_out = [1:i_in-1, i_in+1:6]
-          plot(freqs, abs(squeeze(freqresp(G(i_out, 6+i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+          plot(freqs, abs(squeeze(freqresp(Gu(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
                'HandleVisibility', 'off');
       end
   end
-  plot(freqs, abs(squeeze(freqresp(G(i_out, 6+i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-       'DisplayName', '$G(i,j)\ i \neq j$');
+  plot(freqs, abs(squeeze(freqresp(Gu(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_u(i,j)\ i \neq j$');
   set(gca,'ColorOrderIndex',1)
   for i_in_out = 1:6
-    plot(freqs, abs(squeeze(freqresp(G(i_in_out, 6+i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gu(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_u(%d,%d)$', i_in_out, i_in_out));
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -898,7 +903,7 @@ One can easily see that the system is strongly coupled.
 #+end_src
 
 #+name: fig:stewart_platform_coupled_plant
-#+caption: Magnitude of all 36 elements of the transfer function matrix $\bm{G}$
+#+caption: Magnitude of all 36 elements of the transfer function matrix $G_u$
 #+RESULTS:
 [[file:figs/stewart_platform_coupled_plant.png]]
 
@@ -909,22 +914,16 @@ The Jacobian matrix is used to transform forces/torques applied on the top platf
 
 #+begin_src latex :file plant_decouple_jacobian.pdf :tangle no :exports results
   \begin{tikzpicture}
-    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G\end{bmatrix}$};
-
-    % Inputs of the controllers
-    \coordinate[] (inputd) at ($(G.south west)!0.75!(G.north west)$);
-    \coordinate[] (inputu) at ($(G.south west)!0.25!(G.north west)$);
-
-    \node[block, left=0.6 of inputu] (J) {$J^{-T}$};
+    \node[block] (G) {$G_u$};
+    \node[block, left=0.6 of G] (J) {$J^{-T}$};
 
     % Connections and labels
-    \draw[<-] (inputd) -- ++(-0.8, 0) node[above right]{$D_w$};
-    \draw[->] (G.east) -- ++( 0.8, 0)  node[above left]{$a$};
-    \draw[->] (J.east) -- (inputu)  node[above left]{$\tau$};
-    \draw[<-] (J.west) -- ++(-0.8, 0) node[above right]{$\mathcal{F}$};
+    \draw[<-] (J.west) -- ++(-1.0, 0) node[above right]{$\mathcal{F}$};
+    \draw[->] (J.east) -- (G.west)  node[above left]{$\tau$};
+    \draw[->] (G.east) -- ++( 1.0, 0)  node[above left]{$a$};
 
     \begin{scope}[on background layer]
-      \node[fit={(J.south west) (G.north east)}, fill=black!10!white, draw, dashed, inner sep=8pt] (Gx) {};
+      \node[fit={(J.south west) (G.north east)}, fill=black!10!white, draw, dashed, inner sep=14pt] (Gx) {};
       \node[below right] at (Gx.north west) {$\bm{G}_x$};
     \end{scope}
   \end{tikzpicture}
@@ -941,22 +940,18 @@ We define a new plant:
 $G_x(s)$ correspond to the transfer function from forces and torques applied to the top platform to the absolute acceleration of the top platform.
 
 #+begin_src matlab
-  Gx = G*blkdiag(eye(6), inv(J'));
-  Gx.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
-                   'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
+  Gx = Gu*inv(J');
+  Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
 #+end_src
 
 ** Real Approximation of $G$ at the decoupling frequency
 <<sec:stewart_real_approx>>
 
-Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
+Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_u(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
 #+begin_src matlab
   wc = 2*pi*30; % Decoupling frequency [rad/s]
 
-  Gc = G({'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'}, ...
-         {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'}); % Transfer function to find a real approximation
-
-  H1 = evalfr(Gc, j*wc);
+  H1 = evalfr(Gu, j*wc);
 #+end_src
 
 The real approximation is computed as follows:
@@ -979,12 +974,12 @@ The real approximation is computed as follows:
 |  220.6 | -220.6 |  220.6 | -220.6 | 220.6 | -220.6 |
 
 
-Note that the plant $G$ at $\omega_c$ is already an almost real matrix.
+Note that the plant $G_u$ at $\omega_c$ is already an almost real matrix.
 This can be seen on the Bode plots where the phase is close to 1.
-This can be verified below where only the real value of $G(\omega_c)$ is shown
+This can be verified below where only the real value of $G_u(\omega_c)$ is shown
 
 #+begin_src matlab :exports results :results value table replace :tangle no
-  data2orgtable(real(evalfr(Gc, j*wc)), {}, {}, ' %.1f ');
+  data2orgtable(real(evalfr(Gu, j*wc)), {}, {}, ' %.1f ');
 #+end_src
 
 #+RESULTS:
@@ -1002,31 +997,26 @@ First, the Singular Value Decomposition of $H_1$ is performed:
 \[ H_1 = U \Sigma V^H \]
 
 #+begin_src matlab
-  [U,S,V] = svd(H1);
+  [U,~,V] = svd(H1);
 #+end_src
 
 The obtained matrices $U$ and $V$ are used to decouple the system as shown in Figure [[fig:plant_decouple_svd]].
 
 #+begin_src latex :file plant_decouple_svd.pdf :tangle no :exports results
   \begin{tikzpicture}
-    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G\end{bmatrix}$};
+    \node[block] (G) {$G_u$};
 
-    % Inputs of the controllers
-    \coordinate[] (inputd) at ($(G.south west)!0.75!(G.north west)$);
-    \coordinate[] (inputu) at ($(G.south west)!0.25!(G.north west)$);
-
-    \node[block, left=0.6 of inputu] (V) {$V^{-T}$};
+    \node[block, left=0.6 of G.west] (V) {$V^{-T}$};
     \node[block, right=0.6 of G.east] (U) {$U^{-1}$};
 
     % Connections and labels
-    \draw[<-] (inputd) -- ++(-0.8, 0) node[above right]{$D_w$};
+    \draw[<-] (V.west) -- ++(-1.0, 0) node[above right]{$u$};
+    \draw[->] (V.east) -- (G.west) node[above left]{$\tau$};
     \draw[->] (G.east) -- (U.west) node[above left]{$a$};
-    \draw[->] (U.east) -- ++( 0.8, 0) node[above left]{$y$};
-    \draw[->] (V.east) -- (inputu) node[above left]{$\tau$};
-    \draw[<-] (V.west) -- ++(-0.8, 0) node[above right]{$u$};
+    \draw[->] (U.east) -- ++( 1.0, 0) node[above left]{$y$};
 
     \begin{scope}[on background layer]
-      \node[fit={(V.south west) (G.north-|U.east)}, fill=black!10!white, draw, dashed, inner sep=8pt] (Gsvd) {};
+      \node[fit={(V.south west) (G.north-|U.east)}, fill=black!10!white, draw, dashed, inner sep=14pt] (Gsvd) {};
       \node[below right] at (Gsvd.north west) {$\bm{G}_{SVD}$};
     \end{scope}
   \end{tikzpicture}
@@ -1038,12 +1028,19 @@ The obtained matrices $U$ and $V$ are used to decouple the system as shown in Fi
 [[file:figs/plant_decouple_svd.png]]
 
 The decoupled plant is then:
-\[ G_{SVD}(s) = U^{-1} G(s) V^{-H} \]
+\[ G_{SVD}(s) = U^{-1} G_u(s) V^{-H} \]
+
+#+begin_src matlab
+  Gsvd = inv(U)*Gu*inv(V');
+#+end_src
 
 ** Verification of the decoupling using the "Gershgorin Radii"
 <<sec:comp_decoupling>>
 
 The "Gershgorin Radii" is computed for the coupled plant $G(s)$, for the "Jacobian plant" $G_x(s)$ and the "SVD Decoupled Plant" $G_{SVD}(s)$:
+
+The "Gershgorin Radii" of a matrix $S$ is defined by:
+\[ \zeta_i(j\omega) = \frac{\sum\limits_{j\neq i}|S_{ij}(j\omega)|}{|S_{ii}(j\omega)|} \]
 
 This is computed over the following frequencies.
 #+begin_src matlab
@@ -1052,29 +1049,23 @@ This is computed over the following frequencies.
 
 #+begin_src matlab :exports none
   % Gershgorin Radii for the coupled plant:
-  Gr_coupled = zeros(length(freqs), size(Gc,2));
-
-  H = abs(squeeze(freqresp(Gc, freqs, 'Hz')));
-  for out_i = 1:size(Gc,2)
+  Gr_coupled = zeros(length(freqs), size(Gu,2));
+  H = abs(squeeze(freqresp(Gu, freqs, 'Hz')));
+  for out_i = 1:size(Gu,2)
       Gr_coupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
   end
 
   % Gershgorin Radii for the decoupled plant using SVD:
-  Gd = inv(U)*Gc*inv(V');
-  Gr_decoupled = zeros(length(freqs), size(Gd,2));
-
-  H = abs(squeeze(freqresp(Gd, freqs, 'Hz')));
-  for out_i = 1:size(Gd,2)
+  Gr_decoupled = zeros(length(freqs), size(Gsvd,2));
+  H = abs(squeeze(freqresp(Gsvd, freqs, 'Hz')));
+  for out_i = 1:size(Gsvd,2)
       Gr_decoupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
   end
 
   % Gershgorin Radii for the decoupled plant using the Jacobian:
-  Gj = Gc*inv(J');
-  Gr_jacobian = zeros(length(freqs), size(Gj,2));
-
-  H = abs(squeeze(freqresp(Gj, freqs, 'Hz')));
-
-  for out_i = 1:size(Gj,2)
+  Gr_jacobian = zeros(length(freqs), size(Gx,2));
+  H = abs(squeeze(freqresp(Gx, freqs, 'Hz')));
+  for out_i = 1:size(Gx,2)
       Gr_jacobian(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
   end
 #+end_src
@@ -1126,15 +1117,15 @@ The bode plot of the diagonal and off-diagonal elements of $G_{SVD}$ are shown i
   hold on;
   for i_in = 1:6
       for i_out = [1:i_in-1, i_in+1:6]
-          plot(freqs, abs(squeeze(freqresp(Gd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+          plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
                'HandleVisibility', 'off');
       end
   end
-  plot(freqs, abs(squeeze(freqresp(Gd(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.5], ...
+  plot(freqs, abs(squeeze(freqresp(Gsvd(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.5], ...
        'DisplayName', '$G_{SVD}(i,j),\ i \neq j$');
   set(gca,'ColorOrderIndex',1)
   for ch_i = 1:6
-    plot(freqs, abs(squeeze(freqresp(Gd(ch_i, ch_i), freqs, 'Hz'))), ...
+    plot(freqs, abs(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))), ...
          'DisplayName', sprintf('$G_{SVD}(%i,%i)$', ch_i, ch_i));
   end
   hold off;
@@ -1147,7 +1138,7 @@ The bode plot of the diagonal and off-diagonal elements of $G_{SVD}$ are shown i
   ax2 = nexttile;
   hold on;
   for ch_i = 1:6
-    plot(freqs, 180/pi*angle(squeeze(freqresp(Gd(ch_i, ch_i), freqs, 'Hz'))));
+    plot(freqs, 180/pi*angle(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))));
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
@@ -1180,7 +1171,7 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
   hold on;
   for i_in = 1:6
       for i_out = [1:i_in-1, i_in+1:6]
-          plot(freqs, abs(squeeze(freqresp(Gx(i_out, 6+i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+          plot(freqs, abs(squeeze(freqresp(Gx(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
                'HandleVisibility', 'off');
       end
   end
@@ -1228,14 +1219,6 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
 
 ** Diagonal Controller
 <<sec:stewart_diagonal_control>>
-
-#+begin_src matlab :exports none :tangle no
-  wc = 2*pi*0.1; % Crossover Frequency [rad/s]
-  C_g = 50; % DC Gain
-
-  Kc = eye(6)*C_g/(s+wc);
-#+end_src
-
 The control diagram for the centralized control is shown in Figure [[fig:centralized_control]].
 
 The controller $K_c$ is "working" in an cartesian frame.
@@ -1243,7 +1226,7 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 
 #+begin_src latex :file centralized_control.pdf :tangle no :exports results
   \begin{tikzpicture}
-    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G\end{bmatrix}$};
+    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G_u\end{bmatrix}$};
     \node[above] at (G.north) {$\bm{G}$};
     \node[block, below right=0.6 and -0.5 of G] (K) {$K_c$};
     \node[block, below left= 0.6 and -0.5 of G] (J) {$J^{-T}$};
@@ -1271,7 +1254,8 @@ The matrices $U$ and $V$ are used to decoupled the plant $G$.
 
 #+begin_src latex :file svd_control.pdf :tangle no :exports results
   \begin{tikzpicture}
-    \node[block={2cm}{1.5cm}] (G) {$G$};
+    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G_u\end{bmatrix}$};
+    \node[above] at (G.north) {$\bm{G}$};
     \node[block, below right=0.6 and 0 of G] (U) {$U^{-1}$};
     \node[block, below=0.6 of G] (K) {$K_{\text{SVD}}$};
     \node[block, below left= 0.6 and 0 of G] (V) {$V^{-T}$};
@@ -1302,19 +1286,19 @@ We choose the controller to be a low pass filter:
 $G_0$ is tuned such that the crossover frequency corresponding to the diagonal terms of the loop gain is equal to $\omega_c$
 
 #+begin_src matlab
-  wc = 2*pi*80;
-  w0 = 2*pi*0.1;
+  wc = 2*pi*80;  % Crossover Frequency [rad/s]
+  w0 = 2*pi*0.1; % Controller Pole [rad/s]
 #+end_src
 
 #+begin_src matlab
-  K_cen = diag(1./diag(abs(evalfr(Gx(1:6, 7:12), j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
-  L_cen = K_cen*Gx(1:6, 7:12);
+  K_cen = diag(1./diag(abs(evalfr(Gx, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
+  L_cen = K_cen*Gx;
   G_cen = feedback(G, pinv(J')*K_cen, [7:12], [1:6]);
 #+end_src
 
 #+begin_src matlab
-  K_svd = diag(1./diag(abs(evalfr(Gd, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
-  L_svd = K_svd*Gd;
+  K_svd = diag(1./diag(abs(evalfr(Gsvd, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
+  L_svd = K_svd*Gsvd;
   G_svd = feedback(G, inv(V')*K_svd*inv(U), [7:12], [1:6]);
 #+end_src
 
