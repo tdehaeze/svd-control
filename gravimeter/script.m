@@ -4,8 +4,6 @@ clear; close all; clc;
 %% Intialize Laplace variable
 s = zpk('s');
 
-addpath('gravimeter');
-
 % Simscape Model - Parameters
 
 open('gravimeter.slx')
