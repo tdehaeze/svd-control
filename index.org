@@ -69,10 +69,10 @@
 Parameters
 #+begin_src matlab
   l  = 1.0; % Length of the mass [m]
-  la = 0.5; % Position of Act. [m]
+  h  = 1.7; % Height of the mass [m]
 
-  h  = 3.4; % Height of the mass [m]
-  ha = 1.7; % Position of Act. [m]
+  la = l/2; % Position of Act. [m]
+  ha = h/2; % Position of Act. [m]
 
   m = 400; % Mass [kg]
   I = 115; % Inertia [kg m^2]
@@ -105,20 +105,45 @@ Parameters
   G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
 #+end_src
 
+The inputs and outputs of the plant are shown in Figure [[fig:gravimeter_plant_schematic]].
+
+#+begin_src latex :file gravimeter_plant_schematic.pdf :tangle no :exports results
+  \begin{tikzpicture}
+    \node[block] (G) {$G$};
+
+    % Connections and labels
+    \draw[<-] (G.west) -- ++(-2.0, 0) node[above right]{$\bm{\tau} = \begin{bmatrix}\tau_1 \\ \tau_2 \\ \tau_2 \end{bmatrix}$};
+    \draw[->] (G.east) -- ++( 2.0, 0)  node[above left]{$\bm{a} = \begin{bmatrix} a_{1x} \\ a_{1z} \\ a_{2x} \\ a_{2z} \end{bmatrix}$};
+  \end{tikzpicture}
+#+end_src
+
+#+name: fig:gravimeter_plant_schematic
+#+caption: Schematic of the gravimeter plant
+#+RESULTS:
+[[file:figs/gravimeter_plant_schematic.png]]
+
+\begin{equation}
+  \bm{a} = \begin{bmatrix} a_{1x} \\ a_{1z} \\ a_{2x} \\ a_{2z} \end{bmatrix}
+\end{equation}
+
+\begin{equation}
+  \bm{\tau} = \begin{bmatrix}\tau_1 \\ \tau_2 \\ \tau_2 \end{bmatrix}
+\end{equation}
+
+We can check the poles of the plant:
+
 #+begin_src matlab :results output replace :exports results
   pole(G)
 #+end_src
 
 #+RESULTS:
 #+begin_example
-pole(G)
-ans =
-      -0.000473481142385795 +      21.7596190728632i
-      -0.000473481142385795 -      21.7596190728632i
-      -7.49842879459172e-05 +       8.6593576906982i
-      -7.49842879459172e-05 -       8.6593576906982i
-       -5.1538686792578e-06 +      2.27025295182756i
-       -5.1538686792578e-06 -      2.27025295182756i
+      -0.000183495485977108 +       13.546056874877i
+      -0.000183495485977108 -       13.546056874877i
+      -7.49842878906757e-05 +      8.65934902322567i
+      -7.49842878906757e-05 -      8.65934902322567i
+      -1.33171230256362e-05 +      3.64924169037897i
+      -1.33171230256362e-05 -      3.64924169037897i
 #+end_example
 
 The plant as 6 states as expected (2 translations + 1 rotation)
@@ -129,15 +154,32 @@ The plant as 6 states as expected (2 translations + 1 rotation)
 #+RESULTS:
 : State-space model with 4 outputs, 3 inputs, and 6 states.
 
+The bode plot of all elements of the plant are shown in Figure [[fig:open_loop_tf]].
+
 #+begin_src matlab :exports none
-  freqs = logspace(-2, 2, 1000);
+  freqs = logspace(-1, 2, 1000);
 
   figure;
-  for in_i = 1:3
-      for out_i = 1:4
-          subplot(4, 3, 3*(out_i-1)+in_i);
+  tiledlayout(4, 3, 'TileSpacing', 'None', 'Padding', 'None');
+
+  for out_i = 1:4
+      for in_i = 1:3
+          nexttile;
           plot(freqs, abs(squeeze(freqresp(G(out_i,in_i), freqs, 'Hz'))), '-');
           set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+          xlim([1e-1, 2e1]); ylim([1e-4, 1e0]);
+
+          if in_i == 1
+              ylabel('Amplitude [m/N]')
+          else
+              set(gca, 'YTickLabel',[]);
+          end
+
+          if out_i == 4
+              xlabel('Frequency [Hz]')
+          else
+              set(gca, 'XTickLabel',[]);
+          end
       end
   end
 #+end_src
@@ -151,7 +193,624 @@ The plant as 6 states as expected (2 translations + 1 rotation)
 #+RESULTS:
 [[file:figs/open_loop_tf.png]]
 
-** System Identification - With Gravity
+** Physical Decoupling using the Jacobian
+<<sec:gravimeter_jacobian_decoupling>>
+
+Consider the control architecture shown in Figure [[fig:gravimeter_decouple_jacobian]].
+
+The Jacobian matrix $J_{\tau}$ is used to transform forces applied by the three actuators into forces/torques applied on the gravimeter at its center of mass.
+The Jacobian matrix $J_{a}$ is used to compute the vertical acceleration, horizontal acceleration and rotational acceleration of the mass with respect to its center of mass.
+
+We thus define a new plant as defined in Figure [[fig:gravimeter_decouple_jacobian]].
+\[ G_x(s) = J_a G(s) J_{\tau}^{-T} \]
+
+$G_x(s)$ correspond to the transfer function from forces and torques applied to the gravimeter at its center of mass to the absolute acceleration of the gravimeter's center of mass.
+
+#+begin_src latex :file gravimeter_decouple_jacobian.pdf :tangle no :exports results
+  \begin{tikzpicture}
+    \node[block] (G) {$G$};
+    \node[block, left=0.6 of G] (Jt) {$J_{\tau}^{-T}$};
+    \node[block, right=0.6 of G] (Ja) {$J_{a}$};
+
+    % Connections and labels
+    \draw[<-] (Jt.west) -- ++(-1.1, 0) node[above right]{$\bm{\mathcal{F}}$};
+    \draw[->] (Jt.east) -- (G.west)  node[above left]{$\bm{\tau}$};
+    \draw[->] (G.east) -- (Ja.west)  node[above left]{$\bm{a}$};
+    \draw[->] (Ja.east) -- ++( 1.1, 0)  node[above left]{$\bm{\mathcal{X}}$};
+
+    \begin{scope}[on background layer]
+      \node[fit={(Jt.south west) (Ja.north east)}, fill=black!10!white, draw, dashed, inner sep=14pt] (Gx) {};
+      \node[below right] at (Gx.north west) {$\bm{G}_x$};
+    \end{scope}
+  \end{tikzpicture}
+#+end_src
+
+#+name: fig:gravimeter_decouple_jacobian
+#+caption: Decoupled plant $\bm{G}_x$ using the Jacobian matrix $J$
+#+RESULTS:
+[[file:figs/gravimeter_decouple_jacobian.png]]
+
+The jacobian corresponding to the sensors and actuators are defined below.
+#+begin_src matlab
+  Ja = [1 0  h/2
+        0 1 -l/2
+        1 0 -h/2
+        0 1  0];
+
+  Jt = [1 0  ha
+        0 1 -la
+        0 1  la];
+#+end_src
+
+#+begin_src matlab
+  Gx = pinv(Ja)*G*pinv(Jt');
+  Gx.InputName  = {'Fx', 'Fz', 'My'};
+  Gx.OutputName  = {'Dx', 'Dz', 'Ry'};
+#+end_src
+
+The diagonal and off-diagonal elements of $G_x$ are shown in Figure [[fig:gravimeter_jacobian_plant]].
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(Gx(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(Gx(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gx(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast');
+  ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_jacobian_plant.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:gravimeter_jacobian_plant
+#+caption: Diagonal and off-diagonal elements of $G_x$
+#+RESULTS:
+[[file:figs/gravimeter_jacobian_plant.png]]
+
+** Real Approximation of $G$ at the decoupling frequency
+<<sec:gravimeter_real_approx>>
+
+Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_u(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
+#+begin_src matlab
+  wc = 2*pi*10; % Decoupling frequency [rad/s]
+
+  H1 = evalfr(G, j*wc);
+#+end_src
+
+The real approximation is computed as follows:
+#+begin_src matlab
+  D = pinv(real(H1'*H1));
+  H1 = inv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+#+end_src
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+  data2orgtable(H1, {}, {}, ' %.2g ');
+#+end_src
+
+#+caption: Real approximate of $G$ at the decoupling frequency $\omega_c$
+#+RESULTS:
+|  0.0026 | -3.7e-05 | 3.7e-05 |
+| 1.9e-10 |   0.0025 |  0.0025 |
+| -0.0078 |   0.0045 | -0.0045 |
+
+** SVD Decoupling
+<<sec:gravimeter_svd_decoupling>>
+
+First, the Singular Value Decomposition of $H_1$ is performed:
+\[ H_1 = U \Sigma V^H \]
+
+#+begin_src matlab
+  [U,~,V] = svd(H1);
+#+end_src
+
+The obtained matrices $U$ and $V$ are used to decouple the system as shown in Figure [[fig:gravimeter_decouple_svd]].
+
+#+begin_src latex :file gravimeter_decouple_svd.pdf :tangle no :exports results
+  \begin{tikzpicture}
+    \node[block] (G) {$G_u$};
+
+    \node[block, left=0.6 of G.west] (V) {$V^{-T}$};
+    \node[block, right=0.6 of G.east] (U) {$U^{-1}$};
+
+    % Connections and labels
+    \draw[<-] (V.west) -- ++(-1.0, 0) node[above right]{$u$};
+    \draw[->] (V.east) -- (G.west) node[above left]{$\tau$};
+    \draw[->] (G.east) -- (U.west) node[above left]{$a$};
+    \draw[->] (U.east) -- ++( 1.0, 0) node[above left]{$y$};
+
+    \begin{scope}[on background layer]
+      \node[fit={(V.south west) (G.north-|U.east)}, fill=black!10!white, draw, dashed, inner sep=14pt] (Gsvd) {};
+      \node[below right] at (Gsvd.north west) {$\bm{G}_{SVD}$};
+    \end{scope}
+  \end{tikzpicture}
+#+end_src
+
+#+name: fig:gravimeter_decouple_svd
+#+caption: Decoupled plant $\bm{G}_{SVD}$ using the Singular Value Decomposition
+#+RESULTS:
+[[file:figs/gravimeter_decouple_svd.png]]
+
+The decoupled plant is then:
+\[ G_{SVD}(s) = U^{-1} G_u(s) V^{-H} \]
+
+#+begin_src matlab
+  Gsvd = inv(U)*G*inv(V');
+#+end_src
+
+The diagonal and off-diagonal elements of the "SVD" plant are shown in Figure [[fig:gravimeter_svd_plant]].
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast', 'FontSize', 8);
+  ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_svd_plant.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:gravimeter_svd_plant
+#+caption: Diagonal and off-diagonal elements of $G_{svd}$
+#+RESULTS:
+[[file:figs/gravimeter_svd_plant.png]]
+
+** TODO Verification of the decoupling using the "Gershgorin Radii"
+<<sec:comp_decoupling>>
+
+The "Gershgorin Radii" is computed for the coupled plant $G(s)$, for the "Jacobian plant" $G_x(s)$ and the "SVD Decoupled Plant" $G_{SVD}(s)$:
+
+The "Gershgorin Radii" of a matrix $S$ is defined by:
+\[ \zeta_i(j\omega) = \frac{\sum\limits_{j\neq i}|S_{ij}(j\omega)|}{|S_{ii}(j\omega)|} \]
+
+This is computed over the following frequencies.
+#+begin_src matlab
+  freqs = logspace(-2, 2, 1000); % [Hz]
+#+end_src
+
+#+begin_src matlab :exports none
+  % Gershgorin Radii for the coupled plant:
+  Gr_coupled = zeros(length(freqs), size(Gu,2));
+  H = abs(squeeze(freqresp(Gu, freqs, 'Hz')));
+  for out_i = 1:size(Gu,2)
+      Gr_coupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
+  end
+
+  % Gershgorin Radii for the decoupled plant using SVD:
+  Gr_decoupled = zeros(length(freqs), size(Gsvd,2));
+  H = abs(squeeze(freqresp(Gsvd, freqs, 'Hz')));
+  for out_i = 1:size(Gsvd,2)
+      Gr_decoupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
+  end
+
+  % Gershgorin Radii for the decoupled plant using the Jacobian:
+  Gr_jacobian = zeros(length(freqs), size(Gx,2));
+  H = abs(squeeze(freqresp(Gx, freqs, 'Hz')));
+  for out_i = 1:size(Gx,2)
+      Gr_jacobian(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
+  end
+#+end_src
+
+#+begin_src matlab :exports results
+  figure;
+  hold on;
+  plot(freqs, Gr_coupled(:,1), 'DisplayName', 'Coupled');
+  plot(freqs, Gr_decoupled(:,1), 'DisplayName', 'SVD');
+  plot(freqs, Gr_jacobian(:,1), 'DisplayName', 'Jacobian');
+  for in_i = 2:6
+      set(gca,'ColorOrderIndex',1)
+      plot(freqs, Gr_coupled(:,in_i), 'HandleVisibility', 'off');
+      set(gca,'ColorOrderIndex',2)
+      plot(freqs, Gr_decoupled(:,in_i), 'HandleVisibility', 'off');
+      set(gca,'ColorOrderIndex',3)
+      plot(freqs, Gr_jacobian(:,in_i), 'HandleVisibility', 'off');
+  end
+  plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  hold off;
+  xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+  legend('location', 'northwest');
+  ylim([1e-3, 1e3]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/simscape_model_gershgorin_radii.pdf', 'eps', true, 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:simscape_model_gershgorin_radii
+#+caption: Gershgorin Radii of the Coupled and Decoupled plants
+#+RESULTS:
+[[file:figs/simscape_model_gershgorin_radii.png]]
+
+** TODO Obtained Decoupled Plants
+<<sec:gravimeter_decoupled_plant>>
+
+The bode plot of the diagonal and off-diagonal elements of $G_{SVD}$ are shown in Figure [[fig:simscape_model_decoupled_plant_svd]].
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+  tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
+
+  % Magnitude
+  ax1 = nexttile([2, 1]);
+  hold on;
+  for i_in = 1:6
+      for i_out = [1:i_in-1, i_in+1:6]
+          plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(Gsvd(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.5], ...
+       'DisplayName', '$G_{SVD}(i,j),\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for ch_i = 1:6
+    plot(freqs, abs(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))), ...
+         'DisplayName', sprintf('$G_{SVD}(%i,%i)$', ch_i, ch_i));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Magnitude'); set(gca, 'XTickLabel',[]);
+  legend('location', 'northwest');
+  ylim([1e-1, 1e5])
+
+  % Phase
+  ax2 = nexttile;
+  hold on;
+  for ch_i = 1:6
+    plot(freqs, 180/pi*angle(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
+  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
+  ylim([-180, 180]);
+  yticks([-180:90:360]);
+
+  linkaxes([ax1,ax2],'x');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/simscape_model_decoupled_plant_svd.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
+#+end_src
+
+#+name: fig:simscape_model_decoupled_plant_svd
+#+caption: Decoupled Plant using SVD
+#+RESULTS:
+[[file:figs/simscape_model_decoupled_plant_svd.png]]
+
+Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant $G_x(s)$ using the Jacobian are shown in Figure [[fig:simscape_model_decoupled_plant_jacobian]].
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+  tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
+
+  % Magnitude
+  ax1 = nexttile([2, 1]);
+  hold on;
+  for i_in = 1:6
+      for i_out = [1:i_in-1, i_in+1:6]
+          plot(freqs, abs(squeeze(freqresp(Gx(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(Gx(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.5], ...
+       'DisplayName', '$G_x(i,j),\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  plot(freqs, abs(squeeze(freqresp(Gx('Ax', 'Fx'), freqs, 'Hz'))), 'DisplayName', '$G_x(1,1) = A_x/F_x$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ay', 'Fy'), freqs, 'Hz'))), 'DisplayName', '$G_x(2,2) = A_y/F_y$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Az', 'Fz'), freqs, 'Hz'))), 'DisplayName', '$G_x(3,3) = A_z/F_z$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Arx', 'Mx'), freqs, 'Hz'))), 'DisplayName', '$G_x(4,4) = A_{R_x}/M_x$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Ary', 'My'), freqs, 'Hz'))), 'DisplayName', '$G_x(5,5) = A_{R_y}/M_y$');
+  plot(freqs, abs(squeeze(freqresp(Gx('Arz', 'Mz'), freqs, 'Hz'))), 'DisplayName', '$G_x(6,6) = A_{R_z}/M_z$');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Magnitude'); set(gca, 'XTickLabel',[]);
+  legend('location', 'northwest');
+  ylim([1e-2, 2e6])
+
+  % Phase
+  ax2 = nexttile;
+  hold on;
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ax', 'Fx'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ay', 'Fy'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Az', 'Fz'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Arx', 'Mx'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Ary', 'My'), freqs, 'Hz'))));
+  plot(freqs, 180/pi*angle(squeeze(freqresp(Gx('Arz', 'Mz'), freqs, 'Hz'))));
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
+  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
+  ylim([0, 180]);
+  yticks([0:45:360]);
+
+  linkaxes([ax1,ax2],'x');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/simscape_model_decoupled_plant_jacobian.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
+#+end_src
+
+#+name: fig:simscape_model_decoupled_plant_jacobian
+#+caption: Gravimeter Platform Plant from forces (resp. torques) applied by the legs to the acceleration (resp. angular acceleration) of the platform as well as all the coupling terms between the two (non-diagonal terms of the transfer function matrix)
+#+RESULTS:
+[[file:figs/simscape_model_decoupled_plant_jacobian.png]]
+
+** TODO Diagonal Controller
+<<sec:gravimeter_diagonal_control>>
+The control diagram for the centralized control is shown in Figure [[fig:centralized_control]].
+
+The controller $K_c$ is "working" in an cartesian frame.
+The Jacobian is used to convert forces in the cartesian frame to forces applied by the actuators.
+
+#+begin_src latex :file centralized_control.pdf :tangle no :exports results
+  \begin{tikzpicture}
+    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G_u\end{bmatrix}$};
+    \node[above] at (G.north) {$\bm{G}$};
+    \node[block, below right=0.6 and -0.5 of G] (K) {$K_c$};
+    \node[block, below left= 0.6 and -0.5 of G] (J) {$J^{-T}$};
+
+    % Inputs of the controllers
+    \coordinate[] (inputd) at ($(G.south west)!0.75!(G.north west)$);
+    \coordinate[] (inputu) at ($(G.south west)!0.25!(G.north west)$);
+
+    % Connections and labels
+    \draw[<-] (inputd) -- ++(-0.8, 0) node[above right]{$D_w$};
+    \draw[->] (G.east) -- ++(2.0, 0)  node[above left]{$a$};
+    \draw[->] ($(G.east)+(1.4, 0)$)node[branch]{} |- (K.east);
+    \draw[->] (K.west) -- (J.east) node[above right]{$\mathcal{F}$};
+    \draw[->] (J.west) -- ++(-0.6, 0) |- (inputu) node[above left]{$\tau$};
+  \end{tikzpicture}
+#+end_src
+
+#+name: fig:centralized_control
+#+caption: Control Diagram for the Centralized control
+#+RESULTS:
+[[file:figs/centralized_control.png]]
+
+The SVD control architecture is shown in Figure [[fig:svd_control]].
+The matrices $U$ and $V$ are used to decoupled the plant $G$.
+
+#+begin_src latex :file svd_control.pdf :tangle no :exports results
+  \begin{tikzpicture}
+    \node[block={2cm}{1.5cm}] (G) {$\begin{bmatrix}G_d\\G_u\end{bmatrix}$};
+    \node[above] at (G.north) {$\bm{G}$};
+    \node[block, below right=0.6 and 0 of G] (U) {$U^{-1}$};
+    \node[block, below=0.6 of G] (K) {$K_{\text{SVD}}$};
+    \node[block, below left= 0.6 and 0 of G] (V) {$V^{-T}$};
+
+    % Inputs of the controllers
+    \coordinate[] (inputd) at ($(G.south west)!0.75!(G.north west)$);
+    \coordinate[] (inputu) at ($(G.south west)!0.25!(G.north west)$);
+
+    % Connections and labels
+    \draw[<-] (inputd) -- ++(-0.8, 0) node[above right]{$D_w$};
+    \draw[->] (G.east) -- ++(2.5, 0) node[above left]{$a$};
+    \draw[->] ($(G.east)+(2.0, 0)$) node[branch]{} |- (U.east);
+    \draw[->] (U.west) -- (K.east);
+    \draw[->] (K.west) -- (V.east);
+    \draw[->] (V.west) -- ++(-0.6, 0) |- (inputu) node[above left]{$\tau$};
+  \end{tikzpicture}
+#+end_src
+
+#+name: fig:svd_control
+#+caption: Control Diagram for the SVD control
+#+RESULTS:
+[[file:figs/svd_control.png]]
+
+
+We choose the controller to be a low pass filter:
+\[ K_c(s) = \frac{G_0}{1 + \frac{s}{\omega_0}} \]
+
+$G_0$ is tuned such that the crossover frequency corresponding to the diagonal terms of the loop gain is equal to $\omega_c$
+
+#+begin_src matlab
+  wc = 2*pi*80;  % Crossover Frequency [rad/s]
+  w0 = 2*pi*0.1; % Controller Pole [rad/s]
+#+end_src
+
+#+begin_src matlab
+  K_cen = diag(1./diag(abs(evalfr(Gx, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
+  L_cen = K_cen*Gx;
+  G_cen = feedback(G, pinv(J')*K_cen, [7:12], [1:6]);
+#+end_src
+
+#+begin_src matlab
+  K_svd = diag(1./diag(abs(evalfr(Gsvd, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
+  L_svd = K_svd*Gsvd;
+  G_svd = feedback(G, inv(V')*K_svd*inv(U), [7:12], [1:6]);
+#+end_src
+
+The obtained diagonal elements of the loop gains are shown in Figure [[fig:gravimeter_comp_loop_gain_diagonal]].
+
+#+begin_src matlab :exports none
+  freqs = logspace(-1, 2, 1000);
+
+  figure;
+  tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
+
+  % Magnitude
+  ax1 = nexttile([2, 1]);
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(L_svd(1, 1), freqs, 'Hz'))), 'DisplayName', '$L_{SVD}(i,i)$');
+  for i_in_out = 2:6
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, abs(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+  end
+
+  set(gca,'ColorOrderIndex',2)
+  plot(freqs, abs(squeeze(freqresp(L_cen(1, 1), freqs, 'Hz'))), ...
+       'DisplayName', '$L_{J}(i,i)$');
+  for i_in_out = 2:6
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, abs(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Magnitude'); set(gca, 'XTickLabel',[]);
+  legend('location', 'northwest');
+  ylim([5e-2, 2e3])
+
+  % Phase
+  ax2 = nexttile;
+  hold on;
+  for i_in_out = 1:6
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))));
+  end
+  set(gca,'ColorOrderIndex',2)
+  for i_in_out = 1:6
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
+  ylabel('Phase [deg]'); xlabel('Frequency [Hz]');
+  ylim([-180, 180]);
+  yticks([-180:90:360]);
+
+  linkaxes([ax1,ax2],'x');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_comp_loop_gain_diagonal.pdf', 'width', 'wide', 'height', 'tall');
+#+end_src
+
+#+name: fig:gravimeter_comp_loop_gain_diagonal
+#+caption: Comparison of the diagonal elements of the loop gains for the SVD control architecture and the Jacobian one
+#+RESULTS:
+[[file:figs/gravimeter_comp_loop_gain_diagonal.png]]
+
+** TODO Closed-Loop system Performances
+<<sec:gravimeter_closed_loop_results>>
+
+Let's first verify the stability of the closed-loop systems:
+#+begin_src matlab :results output replace text
+  isstable(G_cen)
+#+end_src
+
+#+RESULTS:
+: ans =
+:   logical
+:    1
+
+#+begin_src matlab :results output replace text
+  isstable(G_svd)
+#+end_src
+
+#+RESULTS:
+: ans =
+:   logical
+:    1
+
+The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure [[fig:gravimeter_platform_simscape_cl_transmissibility]].
+
+#+begin_src matlab :exports results
+  freqs = logspace(-2, 2, 1000);
+
+  figure;
+  tiledlayout(2, 2, 'TileSpacing', 'None', 'Padding', 'None');
+
+  ax1 = nexttile;
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
+  plot(freqs, abs(squeeze(freqresp(G_cen('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ax', 'Dwx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+  set(gca,'ColorOrderIndex',1)
+  plot(freqs, abs(squeeze(freqresp(G(    'Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
+  plot(freqs, abs(squeeze(freqresp(G_cen('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))), '--', 'HandleVisibility', 'off');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('$D_x/D_{w,x}$, $D_y/D_{w, y}$'); set(gca, 'XTickLabel',[]);
+  legend('location', 'southwest');
+
+  ax2 = nexttile;
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Az', 'Dwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Az', 'Dwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Az', 'Dwz')/s^2, freqs, 'Hz'))), '--');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('$D_z/D_{w,z}$'); set(gca, 'XTickLabel',[]);
+
+  ax3 = nexttile;
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Arx', 'Rwx')/s^2, freqs, 'Hz'))), '--');
+  set(gca,'ColorOrderIndex',1)
+  plot(freqs, abs(squeeze(freqresp(G(    'Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))), '--');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('$R_x/R_{w,x}$, $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
+
+  ax4 = nexttile;
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G(    'Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd('Arz', 'Rwz')/s^2, freqs, 'Hz'))), '--');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('$R_z/R_{w,z}$');  xlabel('Frequency [Hz]');
+
+  linkaxes([ax1,ax2,ax3,ax4],'xy');
+  xlim([freqs(1), freqs(end)]);
+  ylim([1e-3, 1e2]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_platform_simscape_cl_transmissibility.pdf', 'eps', true, 'width', 'wide', 'height', 'tall');
+#+end_src
+
+#+name: fig:gravimeter_platform_simscape_cl_transmissibility
+#+caption: Obtained Transmissibility
+#+RESULTS:
+[[file:figs/gravimeter_platform_simscape_cl_transmissibility.png]]
+
+* Gravimeter - Analytical Model                                     :noexport:
+** System Identification - With Gravity                            :noexport:
 #+begin_src matlab
   g = 9.80665; % Gravity [m/s2]
 #+end_src
@@ -169,14 +828,12 @@ We can now see that the system is unstable due to gravity.
 
 #+RESULTS:
 #+begin_example
-pole(Gg)
-ans =
-          -10.9848275341252 +                     0i
-           10.9838836405201 +                     0i
-      -7.49855379478109e-05 +      8.65962885770051i
-      -7.49855379478109e-05 -      8.65962885770051i
-      -6.68819548733559e-06 +     0.832960422243848i
-      -6.68819548733559e-06 -     0.832960422243848i
+      -7.49865861504606e-05 +      8.65948534948982i
+      -7.49865861504606e-05 -      8.65948534948982i
+          -4.76450798645977 +                     0i
+            4.7642612321107 +                     0i
+      -7.34348883628024e-05 +      4.29133825321225i
+      -7.34348883628024e-05 -      4.29133825321225i
 #+end_example
 
 #+begin_src matlab :exports none
@@ -204,8 +861,7 @@ ans =
 #+RESULTS:
 [[file:figs/open_loop_tf_g.png]]
 
-** Analytical Model
-*** Parameters
+** Parameters
 Bode options.
 #+begin_src matlab
   P = bodeoptions;
@@ -228,7 +884,7 @@ Frequency vector.
   w = 2*pi*logspace(-1,2,1000); % [rad/s]
 #+end_src
 
-*** Generation of the State Space Model
+** Generation of the State Space Model
 Mass matrix
 #+begin_src matlab
   M = [m 0 0
@@ -301,7 +957,7 @@ State Space model:
 #+RESULTS:
 : State-space model with 12 outputs, 6 inputs, and 6 states.
 
-*** Comparison with the Simscape Model
+** Comparison with the Simscape Model
 #+begin_src matlab :exports none
   freqs = logspace(-2, 2, 1000);
 
@@ -327,7 +983,7 @@ State Space model:
 #+RESULTS:
 [[file:figs/gravimeter_analytical_system_open_loop_models.png]]
 
-*** Analysis
+** Analysis
 #+begin_src matlab
   % figure
   % bode(system_dec,P);
@@ -390,7 +1046,7 @@ State Space model:
   % legend('GH \sigma_{sup} +1 ','GH \sigma_{sup} -1','S 1/\sigma_{inf}');%,'\lambda_1','\lambda_2','\lambda_3');
 #+end_src
 
-*** Control Section
+** Control Section
 #+begin_src matlab
   system_dec_10Hz = freqresp(system_dec,2*pi*10);
   system_dec_0Hz = freqresp(system_dec,0);
@@ -513,7 +1169,7 @@ State Space model:
   legend('Control OFF','Decentralized control','Centralized control','SVD control','SVD control real appr.');
 #+end_src
 
-*** Greshgorin radius
+** Greshgorin radius
 #+begin_src matlab
   system_dec_freq = freqresp(system_dec,w);
   x1 = zeros(1,length(w));
@@ -553,7 +1209,7 @@ State Space model:
   % set(gcf,'color','w')
 #+end_src
 
-*** Injecting ground motion in the system to have the output
+** Injecting ground motion in the system to have the output
 #+begin_src matlab
   Fr = logspace(-2,3,1e3);
   w=2*pi*Fr*1i;
@@ -603,7 +1259,7 @@ State Space model:
   rot = PHI(:,11,11);
 #+end_src
 
-* Gravimeter - Functions
+* Gravimeter - Functions                                            :noexport:
 :PROPERTIES:
 :header-args:matlab+: :comments none :mkdirp yes :eval no
 :END:
