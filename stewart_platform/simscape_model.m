@@ -6,6 +6,8 @@ s = zpk('s');
 
 addpath('STEP');
 
+freqs = logspace(-1, 2, 1000);
+
 % Simscape Model - Parameters
 % <<sec:stewart_simscape>>
 
@@ -25,6 +27,12 @@ cz = 0.025;
 
 
 
+% We suppose the sensor is perfectly positioned.
+
+sens_pos_error = zeros(3,1);
+
+
+
 % Gravity:
 
 g = 0;
@@ -33,7 +41,7 @@ g = 0;
 
 % We load the Jacobian (previously computed from the geometry):
 
-load('./jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
+load('jacobian.mat', 'Aa', 'Ab', 'As', 'l', 'J');
 
 
 
@@ -85,8 +93,6 @@ size(G)
 
 % One can easily see that the system is strongly coupled.
 
-
-freqs = logspace(-1, 2, 1000);
 
 figure;
 
@@ -174,8 +180,6 @@ Gsvd = inv(U)*Gu*inv(V');
 
 % This is computed over the following frequencies.
 
-freqs = logspace(-2, 2, 1000); % [Hz]
-
 % Gershgorin Radii for the coupled plant:
 Gr_coupled = zeros(length(freqs), size(Gu,2));
 H = abs(squeeze(freqresp(Gu, freqs, 'Hz')));
@@ -210,20 +214,98 @@ for in_i = 2:6
     set(gca,'ColorOrderIndex',3)
     plot(freqs, Gr_jacobian(:,in_i), 'HandleVisibility', 'off');
 end
-plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 hold off;
 xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
 legend('location', 'northwest');
 ylim([1e-3, 1e3]);
 
+% Verification of the decoupling using the "Relative Gain Array"
+% The relative gain array (RGA) is defined as:
+% \begin{equation}
+%   \Lambda\big(G(s)\big) = G(s) \times \big( G(s)^{-1} \big)^T
+% \end{equation}
+% where $\times$ denotes an element by element multiplication and $G(s)$ is an $n \times n$ square transfer matrix.
+
+% The obtained RGA elements are shown in Figure [[fig:simscape_model_rga]].
+
+
+% Relative Gain Array for the coupled plant:
+RGA_coupled = zeros(length(freqs), size(Gu,1), size(Gu,2));
+Gu_inv = inv(Gu);
+for f_i = 1:length(freqs)
+  RGA_coupled(f_i, :, :) = abs(evalfr(Gu, j*2*pi*freqs(f_i)).*evalfr(Gu_inv, j*2*pi*freqs(f_i))');
+end
+
+% Relative Gain Array for the decoupled plant using SVD:
+RGA_svd = zeros(length(freqs), size(Gsvd,1), size(Gsvd,2));
+Gsvd_inv = inv(Gsvd);
+for f_i = 1:length(freqs)
+  RGA_svd(f_i, :, :) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
+end
+
+% Relative Gain Array for the decoupled plant using the Jacobian:
+RGA_x = zeros(length(freqs), size(Gx,1), size(Gx,2));
+Gx_inv = inv(Gx);
+for f_i = 1:length(freqs)
+  RGA_x(f_i, :, :) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
+end
+
+figure;
+tiledlayout(1, 2, 'TileSpacing', 'None', 'Padding', 'None');
+
+ax1 = nexttile;
+hold on;
+for i_in = 1:6
+    for i_out = [1:i_in-1, i_in+1:6]
+        plot(freqs, RGA_svd(:, i_out, i_in), '--', 'color', [0 0 0 0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, RGA_svd(:, 1, 2), '--', 'color', [0 0 0 0.2], ...
+     'DisplayName', '$RGA_{SVD}(i,j),\ i \neq j$');
+
+plot(freqs, RGA_svd(:, 1, 1), 'k-', ...
+     'DisplayName', '$RGA_{SVD}(i,i)$');
+for ch_i = 1:6
+  plot(freqs, RGA_svd(:, ch_i, ch_i), 'k-', ...
+       'HandleVisibility', 'off');
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+ylabel('Magnitude'); xlabel('Frequency [Hz]');
+legend('location', 'southwest');
+
+ax2 = nexttile;
+hold on;
+for i_in = 1:6
+    for i_out = [1:i_in-1, i_in+1:6]
+        plot(freqs, RGA_x(:, i_out, i_in), '--', 'color', [0 0 0 0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, RGA_x(:, 1, 2), '--', 'color', [0 0 0 0.2], ...
+     'DisplayName', '$RGA_{X}(i,j),\ i \neq j$');
+
+plot(freqs, RGA_x(:, 1, 1), 'k-', ...
+     'DisplayName', '$RGA_{X}(i,i)$');
+for ch_i = 1:6
+  plot(freqs, RGA_x(:, ch_i, ch_i), 'k-', ...
+       'HandleVisibility', 'off');
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); set(gca, 'YTickLabel',[]);
+legend('location', 'southwest');
+
+linkaxes([ax1,ax2],'y');
+ylim([1e-5, 1e1]);
+
 % Obtained Decoupled Plants
 % <<sec:stewart_decoupled_plant>>
 
 % The bode plot of the diagonal and off-diagonal elements of $G_{SVD}$ are shown in Figure [[fig:simscape_model_decoupled_plant_svd]].
 
-
-freqs = logspace(-1, 2, 1000);
 
 figure;
 tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
@@ -273,8 +355,6 @@ linkaxes([ax1,ax2],'x');
 
 % Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant $G_x(s)$ using the Jacobian are shown in Figure [[fig:simscape_model_decoupled_plant_jacobian]].
 
-
-freqs = logspace(-1, 2, 1000);
 
 figure;
 tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
@@ -350,8 +430,6 @@ G_svd = feedback(G, inv(V')*K_svd*inv(U), [7:12], [1:6]);
 % The obtained diagonal elements of the loop gains are shown in Figure [[fig:stewart_comp_loop_gain_diagonal]].
 
 
-freqs = logspace(-1, 2, 1000);
-
 figure;
 tiledlayout(3, 1, 'TileSpacing', 'None', 'Padding', 'None');
 
@@ -424,7 +502,140 @@ isstable(G_svd)
 % The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure [[fig:stewart_platform_simscape_cl_transmissibility]].
 
 
-freqs = logspace(-2, 2, 1000);
+figure;
+tiledlayout(2, 2, 'TileSpacing', 'None', 'Padding', 'None');
+
+ax1 = nexttile;
+hold on;
+plot(freqs, abs(squeeze(freqresp(G(    'Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
+plot(freqs, abs(squeeze(freqresp(G_cen('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
+plot(freqs, abs(squeeze(freqresp(G_svd('Ax', 'Dwx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+set(gca,'ColorOrderIndex',1)
+plot(freqs, abs(squeeze(freqresp(G(    'Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
+plot(freqs, abs(squeeze(freqresp(G_cen('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
+plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))), '--', 'HandleVisibility', 'off');
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+ylabel('$D_x/D_{w,x}$, $D_y/D_{w, y}$'); set(gca, 'XTickLabel',[]);
+legend('location', 'southwest');
+
+ax2 = nexttile;
+hold on;
+plot(freqs, abs(squeeze(freqresp(G(    'Az', 'Dwz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Az', 'Dwz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Az', 'Dwz')/s^2, freqs, 'Hz'))), '--');
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+ylabel('$D_z/D_{w,z}$'); set(gca, 'XTickLabel',[]);
+
+ax3 = nexttile;
+hold on;
+plot(freqs, abs(squeeze(freqresp(G(    'Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Arx', 'Rwx')/s^2, freqs, 'Hz'))), '--');
+set(gca,'ColorOrderIndex',1)
+plot(freqs, abs(squeeze(freqresp(G(    'Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))), '--');
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+ylabel('$R_x/R_{w,x}$, $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
+
+ax4 = nexttile;
+hold on;
+plot(freqs, abs(squeeze(freqresp(G(    'Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Arz', 'Rwz')/s^2, freqs, 'Hz'))), '--');
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+ylabel('$R_z/R_{w,z}$');  xlabel('Frequency [Hz]');
+
+linkaxes([ax1,ax2,ax3,ax4],'xy');
+xlim([freqs(1), freqs(end)]);
+ylim([1e-3, 1e2]);
+
+% Small error on the sensor location                             :no_export:
+% Let's now consider a small position error of the sensor:
+
+sens_pos_error = [105 5 -1]*1e-3; % [m]
+
+
+
+% The system is identified again:
+
+%% Name of the Simulink File
+mdl = 'drone_platform';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/Dw'],              1, 'openinput');  io_i = io_i + 1; % Ground Motion
+io(io_i) = linio([mdl, '/V-T'],             1, 'openinput');  io_i = io_i + 1; % Actuator Forces
+io(io_i) = linio([mdl, '/Inertial Sensor'], 1, 'openoutput'); io_i = io_i + 1; % Top platform acceleration
+
+G = linearize(mdl, io);
+G.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
+                'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
+G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
+
+% Plant
+Gu = G(:, {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'});
+% Disturbance dynamics
+Gd = G(:, {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz'});
+
+Gx = Gu*inv(J');
+Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
+
+Gsvd = inv(U)*Gu*inv(V');
+
+% Gershgorin Radii for the coupled plant:
+Gr_coupled = zeros(length(freqs), size(Gu,2));
+H = abs(squeeze(freqresp(Gu, freqs, 'Hz')));
+for out_i = 1:size(Gu,2)
+    Gr_coupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
+end
+
+% Gershgorin Radii for the decoupled plant using SVD:
+Gr_decoupled = zeros(length(freqs), size(Gsvd,2));
+H = abs(squeeze(freqresp(Gsvd, freqs, 'Hz')));
+for out_i = 1:size(Gsvd,2)
+    Gr_decoupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
+end
+
+% Gershgorin Radii for the decoupled plant using the Jacobian:
+Gr_jacobian = zeros(length(freqs), size(Gx,2));
+H = abs(squeeze(freqresp(Gx, freqs, 'Hz')));
+for out_i = 1:size(Gx,2)
+    Gr_jacobian(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
+end
+
+figure;
+hold on;
+plot(freqs, Gr_coupled(:,1), 'DisplayName', 'Coupled');
+plot(freqs, Gr_decoupled(:,1), 'DisplayName', 'SVD');
+plot(freqs, Gr_jacobian(:,1), 'DisplayName', 'Jacobian');
+for in_i = 2:6
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, Gr_coupled(:,in_i), 'HandleVisibility', 'off');
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, Gr_decoupled(:,in_i), 'HandleVisibility', 'off');
+    set(gca,'ColorOrderIndex',3)
+    plot(freqs, Gr_jacobian(:,in_i), 'HandleVisibility', 'off');
+end
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+hold off;
+xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
+legend('location', 'northwest');
+ylim([1e-3, 1e3]);
+
+L_cen = K_cen*Gx;
+G_cen = feedback(G, pinv(J')*K_cen, [7:12], [1:6]);
+
+L_svd = K_svd*Gsvd;
+G_svd = feedback(G, inv(V')*K_svd*inv(U), [7:12], [1:6]);
+
+isstable(G_cen)
+
+isstable(G_svd)
 
 figure;
 tiledlayout(2, 2, 'TileSpacing', 'None', 'Padding', 'None');

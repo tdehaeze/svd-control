@@ -281,7 +281,6 @@ for in_i = 2:6
     set(gca,'ColorOrderIndex',3)
     plot(freqs, Gr_jacobian(:,in_i), 'HandleVisibility', 'off');
 end
-plot(freqs, 0.5*ones(size(freqs)), 'k--', 'DisplayName', 'Limit')
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 hold off;
 xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
