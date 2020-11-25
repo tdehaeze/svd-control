@@ -132,8 +132,10 @@ legend('location', 'northwest');
 Gx = Gu*inv(J');
 Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
 
-% Real Approximation of $G$ at the decoupling frequency
-% <<sec:stewart_real_approx>>
+% Decoupling using the SVD
+% <<sec:stewart_svd_decoupling>>
+
+% In order to decouple the plant using the SVD, first a real approximation of the plant transfer function matrix as the crossover frequency is required.
 
 % Let's compute a real approximation of the complex matrix $H_1$ which corresponds to the the transfer function $G_u(j\omega_c)$ from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency $\omega_c$.
 
@@ -148,10 +150,18 @@ H1 = evalfr(Gu, j*wc);
 D = pinv(real(H1'*H1));
 H1 = inv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
 
-% SVD Decoupling
-% <<sec:stewart_svd_decoupling>>
 
-% First, the Singular Value Decomposition of $H_1$ is performed:
+
+% #+caption: Real part of $G$ at the decoupling frequency $\omega_c$
+% #+RESULTS:
+% |    4.4 |   -2.1 |   -2.1 |    4.4 |  -2.4 |   -2.4 |
+% |   -0.2 |   -3.9 |    3.9 |    0.2 |  -3.8 |    3.8 |
+% |    3.4 |    3.4 |    3.4 |    3.4 |   3.4 |    3.4 |
+% | -367.1 | -323.8 |  323.8 |  367.1 |  43.3 |  -43.3 |
+% | -162.0 | -237.0 | -237.0 | -162.0 | 398.9 |  398.9 |
+% |  220.6 | -220.6 |  220.6 | -220.6 | 220.6 | -220.6 |
+
+% Now, the Singular Value Decomposition of $H_1$ is performed:
 % \[ H_1 = U \Sigma V^H \]
 
 
@@ -171,7 +181,7 @@ H1 = inv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
 Gsvd = inv(U)*Gu*inv(V');
 
 % Verification of the decoupling using the "Gershgorin Radii"
-% <<sec:comp_decoupling>>
+% <<sec:stewart_gershorin_radii>>
 
 % The "Gershgorin Radii" is computed for the coupled plant $G(s)$, for the "Jacobian plant" $G_x(s)$ and the "SVD Decoupled Plant" $G_{SVD}(s)$:
 
@@ -221,6 +231,8 @@ legend('location', 'northwest');
 ylim([1e-3, 1e3]);
 
 % Verification of the decoupling using the "Relative Gain Array"
+% <<sec:stewart_rga>>
+
 % The relative gain array (RGA) is defined as:
 % \begin{equation}
 %   \Lambda\big(G(s)\big) = G(s) \times \big( G(s)^{-1} \big)^T
@@ -501,141 +513,6 @@ isstable(G_svd)
 
 % The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure [[fig:stewart_platform_simscape_cl_transmissibility]].
 
-
-figure;
-tiledlayout(2, 2, 'TileSpacing', 'None', 'Padding', 'None');
-
-ax1 = nexttile;
-hold on;
-plot(freqs, abs(squeeze(freqresp(G(    'Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
-plot(freqs, abs(squeeze(freqresp(G_cen('Ax', 'Dwx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
-plot(freqs, abs(squeeze(freqresp(G_svd('Ax', 'Dwx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
-set(gca,'ColorOrderIndex',1)
-plot(freqs, abs(squeeze(freqresp(G(    'Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
-plot(freqs, abs(squeeze(freqresp(G_cen('Ay', 'Dwy')/s^2, freqs, 'Hz'))), 'HandleVisibility', 'off');
-plot(freqs, abs(squeeze(freqresp(G_svd('Ay', 'Dwy')/s^2, freqs, 'Hz'))), '--', 'HandleVisibility', 'off');
-hold off;
-set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-ylabel('$D_x/D_{w,x}$, $D_y/D_{w, y}$'); set(gca, 'XTickLabel',[]);
-legend('location', 'southwest');
-
-ax2 = nexttile;
-hold on;
-plot(freqs, abs(squeeze(freqresp(G(    'Az', 'Dwz')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen('Az', 'Dwz')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd('Az', 'Dwz')/s^2, freqs, 'Hz'))), '--');
-hold off;
-set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-ylabel('$D_z/D_{w,z}$'); set(gca, 'XTickLabel',[]);
-
-ax3 = nexttile;
-hold on;
-plot(freqs, abs(squeeze(freqresp(G(    'Arx', 'Rwx')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen('Arx', 'Rwx')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd('Arx', 'Rwx')/s^2, freqs, 'Hz'))), '--');
-set(gca,'ColorOrderIndex',1)
-plot(freqs, abs(squeeze(freqresp(G(    'Ary', 'Rwy')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen('Ary', 'Rwy')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd('Ary', 'Rwy')/s^2, freqs, 'Hz'))), '--');
-hold off;
-set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-ylabel('$R_x/R_{w,x}$, $R_y/R_{w,y}$');  xlabel('Frequency [Hz]');
-
-ax4 = nexttile;
-hold on;
-plot(freqs, abs(squeeze(freqresp(G(    'Arz', 'Rwz')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen('Arz', 'Rwz')/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd('Arz', 'Rwz')/s^2, freqs, 'Hz'))), '--');
-hold off;
-set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-ylabel('$R_z/R_{w,z}$');  xlabel('Frequency [Hz]');
-
-linkaxes([ax1,ax2,ax3,ax4],'xy');
-xlim([freqs(1), freqs(end)]);
-ylim([1e-3, 1e2]);
-
-% Small error on the sensor location                             :no_export:
-% Let's now consider a small position error of the sensor:
-
-sens_pos_error = [105 5 -1]*1e-3; % [m]
-
-
-
-% The system is identified again:
-
-%% Name of the Simulink File
-mdl = 'drone_platform';
-
-%% Input/Output definition
-clear io; io_i = 1;
-io(io_i) = linio([mdl, '/Dw'],              1, 'openinput');  io_i = io_i + 1; % Ground Motion
-io(io_i) = linio([mdl, '/V-T'],             1, 'openinput');  io_i = io_i + 1; % Actuator Forces
-io(io_i) = linio([mdl, '/Inertial Sensor'], 1, 'openoutput'); io_i = io_i + 1; % Top platform acceleration
-
-G = linearize(mdl, io);
-G.InputName  = {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz', ...
-                'F1', 'F2', 'F3', 'F4', 'F5', 'F6'};
-G.OutputName = {'Ax', 'Ay', 'Az', 'Arx', 'Ary', 'Arz'};
-
-% Plant
-Gu = G(:, {'F1', 'F2', 'F3', 'F4', 'F5', 'F6'});
-% Disturbance dynamics
-Gd = G(:, {'Dwx', 'Dwy', 'Dwz', 'Rwx', 'Rwy', 'Rwz'});
-
-Gx = Gu*inv(J');
-Gx.InputName  = {'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'};
-
-Gsvd = inv(U)*Gu*inv(V');
-
-% Gershgorin Radii for the coupled plant:
-Gr_coupled = zeros(length(freqs), size(Gu,2));
-H = abs(squeeze(freqresp(Gu, freqs, 'Hz')));
-for out_i = 1:size(Gu,2)
-    Gr_coupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
-end
-
-% Gershgorin Radii for the decoupled plant using SVD:
-Gr_decoupled = zeros(length(freqs), size(Gsvd,2));
-H = abs(squeeze(freqresp(Gsvd, freqs, 'Hz')));
-for out_i = 1:size(Gsvd,2)
-    Gr_decoupled(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
-end
-
-% Gershgorin Radii for the decoupled plant using the Jacobian:
-Gr_jacobian = zeros(length(freqs), size(Gx,2));
-H = abs(squeeze(freqresp(Gx, freqs, 'Hz')));
-for out_i = 1:size(Gx,2)
-    Gr_jacobian(:, out_i) = squeeze((sum(H(out_i,:,:)) - H(out_i,out_i,:))./H(out_i, out_i, :));
-end
-
-figure;
-hold on;
-plot(freqs, Gr_coupled(:,1), 'DisplayName', 'Coupled');
-plot(freqs, Gr_decoupled(:,1), 'DisplayName', 'SVD');
-plot(freqs, Gr_jacobian(:,1), 'DisplayName', 'Jacobian');
-for in_i = 2:6
-    set(gca,'ColorOrderIndex',1)
-    plot(freqs, Gr_coupled(:,in_i), 'HandleVisibility', 'off');
-    set(gca,'ColorOrderIndex',2)
-    plot(freqs, Gr_decoupled(:,in_i), 'HandleVisibility', 'off');
-    set(gca,'ColorOrderIndex',3)
-    plot(freqs, Gr_jacobian(:,in_i), 'HandleVisibility', 'off');
-end
-set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-hold off;
-xlabel('Frequency (Hz)'); ylabel('Gershgorin Radii')
-legend('location', 'northwest');
-ylim([1e-3, 1e3]);
-
-L_cen = K_cen*Gx;
-G_cen = feedback(G, pinv(J')*K_cen, [7:12], [1:6]);
-
-L_svd = K_svd*Gsvd;
-G_svd = feedback(G, inv(V')*K_svd*inv(U), [7:12], [1:6]);
-
-isstable(G_cen)
-
-isstable(G_svd)
 
 figure;
 tiledlayout(2, 2, 'TileSpacing', 'None', 'Padding', 'None');
