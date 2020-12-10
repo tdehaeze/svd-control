@@ -20,6 +20,10 @@ open('gravimeter.slx')
 % #+caption: Model of the gravimeter
 % [[file:figs/gravimeter_model.png]]
 
+% #+name: fig:leg_model
+% #+caption: Model of the struts
+% [[file:figs/leg_model.png]]
+
 % The parameters used for the simulation are the following:
 
 l  = 1.0; % Length of the mass [m]
@@ -57,7 +61,7 @@ io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
 
 G = linearize(mdl, io);
 G.InputName  = {'F1', 'F2', 'F3'};
-G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 
 
 
@@ -125,22 +129,22 @@ end
 
 % The Jacobian corresponding to the sensors and actuators are defined below:
 
-Ja = [1 0  h/2
-      0 1 -l/2
-      1 0 -h/2
+Ja = [1 0 -h/2
+      0 1  l/2
+      1 0  h/2
       0 1  0];
 
-Jt = [1 0  ha
-      0 1 -la
-      0 1  la];
+Jt = [1 0 -ha
+      0 1  la
+      0 1 -la];
 
 
 
 % And the plant $\bm{G}_x$ is computed:
 
 Gx = pinv(Ja)*G*pinv(Jt');
-Gx.InputName  = {'Fx', 'Fz', 'My'};
-Gx.OutputName  = {'Dx', 'Dz', 'Ry'};
+Gx.InputName  = {'Fx', 'Fy', 'Mz'};
+Gx.OutputName  = {'Dx', 'Dy', 'Rz'};
 
 size(Gx)
 
@@ -385,6 +389,43 @@ legend('location', 'southwest');
 linkaxes([ax1,ax2],'y');
 ylim([1e-5, 1e1]);
 
+
+
+% #+name: fig:gravimeter_rga
+% #+caption: Obtained norm of RGA elements for the SVD decoupled plant and the Jacobian decoupled plant
+% #+RESULTS:
+% [[file:figs/gravimeter_rga.png]]
+
+% The RGA-number is also a measure of diagonal dominance:
+% \begin{equation}
+%   \text{RGA-number} = \| \Lambda(G) - I \|_\text{sum}
+% \end{equation}
+
+
+% Relative Gain Array for the decoupled plant using SVD:
+RGA_svd = zeros(size(Gsvd,1), size(Gsvd,2), length(freqs));
+Gsvd_inv = inv(Gsvd);
+for f_i = 1:length(freqs)
+  RGA_svd(:, :, f_i) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
+end
+
+% Relative Gain Array for the decoupled plant using the Jacobian:
+RGA_x = zeros(size(Gx,1), size(Gx,2), length(freqs));
+Gx_inv = inv(Gx);
+for f_i = 1:length(freqs)
+  RGA_x(:, :, f_i) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
+end
+
+RGA_num_svd = squeeze(sum(sum(RGA_svd - eye(3))));
+RGA_num_x = squeeze(sum(sum(RGA_x - eye(3))));
+
+figure;
+hold on;
+plot(freqs, RGA_num_svd)
+plot(freqs, RGA_num_x)
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('RGA-Number');
+
 % Obtained Decoupled Plants
 % <<sec:gravimeter_decoupled_plant>>
 
@@ -457,7 +498,7 @@ plot(freqs, abs(squeeze(freqresp(Gx(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.5],
 set(gca,'ColorOrderIndex',1)
 plot(freqs, abs(squeeze(freqresp(Gx(1, 1), freqs, 'Hz'))), 'DisplayName', '$G_x(1,1) = A_x/F_x$');
 plot(freqs, abs(squeeze(freqresp(Gx(2, 2), freqs, 'Hz'))), 'DisplayName', '$G_x(2,2) = A_y/F_y$');
-plot(freqs, abs(squeeze(freqresp(Gx(3, 3), freqs, 'Hz'))), 'DisplayName', '$G_x(3,3) = R_y/M_y$');
+plot(freqs, abs(squeeze(freqresp(Gx(3, 3), freqs, 'Hz'))), 'DisplayName', '$G_x(3,3) = R_z/M_z$');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Magnitude'); set(gca, 'XTickLabel',[]);
@@ -605,7 +646,7 @@ plot(freqs, abs(squeeze(freqresp(G_svd(2,2)/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
-title('$D_z/D_{w,z}$');
+title('$D_y/D_{w,y}$');
 
 ax3 = nexttile;
 hold on;
@@ -615,8 +656,421 @@ plot(freqs, abs(squeeze(freqresp(G_svd(3,3)/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
-title('$R_y/R_{w,y}$');
+title('$R_z/R_{w,z}$');
 
 linkaxes([ax1,ax2,ax3],'xy');
 xlim([freqs(1), freqs(end)]);
 xlim([1e-2, 5e1]); ylim([1e-7, 1e-2]);
+
+
+
+% #+name: fig:gravimeter_platform_simscape_cl_transmissibility
+% #+caption: Obtained Transmissibility
+% #+RESULTS:
+% [[file:figs/gravimeter_platform_simscape_cl_transmissibility.png]]
+
+
+freqs = logspace(-2, 2, 1000);
+
+figure;
+hold on;
+for out_i = 1:3
+    for in_i = out_i+1:3
+        set(gca,'ColorOrderIndex',1)
+        plot(freqs, abs(squeeze(freqresp(G(    out_i,in_i), freqs, 'Hz'))));
+        set(gca,'ColorOrderIndex',2)
+        plot(freqs, abs(squeeze(freqresp(G_cen(out_i,in_i), freqs, 'Hz'))));
+        set(gca,'ColorOrderIndex',3)
+        plot(freqs, abs(squeeze(freqresp(G_svd(out_i,in_i), freqs, 'Hz'))), '--');
+    end
+end
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+ylabel('Transmissibility'); xlabel('Frequency [Hz]');
+
+% Robustness to a change of actuator position
+
+% Let say we change the position of the actuators:
+
+la = l/2*0.7; % Position of Act. [m]
+ha = h/2*0.7; % Position of Act. [m]
+
+%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'F1', 'F2', 'F3'};
+G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+
+G_cen_b = feedback(G, pinv(Jt')*K_cen*pinv(Ja));
+G_svd_b = feedback(G, inv(V')*K_svd*U_inv(1:3, :));
+
+
+
+% The new plant is computed, and the centralized and SVD control architectures are applied using the previsouly computed Jacobian matrices and $U$ and $V$ matrices.
+
+% The closed-loop system are still stable, and their
+
+
+freqs = logspace(-2, 2, 1000);
+
+figure;
+tiledlayout(1, 3, 'TileSpacing', 'None', 'Padding', 'None');
+
+ax1 = nexttile;
+hold on;
+plot(freqs, abs(squeeze(freqresp(G_cen(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Initial');
+plot(freqs, abs(squeeze(freqresp(G_cen_b(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Jacobian');
+plot(freqs, abs(squeeze(freqresp(G_svd_b(1,1)/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+ylabel('Transmissibility'); xlabel('Frequency [Hz]');
+title('$D_x/D_{w,x}$');
+legend('location', 'southwest');
+
+ax2 = nexttile;
+hold on;
+plot(freqs, abs(squeeze(freqresp(G_cen(2,2)/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen_b(2,2)/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd_b(2,2)/s^2, freqs, 'Hz'))), '--');
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
+title('$D_y/D_{w,y}$');
+
+ax3 = nexttile;
+hold on;
+plot(freqs, abs(squeeze(freqresp(G_cen(3,3)/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen_b(3,3)/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd_b(3,3)/s^2, freqs, 'Hz'))), '--');
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
+title('$R_z/R_{w,z}$');
+
+linkaxes([ax1,ax2,ax3],'xy');
+xlim([freqs(1), freqs(end)]);
+xlim([1e-2, 5e1]); ylim([1e-7, 3e-4]);
+
+% Decoupling of the mass matrix
+
+% #+name: fig:gravimeter_model_M
+% #+caption: Choice of {O} such that the Mass Matrix is Diagonal
+% [[file:figs/gravimeter_model_M.png]]
+
+
+la = l/2; % Position of Act. [m]
+ha = h/2; % Position of Act. [m]
+
+%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'F1', 'F2', 'F3'};
+G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+
+
+
+% Decoupling at the CoM (Mass decoupled)
+
+JMa = [1 0 -h/2
+       0 1  l/2
+       1 0  h/2
+       0 1  0];
+
+JMt = [1 0 -ha
+       0 1  la
+       0 1 -la];
+
+GM = pinv(JMa)*G*pinv(JMt');
+GM.InputName  = {'Fx', 'Fy', 'Mz'};
+GM.OutputName  = {'Dx', 'Dy', 'Rz'};
+
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+  plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+
+% Decoupling of the stiffness matrix
+
+% #+name: fig:gravimeter_model_K
+% #+caption: Choice of {O} such that the Stiffness Matrix is Diagonal
+% [[file:figs/gravimeter_model_K.png]]
+
+% Decoupling at the point where K is diagonal (x = 0, y = -h/2 from the schematic {O} frame):
+
+JKa = [1 0  0
+       0 1 -l/2
+       1 0 -h
+       0 1  0];
+
+JKt = [1 0  0
+       0 1 -la
+       0 1  la];
+
+
+
+% And the plant $\bm{G}_x$ is computed:
+
+GK = pinv(JKa)*G*pinv(JKt');
+GK.InputName  = {'Fx', 'Fy', 'Mz'};
+GK.OutputName  = {'Dx', 'Dy', 'Rz'};
+
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(GK(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(GK(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+  plot(freqs, abs(squeeze(freqresp(GK(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+
+% Combined decoupling of the mass and stiffness matrices
+
+% #+name: fig:gravimeter_model_KM
+% #+caption: Ideal location of the actuators such that both the mass and stiffness matrices are diagonal
+% [[file:figs/gravimeter_model_KM.png]]
+
+% To do so, the actuator position should be modified
+
+
+la = l/2; % Position of Act. [m]
+ha = 0; % Position of Act. [m]
+
+%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'F1', 'F2', 'F3'};
+G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+
+JMa = [1 0 -h/2
+       0 1  l/2
+       1 0  h/2
+       0 1  0];
+
+JMt = [1 0 -ha
+       0 1  la
+       0 1 -la];
+
+GKM = pinv(JMa)*G*pinv(JMt');
+GKM.InputName  = {'Fx', 'Fy', 'Mz'};
+GKM.OutputName  = {'Dx', 'Dy', 'Rz'};
+
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(GKM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(GKM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+  plot(freqs, abs(squeeze(freqresp(GKM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+
+% SVD decoupling performances                                     :noexport:
+
+
+la = l/2; % Position of Act. [m]
+ha = 0; % Position of Act. [m]
+
+c = 2e1; % Actuator Damping [N/(m/s)]
+
+%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'F1', 'F2', 'F3'};
+G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+
+wc = 2*pi*10; % Decoupling frequency [rad/s]
+H1 = evalfr(G, j*wc);
+D = pinv(real(H1'*H1));
+H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+[U,S,V] = svd(H1);
+Gsvd = inv(U)*G*inv(V');
+
+c = 5e2; % Actuator Damping [N/(m/s)]
+
+%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'F1', 'F2', 'F3'};
+G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+
+wc = 2*pi*10; % Decoupling frequency [rad/s]
+H1 = evalfr(G, j*wc);
+D = pinv(real(H1'*H1));
+H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+[U,S,V] = svd(H1);
+Gsvdd = inv(U)*G*inv(V');
+
+JMa = [1 0 -h/2
+       0 1  l/2
+       1 0  h/2
+       0 1  0];
+
+JMt = [1 0 -ha
+       0 1  la
+       0 1 -la];
+
+GM = pinv(JMa)*G*pinv(JMt');
+GM.InputName  = {'Fx', 'Fy', 'Mz'};
+GM.OutputName  = {'Dx', 'Dy', 'Rz'};
+
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+  plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+  plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gsvdd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gsvdd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+  plot(freqs, abs(squeeze(freqresp(Gsvdd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);

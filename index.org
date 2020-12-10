@@ -138,7 +138,7 @@ The parameters used for the simulation are the following:
 
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 #+end_src
 
 The inputs and outputs of the plant are shown in Figure [[fig:gravimeter_plant_schematic]].
@@ -149,7 +149,7 @@ More precisely there are three inputs (the three actuator forces):
 \end{equation}
 And 4 outputs (the two 2-DoF accelerometers):
 \begin{equation}
-  \bm{a} = \begin{bmatrix} a_{1x} \\ a_{1z} \\ a_{2x} \\ a_{2z} \end{bmatrix}
+  \bm{a} = \begin{bmatrix} a_{1x} \\ a_{1y} \\ a_{2x} \\ a_{2y} \end{bmatrix}
 \end{equation}
 
 #+begin_src latex :file gravimeter_plant_schematic.pdf :tangle no :exports results
@@ -158,7 +158,7 @@ And 4 outputs (the two 2-DoF accelerometers):
 
     % Connections and labels
     \draw[<-] (G.west) -- ++(-2.0, 0) node[above right]{$\bm{\tau} = \begin{bmatrix}\tau_1 \\ \tau_2 \\ \tau_2 \end{bmatrix}$};
-    \draw[->] (G.east) -- ++( 2.0, 0)  node[above left]{$\bm{a} = \begin{bmatrix} a_{1x} \\ a_{1z} \\ a_{2x} \\ a_{2z} \end{bmatrix}$};
+    \draw[->] (G.east) -- ++( 2.0, 0)  node[above left]{$\bm{a} = \begin{bmatrix} a_{1x} \\ a_{1y} \\ a_{2x} \\ a_{2y} \end{bmatrix}$};
   \end{tikzpicture}
 #+end_src
 
@@ -232,12 +232,12 @@ Consider the control architecture shown in Figure [[fig:gravimeter_decouple_jaco
 
 The Jacobian matrix $J_{\tau}$ is used to transform forces applied by the three actuators into forces/torques applied on the gravimeter at its center of mass:
 \begin{equation}
-  \begin{bmatrix} \tau_1 \\ \tau_2 \\ \tau_3 \end{bmatrix} = J_{\tau}^{-T} \begin{bmatrix} F_x \\ F_z \\ M_y \end{bmatrix}
+  \begin{bmatrix} \tau_1 \\ \tau_2 \\ \tau_3 \end{bmatrix} = J_{\tau}^{-T} \begin{bmatrix} F_x \\ F_y \\ M_z \end{bmatrix}
 \end{equation}
 
 The Jacobian matrix $J_{a}$ is used to compute the vertical acceleration, horizontal acceleration and rotational acceleration of the mass with respect to its center of mass:
 \begin{equation}
-  \begin{bmatrix} a_x \\ a_z \\ a_{R_y} \end{bmatrix} = J_{a}^{-1} \begin{bmatrix} a_{x1} \\ a_{z1} \\ a_{x2} \\ a_{z2} \end{bmatrix}
+  \begin{bmatrix} a_x \\ a_y \\ a_{R_z} \end{bmatrix} = J_{a}^{-1} \begin{bmatrix} a_{x1} \\ a_{y1} \\ a_{x2} \\ a_{y2} \end{bmatrix}
 \end{equation}
 
 We thus define a new plant as defined in Figure [[fig:gravimeter_decouple_jacobian]].
@@ -252,10 +252,10 @@ $\bm{G}_x(s)$ correspond to the $3 \times 3$transfer function matrix from forces
     \node[block, right=0.6 of G] (Ja) {$J_{a}^{-1}$};
 
     % Connections and labels
-    \draw[<-] (Jt.west) -- ++(-2.5, 0) node[above right]{$\bm{\mathcal{F}} = \begin{bmatrix}F_x \\ F_z \\ M_y \end{bmatrix}$};
+    \draw[<-] (Jt.west) -- ++(-2.5, 0) node[above right]{$\bm{\mathcal{F}} = \begin{bmatrix}F_x \\ F_y \\ M_z \end{bmatrix}$};
     \draw[->] (Jt.east) -- (G.west)  node[above left]{$\bm{\tau}$};
     \draw[->] (G.east) -- (Ja.west)  node[above left]{$\bm{a}$};
-    \draw[->] (Ja.east) -- ++( 2.6, 0)  node[above left]{$\bm{\mathcal{A}} = \begin{bmatrix}a_x \\ a_z \\ a_{R_y} \end{bmatrix}$};
+    \draw[->] (Ja.east) -- ++( 2.6, 0)  node[above left]{$\bm{\mathcal{A}} = \begin{bmatrix}a_x \\ a_y \\ a_{R_z} \end{bmatrix}$};
 
     \begin{scope}[on background layer]
       \node[fit={(Jt.south west) (Ja.north east)}, fill=black!10!white, draw, dashed, inner sep=14pt] (Gx) {};
@@ -284,8 +284,8 @@ The Jacobian corresponding to the sensors and actuators are defined below:
 And the plant $\bm{G}_x$ is computed:
 #+begin_src matlab
   Gx = pinv(Ja)*G*pinv(Jt');
-  Gx.InputName  = {'Fx', 'Fz', 'My'};
-  Gx.OutputName  = {'Dx', 'Dz', 'Ry'};
+  Gx.InputName  = {'Fx', 'Fy', 'Mz'};
+  Gx.OutputName  = {'Dx', 'Dy', 'Rz'};
 #+end_src
 
 #+begin_src matlab :results output replace :exports results
@@ -736,7 +736,7 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
   set(gca,'ColorOrderIndex',1)
   plot(freqs, abs(squeeze(freqresp(Gx(1, 1), freqs, 'Hz'))), 'DisplayName', '$G_x(1,1) = A_x/F_x$');
   plot(freqs, abs(squeeze(freqresp(Gx(2, 2), freqs, 'Hz'))), 'DisplayName', '$G_x(2,2) = A_y/F_y$');
-  plot(freqs, abs(squeeze(freqresp(Gx(3, 3), freqs, 'Hz'))), 'DisplayName', '$G_x(3,3) = R_y/M_y$');
+  plot(freqs, abs(squeeze(freqresp(Gx(3, 3), freqs, 'Hz'))), 'DisplayName', '$G_x(3,3) = R_z/M_z$');
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   ylabel('Magnitude'); set(gca, 'XTickLabel',[]);
@@ -961,7 +961,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
-  title('$D_z/D_{w,z}$');
+  title('$D_y/D_{w,y}$');
 
   ax3 = nexttile;
   hold on;
@@ -971,7 +971,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
-  title('$R_y/R_{w,y}$');
+  title('$R_z/R_{w,z}$');
 
   linkaxes([ax1,ax2,ax3],'xy');
   xlim([freqs(1), freqs(end)]);
@@ -1040,7 +1040,7 @@ Let say we change the position of the actuators:
 
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 #+end_src
 
 #+begin_src matlab :exports none
@@ -1077,7 +1077,7 @@ The closed-loop system are still stable, and their
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
-  title('$D_z/D_{w,z}$');
+  title('$D_y/D_{w,y}$');
 
   ax3 = nexttile;
   hold on;
@@ -1087,7 +1087,7 @@ The closed-loop system are still stable, and their
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
-  title('$R_y/R_{w,y}$');
+  title('$R_z/R_{w,z}$');
 
   linkaxes([ax1,ax2,ax3],'xy');
   xlim([freqs(1), freqs(end)]);
@@ -1145,7 +1145,7 @@ To do so, the actuators (springs) should be positioned such that the stiffness m
 
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 #+end_src
 
 Decoupling at the CoM (Mass decoupled)
@@ -1162,8 +1162,8 @@ Decoupling at the CoM (Mass decoupled)
 
 #+begin_src matlab
   GM = pinv(JMa)*G*pinv(JMt');
-  GM.InputName  = {'Fx', 'Fz', 'My'};
-  GM.OutputName  = {'Dx', 'Dz', 'Ry'};
+  GM.InputName  = {'Fx', 'Fy', 'Mz'};
+  GM.OutputName  = {'Dx', 'Dy', 'Rz'};
 #+end_src
 
 #+begin_src matlab :exports none
@@ -1195,7 +1195,7 @@ Decoupling at the CoM (Mass decoupled)
 #+end_src
 
 #+name: fig:jac_decoupling_M
-#+caption:
+#+caption: Diagonal and off-diagonal elements of the decoupled plant
 #+RESULTS:
 [[file:figs/jac_decoupling_M.png]]
 
@@ -1220,8 +1220,8 @@ Decoupling at the point where K is diagonal (x = 0, y = -h/2 from the schematic 
 And the plant $\bm{G}_x$ is computed:
 #+begin_src matlab
   GK = pinv(JKa)*G*pinv(JKt');
-  GK.InputName  = {'Fx', 'Fz', 'My'};
-  GK.OutputName  = {'Dx', 'Dz', 'Ry'};
+  GK.InputName  = {'Fx', 'Fy', 'Mz'};
+  GK.OutputName  = {'Dx', 'Dy', 'Rz'};
 #+end_src
 
 #+begin_src matlab :exports none
@@ -1253,7 +1253,7 @@ And the plant $\bm{G}_x$ is computed:
 #+end_src
 
 #+name: fig:jac_decoupling_K
-#+caption:
+#+caption: Diagonal and off-diagonal elements of the decoupled plant
 #+RESULTS:
 [[file:figs/jac_decoupling_K.png]]
 
@@ -1286,7 +1286,7 @@ To do so, the actuator position should be modified
 
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 #+end_src
 
 #+begin_src matlab
@@ -1302,8 +1302,8 @@ To do so, the actuator position should be modified
 
 #+begin_src matlab
   GKM = pinv(JMa)*G*pinv(JMt');
-  GKM.InputName  = {'Fx', 'Fz', 'My'};
-  GKM.OutputName  = {'Dx', 'Dz', 'Ry'};
+  GKM.InputName  = {'Fx', 'Fy', 'Mz'};
+  GKM.OutputName  = {'Dx', 'Dy', 'Rz'};
 #+end_src
 
 #+begin_src matlab :exports none
@@ -1335,7 +1335,7 @@ To do so, the actuator position should be modified
 #+end_src
 
 #+name: fig:jac_decoupling_KM
-#+caption:
+#+caption: Diagonal and off-diagonal elements of the decoupled plant
 #+RESULTS:
 [[file:figs/jac_decoupling_KM.png]]
 
@@ -1373,7 +1373,7 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
 
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 #+end_src
 
 #+begin_src matlab
@@ -1405,7 +1405,7 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
 
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 #+end_src
 
 #+begin_src matlab
@@ -1430,8 +1430,8 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
 
 #+begin_src matlab
   GM = pinv(JMa)*G*pinv(JMt');
-  GM.InputName  = {'Fx', 'Fz', 'My'};
-  GM.OutputName  = {'Dx', 'Dz', 'Ry'};
+  GM.InputName  = {'Fx', 'Fy', 'Mz'};
+  GM.OutputName  = {'Dx', 'Dy', 'Rz'};
 #+end_src
 
 #+begin_src matlab :exports none
@@ -1504,36 +1504,6 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
   xlabel('Frequency [Hz]'); ylabel('Magnitude');
   legend('location', 'southeast');
   ylim([1e-8, 1e0]);
-#+end_src
-
-** SVD U and V matrices                                            :noexport:
-
-#+begin_src matlab
-  la = l/2; % Position of Act. [m]
-  ha = 0; % Position of Act. [m]
-#+end_src
-
-#+begin_src matlab
-  c = 2e1; % Actuator Damping [N/(m/s)]
-#+end_src
-
-#+begin_src matlab
-  %% Name of the Simulink File
-  mdl = 'gravimeter';
-
-  %% Input/Output definition
-  clear io; io_i = 1;
-  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
-
-  G = linearize(mdl, io);
-  G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
 #+end_src
 
 * Stewart Platform - Simscape Model
