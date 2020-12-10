@@ -96,6 +96,10 @@ The model of the gravimeter is schematically shown in Figure [[fig:gravimeter_mo
 #+caption: Model of the gravimeter
 [[file:figs/gravimeter_model.png]]
 
+#+name: fig:leg_model
+#+caption: Model of the struts
+[[file:figs/leg_model.png]]
+
 The parameters used for the simulation are the following:
 #+begin_src matlab
   l  = 1.0; % Length of the mass [m]
@@ -267,14 +271,14 @@ $\bm{G}_x(s)$ correspond to the $3 \times 3$transfer function matrix from forces
 
 The Jacobian corresponding to the sensors and actuators are defined below:
 #+begin_src matlab
-  Ja = [1 0  h/2
-        0 1 -l/2
-        1 0 -h/2
+  Ja = [1 0 -h/2
+        0 1  l/2
+        1 0  h/2
         0 1  0];
 
-  Jt = [1 0  ha
-        0 1 -la
-        0 1  la];
+  Jt = [1 0 -ha
+        0 1  la
+        0 1 -la];
 #+end_src
 
 And the plant $\bm{G}_x$ is computed:
@@ -363,6 +367,27 @@ Now, the Singular Value Decomposition of $H_1$ is performed:
 #+begin_src matlab
   [U,S,V] = svd(H1);
 #+end_src
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+  data2orgtable(U, {}, {}, ' %.2f ');
+#+end_src
+
+#+caption: $U$ matrix
+#+RESULTS:
+| -0.78 |  0.26 | -0.53 |  -0.2 |
+|   0.4 |  0.61 | -0.04 | -0.68 |
+|  0.48 | -0.14 | -0.85 |   0.2 |
+|  0.03 |  0.73 |  0.06 |  0.68 |
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+  data2orgtable(V, {}, {}, ' %.2f ');
+#+end_src
+
+#+caption: $V$ matrix
+#+RESULTS:
+| -0.79 | 0.11 |  -0.6 |
+|  0.51 | 0.67 | -0.54 |
+| -0.35 | 0.73 |  0.59 |
 
 The obtained matrices $U$ and $V$ are used to decouple the system as shown in Figure [[fig:gravimeter_decouple_svd]].
 
@@ -593,6 +618,48 @@ The obtained RGA elements are shown in Figure [[fig:gravimeter_rga]].
 #+caption: Obtained norm of RGA elements for the SVD decoupled plant and the Jacobian decoupled plant
 #+RESULTS:
 [[file:figs/gravimeter_rga.png]]
+
+The RGA-number is also a measure of diagonal dominance:
+\begin{equation}
+  \text{RGA-number} = \| \Lambda(G) - I \|_\text{sum}
+\end{equation}
+
+#+begin_src matlab :exports none
+  % Relative Gain Array for the decoupled plant using SVD:
+  RGA_svd = zeros(size(Gsvd,1), size(Gsvd,2), length(freqs));
+  Gsvd_inv = inv(Gsvd);
+  for f_i = 1:length(freqs)
+    RGA_svd(:, :, f_i) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
+  end
+
+  % Relative Gain Array for the decoupled plant using the Jacobian:
+  RGA_x = zeros(size(Gx,1), size(Gx,2), length(freqs));
+  Gx_inv = inv(Gx);
+  for f_i = 1:length(freqs)
+    RGA_x(:, :, f_i) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
+  end
+#+end_src
+
+#+begin_src matlab :exports none
+  RGA_num_svd = squeeze(sum(sum(RGA_svd - eye(3))));
+  RGA_num_x = squeeze(sum(sum(RGA_x - eye(3))));
+
+  figure;
+  hold on;
+  plot(freqs, RGA_num_svd)
+  plot(freqs, RGA_num_x)
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('RGA-Number');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_rga_num.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:gravimeter_rga_num
+#+caption: RGA-Number for the Gravimeter
+#+RESULTS:
+[[file:figs/gravimeter_rga_num.png]]
 
 ** Obtained Decoupled Plants
 <<sec:gravimeter_decoupled_plant>>
@@ -919,6 +986,555 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 #+caption: Obtained Transmissibility
 #+RESULTS:
 [[file:figs/gravimeter_platform_simscape_cl_transmissibility.png]]
+
+#+begin_src matlab :exports results
+  freqs = logspace(-2, 2, 1000);
+
+  figure;
+  hold on;
+  for out_i = 1:3
+      for in_i = out_i+1:3
+          set(gca,'ColorOrderIndex',1)
+          plot(freqs, abs(squeeze(freqresp(G(    out_i,in_i), freqs, 'Hz'))));
+          set(gca,'ColorOrderIndex',2)
+          plot(freqs, abs(squeeze(freqresp(G_cen(out_i,in_i), freqs, 'Hz'))));
+          set(gca,'ColorOrderIndex',3)
+          plot(freqs, abs(squeeze(freqresp(G_svd(out_i,in_i), freqs, 'Hz'))), '--');
+      end
+  end
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility'); xlabel('Frequency [Hz]');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_cl_transmissibility_coupling.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:gravimeter_cl_transmissibility_coupling
+#+caption: Obtain coupling terms of the transmissibility matrix
+#+RESULTS:
+[[file:figs/gravimeter_cl_transmissibility_coupling.png]]
+
+
+** Robustness to a change of actuator position
+
+Let say we change the position of the actuators:
+#+begin_src matlab
+  la = l/2*0.7; % Position of Act. [m]
+  ha = h/2*0.7; % Position of Act. [m]
+#+end_src
+
+#+begin_src matlab :exports none
+  %% Name of the Simulink File
+  mdl = 'gravimeter';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+#+end_src
+
+#+begin_src matlab :exports none
+  G_cen_b = feedback(G, pinv(Jt')*K_cen*pinv(Ja));
+  G_svd_b = feedback(G, inv(V')*K_svd*U_inv(1:3, :));
+#+end_src
+
+The new plant is computed, and the centralized and SVD control architectures are applied using the previsouly computed Jacobian matrices and $U$ and $V$ matrices.
+
+The closed-loop system are still stable, and their
+
+#+begin_src matlab :exports results
+  freqs = logspace(-2, 2, 1000);
+
+  figure;
+  tiledlayout(1, 3, 'TileSpacing', 'None', 'Padding', 'None');
+
+  ax1 = nexttile;
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G_cen(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Initial');
+  plot(freqs, abs(squeeze(freqresp(G_cen_b(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Jacobian');
+  plot(freqs, abs(squeeze(freqresp(G_svd_b(1,1)/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  ylabel('Transmissibility'); xlabel('Frequency [Hz]');
+  title('$D_x/D_{w,x}$');
+  legend('location', 'southwest');
+
+  ax2 = nexttile;
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G_cen(2,2)/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen_b(2,2)/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd_b(2,2)/s^2, freqs, 'Hz'))), '--');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
+  title('$D_z/D_{w,z}$');
+
+  ax3 = nexttile;
+  hold on;
+  plot(freqs, abs(squeeze(freqresp(G_cen(3,3)/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_cen_b(3,3)/s^2, freqs, 'Hz'))));
+  plot(freqs, abs(squeeze(freqresp(G_svd_b(3,3)/s^2, freqs, 'Hz'))), '--');
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
+  title('$R_y/R_{w,y}$');
+
+  linkaxes([ax1,ax2,ax3],'xy');
+  xlim([freqs(1), freqs(end)]);
+  xlim([1e-2, 5e1]); ylim([1e-7, 3e-4]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_transmissibility_offset_act.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:gravimeter_transmissibility_offset_act
+#+caption: Transmissibility for the initial CL system and when the position of  actuators are changed
+#+RESULTS:
+[[file:figs/gravimeter_transmissibility_offset_act.png]]
+
+** Combined / comparison of K and M decoupling
+*** Introduction                                                    :ignore:
+
+If we want to decouple the system at low frequency (determined by the stiffness matrix), we have to compute the Jacobians at a point where the stiffness matrix is diagonal.
+A displacement (resp. rotation) of the mass at this particular point should induce a *pure* force (resp. torque) on the same point due to stiffnesses in the system.
+This can be verified by geometrical computations.
+
+
+If we want to decouple the system at high frequency (determined by the mass matrix), we have tot compute the Jacobians at the Center of Mass of the suspended solid.
+Similarly to the stiffness analysis, when considering only the inertia effects (neglecting the stiffnesses), a force (resp. torque) applied at this point (the center of mass) should induce a *pure* acceleration (resp. angular acceleration).
+
+
+Ideally, we would like to have a decoupled mass matrix and stiffness matrix at the same time.
+To do so, the actuators (springs) should be positioned such that the stiffness matrix is diagonal when evaluated at the CoM of the solid.
+
+*** Decoupling of the mass matrix
+
+#+name: fig:gravimeter_model_M
+#+caption: Choice of {O} such that the Mass Matrix is Diagonal
+[[file:figs/gravimeter_model_M.png]]
+
+#+begin_src matlab
+  la = l/2; % Position of Act. [m]
+  ha = h/2; % Position of Act. [m]
+#+end_src
+
+#+begin_src matlab
+  %% Name of the Simulink File
+  mdl = 'gravimeter';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+#+end_src
+
+Decoupling at the CoM (Mass decoupled)
+#+begin_src matlab
+  JMa = [1 0 -h/2
+         0 1  l/2
+         1 0  h/2
+         0 1  0];
+
+  JMt = [1 0 -ha
+         0 1  la
+         0 1 -la];
+#+end_src
+
+#+begin_src matlab
+  GM = pinv(JMa)*G*pinv(JMt');
+  GM.InputName  = {'Fx', 'Fz', 'My'};
+  GM.OutputName  = {'Dx', 'Dz', 'Ry'};
+#+end_src
+
+#+begin_src matlab :exports none
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast');
+  ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/jac_decoupling_M.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:jac_decoupling_M
+#+caption:
+#+RESULTS:
+[[file:figs/jac_decoupling_M.png]]
+
+*** Decoupling of the stiffness matrix
+
+#+name: fig:gravimeter_model_K
+#+caption: Choice of {O} such that the Stiffness Matrix is Diagonal
+[[file:figs/gravimeter_model_K.png]]
+
+Decoupling at the point where K is diagonal (x = 0, y = -h/2 from the schematic {O} frame):
+#+begin_src matlab
+  JKa = [1 0  0
+         0 1 -l/2
+         1 0 -h
+         0 1  0];
+
+  JKt = [1 0  0
+         0 1 -la
+         0 1  la];
+#+end_src
+
+And the plant $\bm{G}_x$ is computed:
+#+begin_src matlab
+  GK = pinv(JKa)*G*pinv(JKt');
+  GK.InputName  = {'Fx', 'Fz', 'My'};
+  GK.OutputName  = {'Dx', 'Dz', 'Ry'};
+#+end_src
+
+#+begin_src matlab :exports none
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(GK(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(GK(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(GK(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast');
+  ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/jac_decoupling_K.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:jac_decoupling_K
+#+caption:
+#+RESULTS:
+[[file:figs/jac_decoupling_K.png]]
+
+*** Combined decoupling of the mass and stiffness matrices
+
+#+name: fig:gravimeter_model_KM
+#+caption: Ideal location of the actuators such that both the mass and stiffness matrices are diagonal
+[[file:figs/gravimeter_model_KM.png]]
+
+To do so, the actuator position should be modified
+
+#+begin_src matlab
+  la = l/2; % Position of Act. [m]
+  ha = 0; % Position of Act. [m]
+#+end_src
+
+#+begin_src matlab
+  %% Name of the Simulink File
+  mdl = 'gravimeter';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+#+end_src
+
+#+begin_src matlab
+  JMa = [1 0 -h/2
+         0 1  l/2
+         1 0  h/2
+         0 1  0];
+
+  JMt = [1 0 -ha
+         0 1  la
+         0 1 -la];
+#+end_src
+
+#+begin_src matlab
+  GKM = pinv(JMa)*G*pinv(JMt');
+  GKM.InputName  = {'Fx', 'Fz', 'My'};
+  GKM.OutputName  = {'Dx', 'Dz', 'Ry'};
+#+end_src
+
+#+begin_src matlab :exports none
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(GKM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(GKM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(GKM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast');
+  ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/jac_decoupling_KM.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:jac_decoupling_KM
+#+caption:
+#+RESULTS:
+[[file:figs/jac_decoupling_KM.png]]
+
+*** Conclusion
+
+Ideally, the mechanical system should be designed in order to have a decoupled stiffness matrix at the CoM of the solid.
+
+If not the case, the system can either be decoupled as low frequency if the Jacobian are evaluated at a point where the stiffness matrix is decoupled.
+Or it can be decoupled at high frequency if the Jacobians are evaluated at the CoM.
+
+** SVD decoupling performances                                     :noexport:
+
+#+begin_src matlab
+  la = l/2; % Position of Act. [m]
+  ha = 0; % Position of Act. [m]
+#+end_src
+
+#+begin_src matlab
+  c = 2e1; % Actuator Damping [N/(m/s)]
+#+end_src
+
+#+begin_src matlab
+  %% Name of the Simulink File
+  mdl = 'gravimeter';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+#+end_src
+
+#+begin_src matlab
+  wc = 2*pi*10; % Decoupling frequency [rad/s]
+  H1 = evalfr(G, j*wc);
+  D = pinv(real(H1'*H1));
+  H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+  [U,S,V] = svd(H1);
+  Gsvd = inv(U)*G*inv(V');
+#+end_src
+
+#+begin_src matlab
+  c = 5e2; % Actuator Damping [N/(m/s)]
+#+end_src
+
+#+begin_src matlab
+  %% Name of the Simulink File
+  mdl = 'gravimeter';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+#+end_src
+
+#+begin_src matlab
+  wc = 2*pi*10; % Decoupling frequency [rad/s]
+  H1 = evalfr(G, j*wc);
+  D = pinv(real(H1'*H1));
+  H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+  [U,S,V] = svd(H1);
+  Gsvdd = inv(U)*G*inv(V');
+#+end_src
+
+#+begin_src matlab
+  JMa = [1 0 -h/2
+         0 1  l/2
+         1 0  h/2
+         0 1  0];
+
+  JMt = [1 0 -ha
+         0 1  la
+         0 1 -la];
+#+end_src
+
+#+begin_src matlab
+  GM = pinv(JMa)*G*pinv(JMt');
+  GM.InputName  = {'Fx', 'Fz', 'My'};
+  GM.OutputName  = {'Dx', 'Dz', 'Ry'};
+#+end_src
+
+#+begin_src matlab :exports none
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast');
+  ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :exports none
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast');
+  ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :exports none
+  figure;
+
+  % Magnitude
+  hold on;
+  for i_in = 1:3
+      for i_out = [1:i_in-1, i_in+1:3]
+          plot(freqs, abs(squeeze(freqresp(Gsvdd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+               'HandleVisibility', 'off');
+      end
+  end
+  plot(freqs, abs(squeeze(freqresp(Gsvdd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+       'DisplayName', '$G_x(i,j)\ i \neq j$');
+  set(gca,'ColorOrderIndex',1)
+  for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gsvdd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+  end
+  hold off;
+  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+  xlabel('Frequency [Hz]'); ylabel('Magnitude');
+  legend('location', 'southeast');
+  ylim([1e-8, 1e0]);
+#+end_src
+
+** SVD U and V matrices                                            :noexport:
+
+#+begin_src matlab
+  la = l/2; % Position of Act. [m]
+  ha = 0; % Position of Act. [m]
+#+end_src
+
+#+begin_src matlab
+  c = 2e1; % Actuator Damping [N/(m/s)]
+#+end_src
+
+#+begin_src matlab
+  %% Name of the Simulink File
+  mdl = 'gravimeter';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Az1', 'Ax2', 'Az2'};
+#+end_src
 
 * Stewart Platform - Simscape Model
 :PROPERTIES:
