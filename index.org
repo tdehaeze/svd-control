@@ -1346,18 +1346,17 @@ Ideally, the mechanical system should be designed in order to have a decoupled s
 If not the case, the system can either be decoupled as low frequency if the Jacobian are evaluated at a point where the stiffness matrix is decoupled.
 Or it can be decoupled at high frequency if the Jacobians are evaluated at the CoM.
 
-** SVD decoupling performances                                     :noexport:
+** SVD decoupling performances
+As the SVD is applied on a *real approximation* of the plant dynamics at a frequency $\omega_0$, it is foreseen that the effectiveness of the decoupling depends on the validity of the real approximation.
 
-#+begin_src matlab
-  la = l/2; % Position of Act. [m]
-  ha = 0; % Position of Act. [m]
-#+end_src
+Let's do the SVD decoupling on a plant that is mostly real (low damping) and one with a large imaginary part (larger damping).
 
+Start with small damping, the obtained diagonal and off-diagonal terms are shown in Figure [[fig:gravimeter_svd_low_damping]].
 #+begin_src matlab
   c = 2e1; % Actuator Damping [N/(m/s)]
 #+end_src
 
-#+begin_src matlab
+#+begin_src matlab :exports none
   %% Name of the Simulink File
   mdl = 'gravimeter';
 
@@ -1374,88 +1373,13 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
   G = linearize(mdl, io);
   G.InputName  = {'F1', 'F2', 'F3'};
   G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
-#+end_src
 
-#+begin_src matlab
   wc = 2*pi*10; % Decoupling frequency [rad/s]
   H1 = evalfr(G, j*wc);
   D = pinv(real(H1'*H1));
   H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
   [U,S,V] = svd(H1);
   Gsvd = inv(U)*G*inv(V');
-#+end_src
-
-#+begin_src matlab
-  c = 5e2; % Actuator Damping [N/(m/s)]
-#+end_src
-
-#+begin_src matlab
-  %% Name of the Simulink File
-  mdl = 'gravimeter';
-
-  %% Input/Output definition
-  clear io; io_i = 1;
-  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
-  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
-
-  G = linearize(mdl, io);
-  G.InputName  = {'F1', 'F2', 'F3'};
-  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
-#+end_src
-
-#+begin_src matlab
-  wc = 2*pi*10; % Decoupling frequency [rad/s]
-  H1 = evalfr(G, j*wc);
-  D = pinv(real(H1'*H1));
-  H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
-  [U,S,V] = svd(H1);
-  Gsvdd = inv(U)*G*inv(V');
-#+end_src
-
-#+begin_src matlab
-  JMa = [1 0 -h/2
-         0 1  l/2
-         1 0  h/2
-         0 1  0];
-
-  JMt = [1 0 -ha
-         0 1  la
-         0 1 -la];
-#+end_src
-
-#+begin_src matlab
-  GM = pinv(JMa)*G*pinv(JMt');
-  GM.InputName  = {'Fx', 'Fy', 'Mz'};
-  GM.OutputName  = {'Dx', 'Dy', 'Rz'};
-#+end_src
-
-#+begin_src matlab :exports none
-  figure;
-
-  % Magnitude
-  hold on;
-  for i_in = 1:3
-      for i_out = [1:i_in-1, i_in+1:3]
-          plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-               'HandleVisibility', 'off');
-      end
-  end
-  plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-       'DisplayName', '$G_x(i,j)\ i \neq j$');
-  set(gca,'ColorOrderIndex',1)
-  for i_in_out = 1:3
-    plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
-  end
-  hold off;
-  set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-  xlabel('Frequency [Hz]'); ylabel('Magnitude');
-  legend('location', 'southeast');
-  ylim([1e-8, 1e0]);
 #+end_src
 
 #+begin_src matlab :exports none
@@ -1470,16 +1394,56 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
       end
   end
   plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-       'DisplayName', '$G_x(i,j)\ i \neq j$');
+       'DisplayName', '$G_{svd}(i,j)\ i \neq j$');
   set(gca,'ColorOrderIndex',1)
   for i_in_out = 1:3
-    plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{svd}(%d,%d)$', i_in_out, i_in_out));
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   xlabel('Frequency [Hz]'); ylabel('Magnitude');
-  legend('location', 'southeast');
+  legend('location', 'northwest');
   ylim([1e-8, 1e0]);
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_svd_low_damping.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:gravimeter_svd_low_damping
+#+caption: Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with small damping
+#+RESULTS:
+[[file:figs/gravimeter_svd_low_damping.png]]
+
+Now take a larger damping, the obtained diagonal and off-diagonal terms are shown in Figure [[fig:gravimeter_svd_high_damping]].
+#+begin_src matlab
+  c = 5e2; % Actuator Damping [N/(m/s)]
+#+end_src
+
+#+begin_src matlab :exports none
+  %% Name of the Simulink File
+  mdl = 'gravimeter';
+
+  %% Input/Output definition
+  clear io; io_i = 1;
+  io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+  io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+  G = linearize(mdl, io);
+  G.InputName  = {'F1', 'F2', 'F3'};
+  G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+
+  wc = 2*pi*10; % Decoupling frequency [rad/s]
+  H1 = evalfr(G, j*wc);
+  D = pinv(real(H1'*H1));
+  H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+  [U,S,V] = svd(H1);
+  Gsvdd = inv(U)*G*inv(V');
 #+end_src
 
 #+begin_src matlab :exports none
@@ -1494,17 +1458,26 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
       end
   end
   plot(freqs, abs(squeeze(freqresp(Gsvdd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-       'DisplayName', '$G_x(i,j)\ i \neq j$');
+       'DisplayName', '$G_{svd}(i,j)\ i \neq j$');
   set(gca,'ColorOrderIndex',1)
   for i_in_out = 1:3
-    plot(freqs, abs(squeeze(freqresp(Gsvdd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gsvdd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{svd}(%d,%d)$', i_in_out, i_in_out));
   end
   hold off;
   set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
   xlabel('Frequency [Hz]'); ylabel('Magnitude');
-  legend('location', 'southeast');
+  legend('location', 'northwest');
   ylim([1e-8, 1e0]);
 #+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+  exportFig('figs/gravimeter_svd_high_damping.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:gravimeter_svd_high_damping
+#+caption: Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with high damping
+#+RESULTS:
+[[file:figs/gravimeter_svd_high_damping.png]]
 
 * Stewart Platform - Simscape Model
 :PROPERTIES:
