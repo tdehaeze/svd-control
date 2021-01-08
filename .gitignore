@@ -36,3 +36,14 @@ octave-workspace
 
 # Simulink Cache
 *.slxc
+
+## Build tool auxiliary files:
+*.fdb_latexmk
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+
+.auctex-auto/
+_minted-index/
