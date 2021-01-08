@@ -41,6 +41,12 @@
 #+PROPERTY: header-args:latex+ :post pdf2svg(file=*this*, ext="png")
 :END:
 
+#+begin_export html
+  <hr>
+  <p>This report is also available as a <a href="./index.pdf">pdf</a>.</p>
+  <hr>
+#+end_export
+
 * Introduction                                                        :ignore:
 
 In this document, the use of the Jacobian matrix and the Singular Value Decomposition to render a physical plant diagonal dominant is studied.
