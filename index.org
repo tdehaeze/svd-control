@@ -12,6 +12,9 @@
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://research.tdehaeze.xyz/css/style.css"/>
 #+HTML_HEAD: <script type="text/javascript" src="https://research.tdehaeze.xyz/js/script.js"></script>
 
+#+LaTeX_CLASS: scrreprt
+#+LaTeX_HEADER_EXTRA: \input{preamble.tex}
+
 #+HTML_MATHJAX: align: center tagside: right font: TeX
 
 #+PROPERTY: header-args:matlab  :session *MATLAB*
@@ -221,6 +224,7 @@ The bode plot of all elements of the plant are shown in Figure [[fig:open_loop_t
 #+end_src
 
 #+name: fig:open_loop_tf
+#+attr_latex: :width \linewidth
 #+caption: Open Loop Transfer Function from 3 Actuators to 4 Accelerometers
 #+RESULTS:
 [[file:figs/open_loop_tf.png]]
@@ -1605,10 +1609,12 @@ We initialize other parameters:
 #+end_src
 
 #+name: fig:stewart_simscape
+#+attr_latex: :width \linewidth
 #+caption: General view of the Simscape Model
 [[file:figs/stewart_simscape.png]]
 
 #+name: fig:stewart_platform_details
+#+attr_latex: :width \linewidth
 #+caption: Simscape model of the Stewart platform
 [[file:figs/stewart_platform_details.png]]
 
