@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-01-11 lun. 09:09 -->
+<!-- 2021-01-11 lun. 09:24 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <title>Diagonal control using the SVD and the Jacobian Matrix</title>
 <meta name="generator" content="Org mode" />
@@ -39,41 +39,41 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgf941d81">1. Gravimeter - Simscape Model</a>
+<li><a href="#orgd0692ab">1. Gravimeter - Simscape Model</a>
 <ul>
-<li><a href="#orgd71b45c">1.1. Introduction</a></li>
-<li><a href="#orga826e17">1.2. Gravimeter Model - Parameters</a></li>
-<li><a href="#orgb93f5ad">1.3. System Identification</a></li>
-<li><a href="#org6e67a49">1.4. Decoupling using the Jacobian</a></li>
-<li><a href="#orgba9173b">1.5. Decoupling using the SVD</a></li>
-<li><a href="#orgdb0fed0">1.6. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
-<li><a href="#orge1275d5">1.7. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
-<li><a href="#org3fdf789">1.8. Obtained Decoupled Plants</a></li>
-<li><a href="#orgc6e5815">1.9. Diagonal Controller</a></li>
-<li><a href="#orge79e44b">1.10. Closed-Loop system Performances</a></li>
-<li><a href="#orgbb745e6">1.11. Robustness to a change of actuator position</a></li>
-<li><a href="#org89d44ae">1.12. Combined / comparison of K and M decoupling</a>
+<li><a href="#org632e984">1.1. Introduction</a></li>
+<li><a href="#org3c8a6bd">1.2. Gravimeter Model - Parameters</a></li>
+<li><a href="#orgca7593b">1.3. System Identification</a></li>
+<li><a href="#org2c6aa3f">1.4. Decoupling using the Jacobian</a></li>
+<li><a href="#orgb980f9f">1.5. Decoupling using the SVD</a></li>
+<li><a href="#orgd548f08">1.6. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
+<li><a href="#org5544b20">1.7. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
+<li><a href="#orgc73d6ed">1.8. Obtained Decoupled Plants</a></li>
+<li><a href="#org0fba42f">1.9. Diagonal Controller</a></li>
+<li><a href="#orge27b744">1.10. Closed-Loop system Performances</a></li>
+<li><a href="#orgf7073e6">1.11. Robustness to a change of actuator position</a></li>
+<li><a href="#org7feb22c">1.12. Choice of the reference frame for Jacobian decoupling</a>
 <ul>
-<li><a href="#org3cc6fa7">1.12.1. Decoupling of the mass matrix</a></li>
-<li><a href="#org00808bc">1.12.2. Decoupling of the stiffness matrix</a></li>
-<li><a href="#org71f7b09">1.12.3. Combined decoupling of the mass and stiffness matrices</a></li>
-<li><a href="#org174077b">1.12.4. Conclusion</a></li>
+<li><a href="#org58fd1af">1.12.1. Decoupling of the mass matrix</a></li>
+<li><a href="#org402054d">1.12.2. Decoupling of the stiffness matrix</a></li>
+<li><a href="#orgfb6c0dd">1.12.3. Combined decoupling of the mass and stiffness matrices</a></li>
+<li><a href="#orge04f84f">1.12.4. Conclusion</a></li>
 </ul>
 </li>
-<li><a href="#org104acaf">1.13. SVD decoupling performances</a></li>
+<li><a href="#orga8edfed">1.13. SVD decoupling performances</a></li>
 </ul>
 </li>
-<li><a href="#org2e39f13">2. Stewart Platform - Simscape Model</a>
+<li><a href="#orge657a63">2. Stewart Platform - Simscape Model</a>
 <ul>
-<li><a href="#orgb17cfae">2.1. Simscape Model - Parameters</a></li>
-<li><a href="#orge9cd306">2.2. Identification of the plant</a></li>
-<li><a href="#org072fd79">2.3. Decoupling using the Jacobian</a></li>
-<li><a href="#orgd4744ca">2.4. Decoupling using the SVD</a></li>
-<li><a href="#orgb67bd2a">2.5. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
-<li><a href="#orgdc07653">2.6. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
-<li><a href="#orga2a4d78">2.7. Obtained Decoupled Plants</a></li>
-<li><a href="#orgbe86d5d">2.8. Diagonal Controller</a></li>
-<li><a href="#org80a8e85">2.9. Closed-Loop system Performances</a></li>
+<li><a href="#org141b437">2.1. Simscape Model - Parameters</a></li>
+<li><a href="#org326f07e">2.2. Identification of the plant</a></li>
+<li><a href="#org9b5c074">2.3. Decoupling using the Jacobian</a></li>
+<li><a href="#org2545676">2.4. Decoupling using the SVD</a></li>
+<li><a href="#org9def003">2.5. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
+<li><a href="#orge541dfe">2.6. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
+<li><a href="#org634f16b">2.7. Obtained Decoupled Plants</a></li>
+<li><a href="#org9347703">2.8. Diagonal Controller</a></li>
+<li><a href="#org94aea9b">2.9. Closed-Loop system Performances</a></li>
 </ul>
 </li>
 </ul>
@@ -92,58 +92,58 @@ Then, a diagonal controller is used.
 These two methods are tested on two plants:
 </p>
 <ul class="org-ul">
-<li>In Section <a href="#org4d66523">1</a> on a 3-DoF gravimeter</li>
-<li>In Section <a href="#org5bbb8c3">2</a> on a 6-DoF Stewart platform</li>
+<li>In Section <a href="#orgf6185e6">1</a> on a 3-DoF gravimeter</li>
+<li>In Section <a href="#org54f5707">2</a> on a 6-DoF Stewart platform</li>
 </ul>
 
-<div id="outline-container-orgf941d81" class="outline-2">
-<h2 id="orgf941d81"><span class="section-number-2">1</span> Gravimeter - Simscape Model</h2>
+<div id="outline-container-orgd0692ab" class="outline-2">
+<h2 id="orgd0692ab"><span class="section-number-2">1</span> Gravimeter - Simscape Model</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-<a id="org4d66523"></a>
+<a id="orgf6185e6"></a>
 </p>
 </div>
 
-<div id="outline-container-orgd71b45c" class="outline-3">
-<h3 id="orgd71b45c"><span class="section-number-3">1.1</span> Introduction</h3>
+<div id="outline-container-org632e984" class="outline-3">
+<h3 id="org632e984"><span class="section-number-3">1.1</span> Introduction</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 In this part, diagonal control using both the SVD and the Jacobian matrices are applied on a gravimeter model:
 </p>
 <ul class="org-ul">
-<li>Section <a href="#org7457b44">1.2</a>: the model is described and its parameters are defined.</li>
-<li>Section <a href="#org8c3a1dc">1.3</a>: the plant dynamics from the actuators to the sensors is computed from a Simscape model.</li>
-<li>Section <a href="#orga41db44">1.4</a>: the plant is decoupled using the Jacobian matrices.</li>
-<li>Section <a href="#org7f8ba13">1.5</a>: the Singular Value Decomposition is performed on a real approximation of the plant transfer matrix and further use to decouple the system.</li>
-<li>Section <a href="#orgba7ada6">1.6</a>: the effectiveness of the decoupling is computed using the Gershorin radii</li>
-<li>Section <a href="#org8acb93f">1.7</a>: the effectiveness of the decoupling is computed using the Relative Gain Array</li>
-<li>Section <a href="#org6195fe5">1.8</a>: the obtained decoupled plants are compared</li>
-<li>Section <a href="#org455ef8e">1.9</a>: the diagonal controller is developed</li>
-<li>Section <a href="#org61fa77b">1.10</a>: the obtained closed-loop performances for the two methods are compared</li>
+<li>Section <a href="#orgf00c104">1.2</a>: the model is described and its parameters are defined.</li>
+<li>Section <a href="#orgd4ea2dd">1.3</a>: the plant dynamics from the actuators to the sensors is computed from a Simscape model.</li>
+<li>Section <a href="#orgab6fdbc">1.4</a>: the plant is decoupled using the Jacobian matrices.</li>
+<li>Section <a href="#org4e3f132">1.5</a>: the Singular Value Decomposition is performed on a real approximation of the plant transfer matrix and further use to decouple the system.</li>
+<li>Section <a href="#orge3cb5da">1.6</a>: the effectiveness of the decoupling is computed using the Gershorin radii</li>
+<li>Section <a href="#org7dd18cb">1.7</a>: the effectiveness of the decoupling is computed using the Relative Gain Array</li>
+<li>Section <a href="#org1dec153">1.8</a>: the obtained decoupled plants are compared</li>
+<li>Section <a href="#org6e0e8a1">1.9</a>: the diagonal controller is developed</li>
+<li>Section <a href="#orgc439c68">1.10</a>: the obtained closed-loop performances for the two methods are compared</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-orga826e17" class="outline-3">
-<h3 id="orga826e17"><span class="section-number-3">1.2</span> Gravimeter Model - Parameters</h3>
+<div id="outline-container-org3c8a6bd" class="outline-3">
+<h3 id="org3c8a6bd"><span class="section-number-3">1.2</span> Gravimeter Model - Parameters</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
-<a id="org7457b44"></a>
+<a id="orgf00c104"></a>
 </p>
 
 <p>
-The model of the gravimeter is schematically shown in Figure <a href="#orgda8b2e3">1</a>.
+The model of the gravimeter is schematically shown in Figure <a href="#org39d0058">1</a>.
 </p>
 
 
-<div id="orgda8b2e3" class="figure">
+<div id="org39d0058" class="figure">
 <p><img src="figs/gravimeter_model.png" alt="gravimeter_model.png" />
 </p>
 <p><span class="figure-number">Figure 1: </span>Model of the gravimeter</p>
 </div>
 
 
-<div id="org039f624" class="figure">
+<div id="org4d335ed" class="figure">
 <p><img src="figs/leg_model.png" alt="leg_model.png" />
 </p>
 <p><span class="figure-number">Figure 2: </span>Model of the struts</p>
@@ -173,11 +173,11 @@ g = 0; <span class="org-comment">% Gravity [m/s2]</span>
 </div>
 </div>
 
-<div id="outline-container-orgb93f5ad" class="outline-3">
-<h3 id="orgb93f5ad"><span class="section-number-3">1.3</span> System Identification</h3>
+<div id="outline-container-orgca7593b" class="outline-3">
+<h3 id="orgca7593b"><span class="section-number-3">1.3</span> System Identification</h3>
 <div class="outline-text-3" id="text-1-3">
 <p>
-<a id="org8c3a1dc"></a>
+<a id="orgd4ea2dd"></a>
 </p>
 
 <div class="org-src-container">
@@ -201,7 +201,7 @@ G.OutputName = {<span class="org-string">'Ax1'</span>, <span class="org-string">
 </div>
 
 <p>
-The inputs and outputs of the plant are shown in Figure <a href="#org97413c0">3</a>.
+The inputs and outputs of the plant are shown in Figure <a href="#org253f1a0">3</a>.
 </p>
 
 <p>
@@ -218,7 +218,7 @@ And 4 outputs (the two 2-DoF accelerometers):
 \end{equation}
 
 
-<div id="org97413c0" class="figure">
+<div id="org253f1a0" class="figure">
 <p><img src="figs/gravimeter_plant_schematic.png" alt="gravimeter_plant_schematic.png" />
 </p>
 <p><span class="figure-number">Figure 3: </span>Schematic of the gravimeter plant</p>
@@ -274,11 +274,11 @@ State-space model with 4 outputs, 3 inputs, and 6 states.
 
 
 <p>
-The bode plot of all elements of the plant are shown in Figure <a href="#orge2f826e">4</a>.
+The bode plot of all elements of the plant are shown in Figure <a href="#org0194135">4</a>.
 </p>
 
 
-<div id="orge2f826e" class="figure">
+<div id="org0194135" class="figure">
 <p><img src="figs/open_loop_tf.png" alt="open_loop_tf.png" />
 </p>
 <p><span class="figure-number">Figure 4: </span>Open Loop Transfer Function from 3 Actuators to 4 Accelerometers</p>
@@ -286,15 +286,15 @@ The bode plot of all elements of the plant are shown in Figure <a href="#orge2f8
 </div>
 </div>
 
-<div id="outline-container-org6e67a49" class="outline-3">
-<h3 id="org6e67a49"><span class="section-number-3">1.4</span> Decoupling using the Jacobian</h3>
+<div id="outline-container-org2c6aa3f" class="outline-3">
+<h3 id="org2c6aa3f"><span class="section-number-3">1.4</span> Decoupling using the Jacobian</h3>
 <div class="outline-text-3" id="text-1-4">
 <p>
-<a id="orga41db44"></a>
+<a id="orgab6fdbc"></a>
 </p>
 
 <p>
-Consider the control architecture shown in Figure <a href="#org2d0a2c4">5</a>.
+Consider the control architecture shown in Figure <a href="#org7ec895d">5</a>.
 </p>
 
 <p>
@@ -312,16 +312,16 @@ The Jacobian matrix \(J_{a}\) is used to compute the vertical acceleration, hori
 \end{equation}
 
 <p>
-We thus define a new plant as defined in Figure <a href="#org2d0a2c4">5</a>.
+We thus define a new plant as defined in Figure <a href="#org7ec895d">5</a>.
 \[ \bm{G}_x(s) = J_a^{-1} \bm{G}(s) J_{\tau}^{-T} \]
 </p>
 
 <p>
-\(\bm{G}_x(s)\) correspond to the $3 &times; 3$transfer function matrix from forces and torques applied to the gravimeter at its center of mass to the absolute acceleration of the gravimeter&rsquo;s center of mass (Figure <a href="#org2d0a2c4">5</a>).
+\(\bm{G}_x(s)\) correspond to the \(3 \times 3\) transfer function matrix from forces and torques applied to the gravimeter at its center of mass to the absolute acceleration of the gravimeter&rsquo;s center of mass (Figure <a href="#org7ec895d">5</a>).
 </p>
 
 
-<div id="org2d0a2c4" class="figure">
+<div id="org7ec895d" class="figure">
 <p><img src="figs/gravimeter_decouple_jacobian.png" alt="gravimeter_decouple_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 5: </span>Decoupled plant \(\bm{G}_x\) using the Jacobian matrix \(J\)</p>
@@ -359,11 +359,23 @@ State-space model with 3 outputs, 3 inputs, and 6 states.
 
 
 <p>
-The diagonal and off-diagonal elements of \(G_x\) are shown in Figure <a href="#orgb83367c">6</a>.
+The diagonal and off-diagonal elements of \(G_x\) are shown in Figure <a href="#org9408c6d">6</a>.
+</p>
+
+<p>
+It is shown at the system is:
+</p>
+<ul class="org-ul">
+<li>decoupled at high frequency thanks to a diagonal mass matrix (the Jacobian being evaluated at the center of mass of the payload)</li>
+<li>coupled at low frequency due to the non-diagonal terms in the stiffness matrix, especially the term corresponding to a coupling between a force in the x direction to a rotation around z (due to the torque applied by the stiffness 1).</li>
+</ul>
+
+<p>
+The choice of the frame in this the Jacobian is evaluated is discussed in Section <a href="#org5f6731b">1.12</a>.
 </p>
 
 
-<div id="orgb83367c" class="figure">
+<div id="org9408c6d" class="figure">
 <p><img src="figs/gravimeter_jacobian_plant.png" alt="gravimeter_jacobian_plant.png" />
 </p>
 <p><span class="figure-number">Figure 6: </span>Diagonal and off-diagonal elements of \(G_x\)</p>
@@ -371,11 +383,11 @@ The diagonal and off-diagonal elements of \(G_x\) are shown in Figure <a href="#
 </div>
 </div>
 
-<div id="outline-container-orgba9173b" class="outline-3">
-<h3 id="orgba9173b"><span class="section-number-3">1.5</span> Decoupling using the SVD</h3>
+<div id="outline-container-orgb980f9f" class="outline-3">
+<h3 id="orgb980f9f"><span class="section-number-3">1.5</span> Decoupling using the SVD</h3>
 <div class="outline-text-3" id="text-1-5">
 <p>
-<a id="org7f8ba13"></a>
+<a id="org4e3f132"></a>
 </p>
 
 <p>
@@ -524,11 +536,11 @@ Now, the Singular Value Decomposition of \(H_1\) is performed:
 </table>
 
 <p>
-The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#org55d77b0">7</a>.
+The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#orgd1d6468">7</a>.
 </p>
 
 
-<div id="org55d77b0" class="figure">
+<div id="orgd1d6468" class="figure">
 <p><img src="figs/gravimeter_decouple_svd.png" alt="gravimeter_decouple_svd.png" />
 </p>
 <p><span class="figure-number">Figure 7: </span>Decoupled plant \(\bm{G}_{SVD}\) using the Singular Value Decomposition</p>
@@ -559,10 +571,10 @@ The 4th output (corresponding to the null singular value) is discarded, and we o
 </div>
 
 <p>
-The diagonal and off-diagonal elements of the &ldquo;SVD&rdquo; plant are shown in Figure <a href="#org72003df">8</a>.
+The diagonal and off-diagonal elements of the &ldquo;SVD&rdquo; plant are shown in Figure <a href="#org5261b66">8</a>.
 </p>
 
-<div id="org72003df" class="figure">
+<div id="org5261b66" class="figure">
 <p><img src="figs/gravimeter_svd_plant.png" alt="gravimeter_svd_plant.png" />
 </p>
 <p><span class="figure-number">Figure 8: </span>Diagonal and off-diagonal elements of \(G_{svd}\)</p>
@@ -570,11 +582,11 @@ The diagonal and off-diagonal elements of the &ldquo;SVD&rdquo; plant are shown 
 </div>
 </div>
 
-<div id="outline-container-orgdb0fed0" class="outline-3">
-<h3 id="orgdb0fed0"><span class="section-number-3">1.6</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
+<div id="outline-container-orgd548f08" class="outline-3">
+<h3 id="orgd548f08"><span class="section-number-3">1.6</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
 <div class="outline-text-3" id="text-1-6">
 <p>
-<a id="orgba7ada6"></a>
+<a id="orge3cb5da"></a>
 </p>
 
 <p>
@@ -587,7 +599,7 @@ The &ldquo;Gershgorin Radii&rdquo; of a matrix \(S\) is defined by:
 </p>
 
 
-<div id="org733c69c" class="figure">
+<div id="org3b28372" class="figure">
 <p><img src="figs/gravimeter_gershgorin_radii.png" alt="gravimeter_gershgorin_radii.png" />
 </p>
 <p><span class="figure-number">Figure 9: </span>Gershgorin Radii of the Coupled and Decoupled plants</p>
@@ -595,11 +607,11 @@ The &ldquo;Gershgorin Radii&rdquo; of a matrix \(S\) is defined by:
 </div>
 </div>
 
-<div id="outline-container-orge1275d5" class="outline-3">
-<h3 id="orge1275d5"><span class="section-number-3">1.7</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
+<div id="outline-container-org5544b20" class="outline-3">
+<h3 id="org5544b20"><span class="section-number-3">1.7</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
 <div class="outline-text-3" id="text-1-7">
 <p>
-<a id="org8acb93f"></a>
+<a id="org7dd18cb"></a>
 </p>
 
 <p>
@@ -613,11 +625,11 @@ where \(\times\) denotes an element by element multiplication and \(G(s)\) is an
 </p>
 
 <p>
-The obtained RGA elements are shown in Figure <a href="#orgeaccd91">10</a>.
+The obtained RGA elements are shown in Figure <a href="#org3a6286e">10</a>.
 </p>
 
 
-<div id="orgeaccd91" class="figure">
+<div id="org3a6286e" class="figure">
 <p><img src="figs/gravimeter_rga.png" alt="gravimeter_rga.png" />
 </p>
 <p><span class="figure-number">Figure 10: </span>Obtained norm of RGA elements for the SVD decoupled plant and the Jacobian decoupled plant</p>
@@ -631,7 +643,7 @@ The RGA-number is also a measure of diagonal dominance:
 \end{equation}
 
 
-<div id="org54abca9" class="figure">
+<div id="org66b258e" class="figure">
 <p><img src="figs/gravimeter_rga_num.png" alt="gravimeter_rga_num.png" />
 </p>
 <p><span class="figure-number">Figure 11: </span>RGA-Number for the Gravimeter</p>
@@ -639,30 +651,30 @@ The RGA-number is also a measure of diagonal dominance:
 </div>
 </div>
 
-<div id="outline-container-org3fdf789" class="outline-3">
-<h3 id="org3fdf789"><span class="section-number-3">1.8</span> Obtained Decoupled Plants</h3>
+<div id="outline-container-orgc73d6ed" class="outline-3">
+<h3 id="orgc73d6ed"><span class="section-number-3">1.8</span> Obtained Decoupled Plants</h3>
 <div class="outline-text-3" id="text-1-8">
 <p>
-<a id="org6195fe5"></a>
+<a id="org1dec153"></a>
 </p>
 
 <p>
-The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#org428119b">12</a>.
+The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#org19ed1b5">12</a>.
 </p>
 
 
-<div id="org428119b" class="figure">
+<div id="org19ed1b5" class="figure">
 <p><img src="figs/gravimeter_decoupled_plant_svd.png" alt="gravimeter_decoupled_plant_svd.png" />
 </p>
 <p><span class="figure-number">Figure 12: </span>Decoupled Plant using SVD</p>
 </div>
 
 <p>
-Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#orgb8f1ebd">13</a>.
+Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#orge9aad4e">13</a>.
 </p>
 
 
-<div id="orgb8f1ebd" class="figure">
+<div id="orge9aad4e" class="figure">
 <p><img src="figs/gravimeter_decoupled_plant_jacobian.png" alt="gravimeter_decoupled_plant_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 13: </span>Gravimeter Platform Plant from forces (resp. torques) applied by the legs to the acceleration (resp. angular acceleration) of the platform as well as all the coupling terms between the two (non-diagonal terms of the transfer function matrix)</p>
@@ -670,12 +682,12 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
 </div>
 </div>
 
-<div id="outline-container-orgc6e5815" class="outline-3">
-<h3 id="orgc6e5815"><span class="section-number-3">1.9</span> Diagonal Controller</h3>
+<div id="outline-container-org0fba42f" class="outline-3">
+<h3 id="org0fba42f"><span class="section-number-3">1.9</span> Diagonal Controller</h3>
 <div class="outline-text-3" id="text-1-9">
 <p>
-<a id="org455ef8e"></a>
-The control diagram for the centralized control is shown in Figure <a href="#org1fbe2e8">14</a>.
+<a id="org6e0e8a1"></a>
+The control diagram for the centralized control is shown in Figure <a href="#orgeb89417">14</a>.
 </p>
 
 <p>
@@ -684,19 +696,19 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 </p>
 
 
-<div id="org1fbe2e8" class="figure">
+<div id="orgeb89417" class="figure">
 <p><img src="figs/centralized_control_gravimeter.png" alt="centralized_control_gravimeter.png" />
 </p>
 <p><span class="figure-number">Figure 14: </span>Control Diagram for the Centralized control</p>
 </div>
 
 <p>
-The SVD control architecture is shown in Figure <a href="#orgb8ae1bd">15</a>.
+The SVD control architecture is shown in Figure <a href="#orga9a8b97">15</a>.
 The matrices \(U\) and \(V\) are used to decoupled the plant \(G\).
 </p>
 
 
-<div id="orgb8ae1bd" class="figure">
+<div id="orga9a8b97" class="figure">
 <p><img src="figs/svd_control_gravimeter.png" alt="svd_control_gravimeter.png" />
 </p>
 <p><span class="figure-number">Figure 15: </span>Control Diagram for the SVD control</p>
@@ -734,11 +746,11 @@ G_svd = feedback(G, inv(V<span class="org-type">'</span>)<span class="org-type">
 </div>
 
 <p>
-The obtained diagonal elements of the loop gains are shown in Figure <a href="#org819d102">16</a>.
+The obtained diagonal elements of the loop gains are shown in Figure <a href="#org11c426e">16</a>.
 </p>
 
 
-<div id="org819d102" class="figure">
+<div id="org11c426e" class="figure">
 <p><img src="figs/gravimeter_comp_loop_gain_diagonal.png" alt="gravimeter_comp_loop_gain_diagonal.png" />
 </p>
 <p><span class="figure-number">Figure 16: </span>Comparison of the diagonal elements of the loop gains for the SVD control architecture and the Jacobian one</p>
@@ -746,11 +758,11 @@ The obtained diagonal elements of the loop gains are shown in Figure <a href="#o
 </div>
 </div>
 
-<div id="outline-container-orge79e44b" class="outline-3">
-<h3 id="orge79e44b"><span class="section-number-3">1.10</span> Closed-Loop system Performances</h3>
+<div id="outline-container-orge27b744" class="outline-3">
+<h3 id="orge27b744"><span class="section-number-3">1.10</span> Closed-Loop system Performances</h3>
 <div class="outline-text-3" id="text-1-10">
 <p>
-<a id="org61fa77b"></a>
+<a id="orgc439c68"></a>
 </p>
 
 <p>
@@ -781,18 +793,18 @@ ans =
 
 
 <p>
-The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#org817a11e">17</a>.
+The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#org0eadd29">17</a>.
 </p>
 
 
-<div id="org817a11e" class="figure">
+<div id="org0eadd29" class="figure">
 <p><img src="figs/gravimeter_platform_simscape_cl_transmissibility.png" alt="gravimeter_platform_simscape_cl_transmissibility.png" />
 </p>
 <p><span class="figure-number">Figure 17: </span>Obtained Transmissibility</p>
 </div>
 
 
-<div id="org60c7852" class="figure">
+<div id="orgf520b9a" class="figure">
 <p><img src="figs/gravimeter_cl_transmissibility_coupling.png" alt="gravimeter_cl_transmissibility_coupling.png" />
 </p>
 <p><span class="figure-number">Figure 18: </span>Obtain coupling terms of the transmissibility matrix</p>
@@ -801,9 +813,13 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 </div>
 
 
-<div id="outline-container-orgbb745e6" class="outline-3">
-<h3 id="orgbb745e6"><span class="section-number-3">1.11</span> Robustness to a change of actuator position</h3>
+<div id="outline-container-orgf7073e6" class="outline-3">
+<h3 id="orgf7073e6"><span class="section-number-3">1.11</span> Robustness to a change of actuator position</h3>
 <div class="outline-text-3" id="text-1-11">
+<p>
+<a id="org04b765f"></a>
+</p>
+
 <p>
 Let say we change the position of the actuators:
 </p>
@@ -822,7 +838,7 @@ The closed-loop system are still stable, and their
 </p>
 
 
-<div id="org04c5145" class="figure">
+<div id="org880866b" class="figure">
 <p><img src="figs/gravimeter_transmissibility_offset_act.png" alt="gravimeter_transmissibility_offset_act.png" />
 </p>
 <p><span class="figure-number">Figure 19: </span>Transmissibility for the initial CL system and when the position of  actuators are changed</p>
@@ -830,11 +846,14 @@ The closed-loop system are still stable, and their
 </div>
 </div>
 
-<div id="outline-container-org89d44ae" class="outline-3">
-<h3 id="org89d44ae"><span class="section-number-3">1.12</span> Combined / comparison of K and M decoupling</h3>
+<div id="outline-container-org7feb22c" class="outline-3">
+<h3 id="org7feb22c"><span class="section-number-3">1.12</span> Choice of the reference frame for Jacobian decoupling</h3>
 <div class="outline-text-3" id="text-1-12">
 <p>
-If we want to decouple the system at low frequency (determined by the stiffness matrix), we have to compute the Jacobians at a point where the stiffness matrix is diagonal.
+<a id="org5f6731b"></a>
+</p>
+<p>
+If we want to decouple the system at low frequency (determined by the stiffness matrix), we have to compute the Jacobian at a point where the stiffness matrix is diagonal.
 A displacement (resp. rotation) of the mass at this particular point should induce a <b>pure</b> force (resp. torque) on the same point due to stiffnesses in the system.
 This can be verified by geometrical computations.
 </p>
@@ -851,12 +870,11 @@ Ideally, we would like to have a decoupled mass matrix and stiffness matrix at t
 To do so, the actuators (springs) should be positioned such that the stiffness matrix is diagonal when evaluated at the CoM of the solid.
 </p>
 </div>
-
-<div id="outline-container-org3cc6fa7" class="outline-4">
-<h4 id="org3cc6fa7"><span class="section-number-4">1.12.1</span> Decoupling of the mass matrix</h4>
+<div id="outline-container-org58fd1af" class="outline-4">
+<h4 id="org58fd1af"><span class="section-number-4">1.12.1</span> Decoupling of the mass matrix</h4>
 <div class="outline-text-4" id="text-1-12-1">
 
-<div id="org6a13e78" class="figure">
+<div id="orge7f401c" class="figure">
 <p><img src="figs/gravimeter_model_M.png" alt="gravimeter_model_M.png" />
 </p>
 <p><span class="figure-number">Figure 20: </span>Choice of {O} such that the Mass Matrix is Diagonal</p>
@@ -911,7 +929,7 @@ GM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string"
 </div>
 
 
-<div id="orgca7615b" class="figure">
+<div id="org6032376" class="figure">
 <p><img src="figs/jac_decoupling_M.png" alt="jac_decoupling_M.png" />
 </p>
 <p><span class="figure-number">Figure 21: </span>Diagonal and off-diagonal elements of the decoupled plant</p>
@@ -919,11 +937,11 @@ GM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string"
 </div>
 </div>
 
-<div id="outline-container-org00808bc" class="outline-4">
-<h4 id="org00808bc"><span class="section-number-4">1.12.2</span> Decoupling of the stiffness matrix</h4>
+<div id="outline-container-org402054d" class="outline-4">
+<h4 id="org402054d"><span class="section-number-4">1.12.2</span> Decoupling of the stiffness matrix</h4>
 <div class="outline-text-4" id="text-1-12-2">
 
-<div id="org3b5b16e" class="figure">
+<div id="org683a76c" class="figure">
 <p><img src="figs/gravimeter_model_K.png" alt="gravimeter_model_K.png" />
 </p>
 <p><span class="figure-number">Figure 22: </span>Choice of {O} such that the Stiffness Matrix is Diagonal</p>
@@ -955,7 +973,7 @@ GK.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string"
 </div>
 
 
-<div id="org9c1ee91" class="figure">
+<div id="org7071e69" class="figure">
 <p><img src="figs/jac_decoupling_K.png" alt="jac_decoupling_K.png" />
 </p>
 <p><span class="figure-number">Figure 23: </span>Diagonal and off-diagonal elements of the decoupled plant</p>
@@ -963,11 +981,11 @@ GK.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string"
 </div>
 </div>
 
-<div id="outline-container-org71f7b09" class="outline-4">
-<h4 id="org71f7b09"><span class="section-number-4">1.12.3</span> Combined decoupling of the mass and stiffness matrices</h4>
+<div id="outline-container-orgfb6c0dd" class="outline-4">
+<h4 id="orgfb6c0dd"><span class="section-number-4">1.12.3</span> Combined decoupling of the mass and stiffness matrices</h4>
 <div class="outline-text-4" id="text-1-12-3">
 
-<div id="orgb841a78" class="figure">
+<div id="orga4882a8" class="figure">
 <p><img src="figs/gravimeter_model_KM.png" alt="gravimeter_model_KM.png" />
 </p>
 <p><span class="figure-number">Figure 24: </span>Ideal location of the actuators such that both the mass and stiffness matrices are diagonal</p>
@@ -1023,7 +1041,7 @@ GKM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string
 </div>
 
 
-<div id="orge49d479" class="figure">
+<div id="org2d49fc4" class="figure">
 <p><img src="figs/jac_decoupling_KM.png" alt="jac_decoupling_KM.png" />
 </p>
 <p><span class="figure-number">Figure 25: </span>Diagonal and off-diagonal elements of the decoupled plant</p>
@@ -1031,8 +1049,8 @@ GKM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string
 </div>
 </div>
 
-<div id="outline-container-org174077b" class="outline-4">
-<h4 id="org174077b"><span class="section-number-4">1.12.4</span> Conclusion</h4>
+<div id="outline-container-orge04f84f" class="outline-4">
+<h4 id="orge04f84f"><span class="section-number-4">1.12.4</span> Conclusion</h4>
 <div class="outline-text-4" id="text-1-12-4">
 <p>
 Ideally, the mechanical system should be designed in order to have a decoupled stiffness matrix at the CoM of the solid.
@@ -1046,8 +1064,8 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
 </div>
 </div>
 
-<div id="outline-container-org104acaf" class="outline-3">
-<h3 id="org104acaf"><span class="section-number-3">1.13</span> SVD decoupling performances</h3>
+<div id="outline-container-orga8edfed" class="outline-3">
+<h3 id="orga8edfed"><span class="section-number-3">1.13</span> SVD decoupling performances</h3>
 <div class="outline-text-3" id="text-1-13">
 <p>
 As the SVD is applied on a <b>real approximation</b> of the plant dynamics at a frequency \(\omega_0\), it is foreseen that the effectiveness of the decoupling depends on the validity of the real approximation.
@@ -1058,7 +1076,7 @@ Let&rsquo;s do the SVD decoupling on a plant that is mostly real (low damping) a
 </p>
 
 <p>
-Start with small damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org51bbb8c">26</a>.
+Start with small damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org3c4dcf8">26</a>.
 </p>
 <div class="org-src-container">
 <pre class="src src-matlab">c = 2e1; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
@@ -1066,14 +1084,14 @@ Start with small damping, the obtained diagonal and off-diagonal terms are shown
 </div>
 
 
-<div id="org51bbb8c" class="figure">
+<div id="org3c4dcf8" class="figure">
 <p><img src="figs/gravimeter_svd_low_damping.png" alt="gravimeter_svd_low_damping.png" />
 </p>
 <p><span class="figure-number">Figure 26: </span>Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with small damping</p>
 </div>
 
 <p>
-Now take a larger damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org26ec1da">27</a>.
+Now take a larger damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org229b1b3">27</a>.
 </p>
 <div class="org-src-container">
 <pre class="src src-matlab">c = 5e2; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
@@ -1081,7 +1099,7 @@ Now take a larger damping, the obtained diagonal and off-diagonal terms are show
 </div>
 
 
-<div id="org26ec1da" class="figure">
+<div id="org229b1b3" class="figure">
 <p><img src="figs/gravimeter_svd_high_damping.png" alt="gravimeter_svd_high_damping.png" />
 </p>
 <p><span class="figure-number">Figure 27: </span>Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with high damping</p>
@@ -1090,14 +1108,14 @@ Now take a larger damping, the obtained diagonal and off-diagonal terms are show
 </div>
 </div>
 
-<div id="outline-container-org2e39f13" class="outline-2">
-<h2 id="org2e39f13"><span class="section-number-2">2</span> Stewart Platform - Simscape Model</h2>
+<div id="outline-container-orge657a63" class="outline-2">
+<h2 id="orge657a63"><span class="section-number-2">2</span> Stewart Platform - Simscape Model</h2>
 <div class="outline-text-2" id="text-2">
 <p>
-<a id="org5bbb8c3"></a>
+<a id="org54f5707"></a>
 </p>
 <p>
-In this analysis, we wish to applied SVD control to the Stewart Platform shown in Figure <a href="#org92b1ebc">28</a>.
+In this analysis, we wish to applied SVD control to the Stewart Platform shown in Figure <a href="#org6827c55">28</a>.
 </p>
 
 <p>
@@ -1110,7 +1128,7 @@ Some notes about the system:
 </ul>
 
 
-<div id="org92b1ebc" class="figure">
+<div id="org6827c55" class="figure">
 <p><img src="figs/SP_assembly.png" alt="SP_assembly.png" />
 </p>
 <p><span class="figure-number">Figure 28: </span>Stewart Platform CAD View</p>
@@ -1120,23 +1138,23 @@ Some notes about the system:
 The analysis of the SVD/Jacobian control applied to the Stewart platform is performed in the following sections:
 </p>
 <ul class="org-ul">
-<li>Section <a href="#org02a6930">2.1</a>: The parameters of the Simscape model of the Stewart platform are defined</li>
-<li>Section <a href="#org788c46f">2.2</a>: The plant is identified from the Simscape model and the system coupling is shown</li>
-<li>Section <a href="#org25f81b3">2.3</a>: The plant is first decoupled using the Jacobian</li>
-<li>Section <a href="#orgedea118">2.4</a>: The decoupling is performed thanks to the SVD. To do so a real approximation of the plant is computed.</li>
-<li>Section <a href="#org3684d49">2.5</a>: The effectiveness of the decoupling with the Jacobian and SVD are compared using the Gershorin Radii</li>
-<li>Section <a href="#orgb8953c6">2.6</a>:</li>
-<li>Section <a href="#orgcf7b1be">2.7</a>: The dynamics of the decoupled plants are shown</li>
-<li>Section <a href="#org12ac36f">2.8</a>: A diagonal controller is defined to control the decoupled plant</li>
-<li>Section <a href="#org67088bc">2.9</a>: Finally, the closed loop system properties are studied</li>
+<li>Section <a href="#org204486d">2.1</a>: The parameters of the Simscape model of the Stewart platform are defined</li>
+<li>Section <a href="#org4035481">2.2</a>: The plant is identified from the Simscape model and the system coupling is shown</li>
+<li>Section <a href="#orgb1b5b22">2.3</a>: The plant is first decoupled using the Jacobian</li>
+<li>Section <a href="#orgbe3c664">2.4</a>: The decoupling is performed thanks to the SVD. To do so a real approximation of the plant is computed.</li>
+<li>Section <a href="#org6c922f4">2.5</a>: The effectiveness of the decoupling with the Jacobian and SVD are compared using the Gershorin Radii</li>
+<li>Section <a href="#orgebb6d6d">2.6</a>:</li>
+<li>Section <a href="#org4f7ce36">2.7</a>: The dynamics of the decoupled plants are shown</li>
+<li>Section <a href="#orgf5ca532">2.8</a>: A diagonal controller is defined to control the decoupled plant</li>
+<li>Section <a href="#org48906c8">2.9</a>: Finally, the closed loop system properties are studied</li>
 </ul>
 </div>
 
-<div id="outline-container-orgb17cfae" class="outline-3">
-<h3 id="orgb17cfae"><span class="section-number-3">2.1</span> Simscape Model - Parameters</h3>
+<div id="outline-container-org141b437" class="outline-3">
+<h3 id="org141b437"><span class="section-number-3">2.1</span> Simscape Model - Parameters</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
-<a id="org02a6930"></a>
+<a id="org204486d"></a>
 </p>
 <div class="org-src-container">
 <pre class="src src-matlab">open(<span class="org-string">'drone_platform.slx'</span>);
@@ -1192,14 +1210,14 @@ Kc = tf(zeros(6));
 </div>
 
 
-<div id="org228ccea" class="figure">
+<div id="org3632e63" class="figure">
 <p><img src="figs/stewart_simscape.png" alt="stewart_simscape.png" />
 </p>
 <p><span class="figure-number">Figure 29: </span>General view of the Simscape Model</p>
 </div>
 
 
-<div id="org905e357" class="figure">
+<div id="org001fe34" class="figure">
 <p><img src="figs/stewart_platform_details.png" alt="stewart_platform_details.png" />
 </p>
 <p><span class="figure-number">Figure 30: </span>Simscape model of the Stewart platform</p>
@@ -1207,15 +1225,15 @@ Kc = tf(zeros(6));
 </div>
 </div>
 
-<div id="outline-container-orge9cd306" class="outline-3">
-<h3 id="orge9cd306"><span class="section-number-3">2.2</span> Identification of the plant</h3>
+<div id="outline-container-org326f07e" class="outline-3">
+<h3 id="org326f07e"><span class="section-number-3">2.2</span> Identification of the plant</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
-<a id="org788c46f"></a>
+<a id="org4035481"></a>
 </p>
 
 <p>
-The plant shown in Figure <a href="#org2068c5a">31</a> is identified from the Simscape model.
+The plant shown in Figure <a href="#org43b7b09">31</a> is identified from the Simscape model.
 </p>
 
 <p>
@@ -1231,7 +1249,7 @@ The outputs are the 6 accelerations measured by the inertial unit.
 </p>
 
 
-<div id="org2068c5a" class="figure">
+<div id="org43b7b09" class="figure">
 <p><img src="figs/stewart_platform_plant.png" alt="stewart_platform_plant.png" />
 </p>
 <p><span class="figure-number">Figure 31: </span>Considered plant \(\bm{G} = \begin{bmatrix}G_d\\G_u\end{bmatrix}\). \(D_w\) is the translation/rotation of the support, \(\tau\) the actuator forces, \(a\) the acceleration/angular acceleration of the top platform</p>
@@ -1273,7 +1291,7 @@ State-space model with 6 outputs, 12 inputs, and 24 states.
 
 
 <p>
-The elements of the transfer matrix \(\bm{G}\) corresponding to the transfer function from actuator forces \(\tau\) to the measured acceleration \(a\) are shown in Figure <a href="#org58f311e">32</a>.
+The elements of the transfer matrix \(\bm{G}\) corresponding to the transfer function from actuator forces \(\tau\) to the measured acceleration \(a\) are shown in Figure <a href="#orgcd097a8">32</a>.
 </p>
 
 <p>
@@ -1281,7 +1299,7 @@ One can easily see that the system is strongly coupled.
 </p>
 
 
-<div id="org58f311e" class="figure">
+<div id="orgcd097a8" class="figure">
 <p><img src="figs/stewart_platform_coupled_plant.png" alt="stewart_platform_coupled_plant.png" />
 </p>
 <p><span class="figure-number">Figure 32: </span>Magnitude of all 36 elements of the transfer function matrix \(G_u\)</p>
@@ -1289,12 +1307,12 @@ One can easily see that the system is strongly coupled.
 </div>
 </div>
 
-<div id="outline-container-org072fd79" class="outline-3">
-<h3 id="org072fd79"><span class="section-number-3">2.3</span> Decoupling using the Jacobian</h3>
+<div id="outline-container-org9b5c074" class="outline-3">
+<h3 id="org9b5c074"><span class="section-number-3">2.3</span> Decoupling using the Jacobian</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
-<a id="org25f81b3"></a>
-Consider the control architecture shown in Figure <a href="#org782c767">33</a>.
+<a id="orgb1b5b22"></a>
+Consider the control architecture shown in Figure <a href="#org8495432">33</a>.
 The Jacobian matrix is used to transform forces/torques applied on the top platform to the equivalent forces applied by each actuator.
 </p>
 
@@ -1376,7 +1394,7 @@ The Jacobian matrix is computed from the geometry of the platform (position and 
 </table>
 
 
-<div id="org782c767" class="figure">
+<div id="org8495432" class="figure">
 <p><img src="figs/plant_decouple_jacobian.png" alt="plant_decouple_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 33: </span>Decoupled plant \(\bm{G}_x\) using the Jacobian matrix \(J\)</p>
@@ -1399,11 +1417,11 @@ Gx.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">
 </div>
 </div>
 
-<div id="outline-container-orgd4744ca" class="outline-3">
-<h3 id="orgd4744ca"><span class="section-number-3">2.4</span> Decoupling using the SVD</h3>
+<div id="outline-container-org2545676" class="outline-3">
+<h3 id="org2545676"><span class="section-number-3">2.4</span> Decoupling using the SVD</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
-<a id="orgedea118"></a>
+<a id="orgbe3c664"></a>
 </p>
 
 <p>
@@ -1739,11 +1757,11 @@ Now, the Singular Value Decomposition of \(H_1\) is performed:
 </table>
 
 <p>
-The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#orgda7c7c4">34</a>.
+The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#org1b9d0f3">34</a>.
 </p>
 
 
-<div id="orgda7c7c4" class="figure">
+<div id="org1b9d0f3" class="figure">
 <p><img src="figs/plant_decouple_svd.png" alt="plant_decouple_svd.png" />
 </p>
 <p><span class="figure-number">Figure 34: </span>Decoupled plant \(\bm{G}_{SVD}\) using the Singular Value Decomposition</p>
@@ -1761,11 +1779,11 @@ The decoupled plant is then:
 </div>
 </div>
 
-<div id="outline-container-orgb67bd2a" class="outline-3">
-<h3 id="orgb67bd2a"><span class="section-number-3">2.5</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
+<div id="outline-container-org9def003" class="outline-3">
+<h3 id="org9def003"><span class="section-number-3">2.5</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
-<a id="org3684d49"></a>
+<a id="org6c922f4"></a>
 </p>
 
 <p>
@@ -1781,7 +1799,7 @@ The &ldquo;Gershgorin Radii&rdquo; of a matrix \(S\) is defined by:
 This is computed over the following frequencies.
 </p>
 
-<div id="org399f7f2" class="figure">
+<div id="org5f7249a" class="figure">
 <p><img src="figs/simscape_model_gershgorin_radii.png" alt="simscape_model_gershgorin_radii.png" />
 </p>
 <p><span class="figure-number">Figure 35: </span>Gershgorin Radii of the Coupled and Decoupled plants</p>
@@ -1789,11 +1807,11 @@ This is computed over the following frequencies.
 </div>
 </div>
 
-<div id="outline-container-orgdc07653" class="outline-3">
-<h3 id="orgdc07653"><span class="section-number-3">2.6</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
+<div id="outline-container-orge541dfe" class="outline-3">
+<h3 id="orge541dfe"><span class="section-number-3">2.6</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
 <div class="outline-text-3" id="text-2-6">
 <p>
-<a id="orgb8953c6"></a>
+<a id="orgebb6d6d"></a>
 </p>
 
 <p>
@@ -1807,11 +1825,11 @@ where \(\times\) denotes an element by element multiplication and \(G(s)\) is an
 </p>
 
 <p>
-The obtained RGA elements are shown in Figure <a href="#orgdb7c7c2">36</a>.
+The obtained RGA elements are shown in Figure <a href="#orgf3f11c2">36</a>.
 </p>
 
 
-<div id="orgdb7c7c2" class="figure">
+<div id="orgf3f11c2" class="figure">
 <p><img src="figs/simscape_model_rga.png" alt="simscape_model_rga.png" />
 </p>
 <p><span class="figure-number">Figure 36: </span>Obtained norm of RGA elements for the SVD decoupled plant and the Jacobian decoupled plant</p>
@@ -1819,30 +1837,30 @@ The obtained RGA elements are shown in Figure <a href="#orgdb7c7c2">36</a>.
 </div>
 </div>
 
-<div id="outline-container-orga2a4d78" class="outline-3">
-<h3 id="orga2a4d78"><span class="section-number-3">2.7</span> Obtained Decoupled Plants</h3>
+<div id="outline-container-org634f16b" class="outline-3">
+<h3 id="org634f16b"><span class="section-number-3">2.7</span> Obtained Decoupled Plants</h3>
 <div class="outline-text-3" id="text-2-7">
 <p>
-<a id="orgcf7b1be"></a>
+<a id="org4f7ce36"></a>
 </p>
 
 <p>
-The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#org13819c8">37</a>.
+The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#orgc47849d">37</a>.
 </p>
 
 
-<div id="org13819c8" class="figure">
+<div id="orgc47849d" class="figure">
 <p><img src="figs/simscape_model_decoupled_plant_svd.png" alt="simscape_model_decoupled_plant_svd.png" />
 </p>
 <p><span class="figure-number">Figure 37: </span>Decoupled Plant using SVD</p>
 </div>
 
 <p>
-Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#org5d74751">38</a>.
+Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#orged11fe6">38</a>.
 </p>
 
 
-<div id="org5d74751" class="figure">
+<div id="orged11fe6" class="figure">
 <p><img src="figs/simscape_model_decoupled_plant_jacobian.png" alt="simscape_model_decoupled_plant_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 38: </span>Stewart Platform Plant from forces (resp. torques) applied by the legs to the acceleration (resp. angular acceleration) of the platform as well as all the coupling terms between the two (non-diagonal terms of the transfer function matrix)</p>
@@ -1850,12 +1868,12 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
 </div>
 </div>
 
-<div id="outline-container-orgbe86d5d" class="outline-3">
-<h3 id="orgbe86d5d"><span class="section-number-3">2.8</span> Diagonal Controller</h3>
+<div id="outline-container-org9347703" class="outline-3">
+<h3 id="org9347703"><span class="section-number-3">2.8</span> Diagonal Controller</h3>
 <div class="outline-text-3" id="text-2-8">
 <p>
-<a id="org12ac36f"></a>
-The control diagram for the centralized control is shown in Figure <a href="#org641c800">39</a>.
+<a id="orgf5ca532"></a>
+The control diagram for the centralized control is shown in Figure <a href="#orgec11e98">39</a>.
 </p>
 
 <p>
@@ -1864,19 +1882,19 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 </p>
 
 
-<div id="org641c800" class="figure">
+<div id="orgec11e98" class="figure">
 <p><img src="figs/centralized_control.png" alt="centralized_control.png" />
 </p>
 <p><span class="figure-number">Figure 39: </span>Control Diagram for the Centralized control</p>
 </div>
 
 <p>
-The SVD control architecture is shown in Figure <a href="#org8f24f26">40</a>.
+The SVD control architecture is shown in Figure <a href="#orgda92931">40</a>.
 The matrices \(U\) and \(V\) are used to decoupled the plant \(G\).
 </p>
 
 
-<div id="org8f24f26" class="figure">
+<div id="orgda92931" class="figure">
 <p><img src="figs/svd_control.png" alt="svd_control.png" />
 </p>
 <p><span class="figure-number">Figure 40: </span>Control Diagram for the SVD control</p>
@@ -1913,11 +1931,11 @@ G_svd = feedback(G, inv(V<span class="org-type">'</span>)<span class="org-type">
 </div>
 
 <p>
-The obtained diagonal elements of the loop gains are shown in Figure <a href="#org50b4289">41</a>.
+The obtained diagonal elements of the loop gains are shown in Figure <a href="#org9080723">41</a>.
 </p>
 
 
-<div id="org50b4289" class="figure">
+<div id="org9080723" class="figure">
 <p><img src="figs/stewart_comp_loop_gain_diagonal.png" alt="stewart_comp_loop_gain_diagonal.png" />
 </p>
 <p><span class="figure-number">Figure 41: </span>Comparison of the diagonal elements of the loop gains for the SVD control architecture and the Jacobian one</p>
@@ -1925,11 +1943,11 @@ The obtained diagonal elements of the loop gains are shown in Figure <a href="#o
 </div>
 </div>
 
-<div id="outline-container-org80a8e85" class="outline-3">
-<h3 id="org80a8e85"><span class="section-number-3">2.9</span> Closed-Loop system Performances</h3>
+<div id="outline-container-org94aea9b" class="outline-3">
+<h3 id="org94aea9b"><span class="section-number-3">2.9</span> Closed-Loop system Performances</h3>
 <div class="outline-text-3" id="text-2-9">
 <p>
-<a id="org67088bc"></a>
+<a id="org48906c8"></a>
 </p>
 
 <p>
@@ -1960,11 +1978,11 @@ ans =
 
 
 <p>
-The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#orgaef33a6">42</a>.
+The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#org5d8dabd">42</a>.
 </p>
 
 
-<div id="orgaef33a6" class="figure">
+<div id="org5d8dabd" class="figure">
 <p><img src="figs/stewart_platform_simscape_cl_transmissibility.png" alt="stewart_platform_simscape_cl_transmissibility.png" />
 </p>
 <p><span class="figure-number">Figure 42: </span>Obtained Transmissibility</p>
@@ -1975,7 +1993,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Dehaeze Thomas</p>
-<p class="date">Created: 2021-01-11 lun. 09:09</p>
+<p class="date">Created: 2021-01-11 lun. 09:24</p>
 </div>
 </body>
 </html>

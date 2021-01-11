@@ -211,7 +211,7 @@ for out_i = 1:4
         xlim([1e-1, 2e1]); ylim([1e-4, 1e0]);
 
         if in_i == 1
-            ylabel('Amplitude [m/N]')
+            ylabel('Amplitude [$\frac{m/s^2}{N}$]')
         else
             set(gca, 'YTickLabel',[]);
         end
@@ -253,7 +253,7 @@ The Jacobian matrix $J_{a}$ is used to compute the vertical acceleration, horizo
 We thus define a new plant as defined in Figure [[fig:gravimeter_decouple_jacobian]].
 \[ \bm{G}_x(s) = J_a^{-1} \bm{G}(s) J_{\tau}^{-T} \]
 
-$\bm{G}_x(s)$ correspond to the $3 \times 3$transfer function matrix from forces and torques applied to the gravimeter at its center of mass to the absolute acceleration of the gravimeter's center of mass (Figure [[fig:gravimeter_decouple_jacobian]]).
+$\bm{G}_x(s)$ correspond to the $3 \times 3$ transfer function matrix from forces and torques applied to the gravimeter at its center of mass to the absolute acceleration of the gravimeter's center of mass (Figure [[fig:gravimeter_decouple_jacobian]]).
 
 #+begin_src latex :file gravimeter_decouple_jacobian.pdf :tangle no :exports results
 \begin{tikzpicture}
@@ -307,6 +307,12 @@ size(Gx)
 : State-space model with 3 outputs, 3 inputs, and 6 states.
 
 The diagonal and off-diagonal elements of $G_x$ are shown in Figure [[fig:gravimeter_jacobian_plant]].
+
+It is shown at the system is:
+- decoupled at high frequency thanks to a diagonal mass matrix (the Jacobian being evaluated at the center of mass of the payload)
+- coupled at low frequency due to the non-diagonal terms in the stiffness matrix, especially the term corresponding to a coupling between a force in the x direction to a rotation around z (due to the torque applied by the stiffness 1).
+
+The choice of the frame in this the Jacobian is evaluated is discussed in Section [[sec:choice_jacobian_reference]].
 
 #+begin_src matlab :exports none
 figure;
@@ -1027,6 +1033,7 @@ exportFig('figs/gravimeter_cl_transmissibility_coupling.pdf', 'width', 'wide', '
 
 
 ** Robustness to a change of actuator position
+<<sec:robustness_actuator_position>>
 
 Let say we change the position of the actuators:
 #+begin_src matlab
@@ -1113,10 +1120,11 @@ exportFig('figs/gravimeter_transmissibility_offset_act.pdf', 'width', 'wide', 'h
 #+RESULTS:
 [[file:figs/gravimeter_transmissibility_offset_act.png]]
 
-** Combined / comparison of K and M decoupling
+** Choice of the reference frame for Jacobian decoupling
+<<sec:choice_jacobian_reference>>
 *** Introduction                                                    :ignore:
 
-If we want to decouple the system at low frequency (determined by the stiffness matrix), we have to compute the Jacobians at a point where the stiffness matrix is diagonal.
+If we want to decouple the system at low frequency (determined by the stiffness matrix), we have to compute the Jacobian at a point where the stiffness matrix is diagonal.
 A displacement (resp. rotation) of the mass at this particular point should induce a *pure* force (resp. torque) on the same point due to stiffnesses in the system.
 This can be verified by geometrical computations.
 
