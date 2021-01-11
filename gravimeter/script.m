@@ -171,7 +171,7 @@ plot(freqs, abs(squeeze(freqresp(Gx(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,
      'DisplayName', '$G_x(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(Gx(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gx(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -256,7 +256,7 @@ plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,
      'DisplayName', '$G_x(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -329,14 +329,14 @@ ylim([1e-4, 1e2]);
 RGA_svd = zeros(length(freqs), size(Gsvd,1), size(Gsvd,2));
 Gsvd_inv = inv(Gsvd);
 for f_i = 1:length(freqs)
-  RGA_svd(f_i, :, :) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
+    RGA_svd(f_i, :, :) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
 end
 
 % Relative Gain Array for the decoupled plant using the Jacobian:
 RGA_x = zeros(length(freqs), size(Gx,1), size(Gx,2));
 Gx_inv = inv(Gx);
 for f_i = 1:length(freqs)
-  RGA_x(f_i, :, :) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
+    RGA_x(f_i, :, :) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
 end
 
 figure;
@@ -356,8 +356,8 @@ plot(freqs, RGA_svd(:, 1, 2), '--', 'color', [0 0 0 0.2], ...
 plot(freqs, RGA_svd(:, 1, 1), 'k-', ...
      'DisplayName', '$RGA_{SVD}(i,i)$');
 for ch_i = 1:3
-  plot(freqs, RGA_svd(:, ch_i, ch_i), 'k-', ...
-       'HandleVisibility', 'off');
+    plot(freqs, RGA_svd(:, ch_i, ch_i), 'k-', ...
+         'HandleVisibility', 'off');
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -378,8 +378,8 @@ plot(freqs, RGA_x(:, 1, 2), '--', 'color', [0 0 0 0.2], ...
 plot(freqs, RGA_x(:, 1, 1), 'k-', ...
      'DisplayName', '$RGA_{X}(i,i)$');
 for ch_i = 1:3
-  plot(freqs, RGA_x(:, ch_i, ch_i), 'k-', ...
-       'HandleVisibility', 'off');
+    plot(freqs, RGA_x(:, ch_i, ch_i), 'k-', ...
+         'HandleVisibility', 'off');
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -406,14 +406,14 @@ ylim([1e-5, 1e1]);
 RGA_svd = zeros(size(Gsvd,1), size(Gsvd,2), length(freqs));
 Gsvd_inv = inv(Gsvd);
 for f_i = 1:length(freqs)
-  RGA_svd(:, :, f_i) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
+    RGA_svd(:, :, f_i) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
 end
 
 % Relative Gain Array for the decoupled plant using the Jacobian:
 RGA_x = zeros(size(Gx,1), size(Gx,2), length(freqs));
 Gx_inv = inv(Gx);
 for f_i = 1:length(freqs)
-  RGA_x(:, :, f_i) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
+    RGA_x(:, :, f_i) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
 end
 
 RGA_num_svd = squeeze(sum(sum(RGA_svd - eye(3))));
@@ -448,8 +448,8 @@ plot(freqs, abs(squeeze(freqresp(Gsvd(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.5
      'DisplayName', '$G_{SVD}(i,j),\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for ch_i = 1:3
-  plot(freqs, abs(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))), ...
-       'DisplayName', sprintf('$G_{SVD}(%i,%i)$', ch_i, ch_i));
+    plot(freqs, abs(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))), ...
+         'DisplayName', sprintf('$G_{SVD}(%i,%i)$', ch_i, ch_i));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -461,7 +461,7 @@ ylim([1e-8, 1e0])
 ax2 = nexttile;
 hold on;
 for ch_i = 1:3
-  plot(freqs, 180/pi*angle(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))));
+    plot(freqs, 180/pi*angle(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
@@ -558,16 +558,16 @@ ax1 = nexttile([2, 1]);
 hold on;
 plot(freqs, abs(squeeze(freqresp(L_svd(1, 1), freqs, 'Hz'))), 'DisplayName', '$L_{SVD}(i,i)$');
 for i_in_out = 2:3
-  set(gca,'ColorOrderIndex',1)
-  plot(freqs, abs(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, abs(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
 end
 
 set(gca,'ColorOrderIndex',2)
 plot(freqs, abs(squeeze(freqresp(L_cen(1, 1), freqs, 'Hz'))), ...
      'DisplayName', '$L_{J}(i,i)$');
 for i_in_out = 2:3
-  set(gca,'ColorOrderIndex',2)
-  plot(freqs, abs(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, abs(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -579,13 +579,13 @@ ylim([5e-2, 2e3])
 ax2 = nexttile;
 hold on;
 for i_in_out = 1:3
-  set(gca,'ColorOrderIndex',1)
-  plot(freqs, 180/pi*angle(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))));
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))));
 end
 set(gca,'ColorOrderIndex',2)
 for i_in_out = 1:3
-  set(gca,'ColorOrderIndex',2)
-  plot(freqs, 180/pi*angle(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))));
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
@@ -819,7 +819,7 @@ plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,
      'DisplayName', '$G_x(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -866,7 +866,7 @@ plot(freqs, abs(squeeze(freqresp(GK(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,
      'DisplayName', '$G_x(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(GK(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(GK(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -930,7 +930,7 @@ plot(freqs, abs(squeeze(freqresp(GKM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0
      'DisplayName', '$G_x(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(GKM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(GKM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -938,11 +938,12 @@ xlabel('Frequency [Hz]'); ylabel('Magnitude');
 legend('location', 'southeast');
 ylim([1e-8, 1e0]);
 
-% SVD decoupling performances                                     :noexport:
+% SVD decoupling performances
+% As the SVD is applied on a *real approximation* of the plant dynamics at a frequency $\omega_0$, it is foreseen that the effectiveness of the decoupling depends on the validity of the real approximation.
 
+% Let's do the SVD decoupling on a plant that is mostly real (low damping) and one with a large imaginary part (larger damping).
 
-la = l/2; % Position of Act. [m]
-ha = 0; % Position of Act. [m]
+% Start with small damping, the obtained diagonal and off-diagonal terms are shown in Figure [[fig:gravimeter_svd_low_damping]].
 
 c = 2e1; % Actuator Damping [N/(m/s)]
 
@@ -970,6 +971,37 @@ H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
 [U,S,V] = svd(H1);
 Gsvd = inv(U)*G*inv(V');
 
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_{svd}(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{svd}(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'northwest');
+ylim([1e-8, 1e0]);
+
+
+
+% #+name: fig:gravimeter_svd_low_damping
+% #+caption: Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with small damping
+% #+RESULTS:
+% [[file:figs/gravimeter_svd_low_damping.png]]
+
+% Now take a larger damping, the obtained diagonal and off-diagonal terms are shown in Figure [[fig:gravimeter_svd_high_damping]].
+
 c = 5e2; % Actuator Damping [N/(m/s)]
 
 %% Name of the Simulink File
@@ -996,63 +1028,6 @@ H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
 [U,S,V] = svd(H1);
 Gsvdd = inv(U)*G*inv(V');
 
-JMa = [1 0 -h/2
-       0 1  l/2
-       1 0  h/2
-       0 1  0];
-
-JMt = [1 0 -ha
-       0 1  la
-       0 1 -la];
-
-GM = pinv(JMa)*G*pinv(JMt');
-GM.InputName  = {'Fx', 'Fy', 'Mz'};
-GM.OutputName  = {'Dx', 'Dy', 'Rz'};
-
-figure;
-
-% Magnitude
-hold on;
-for i_in = 1:3
-    for i_out = [1:i_in-1, i_in+1:3]
-        plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-             'HandleVisibility', 'off');
-    end
-end
-plot(freqs, abs(squeeze(freqresp(GM(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-     'DisplayName', '$G_x(i,j)\ i \neq j$');
-set(gca,'ColorOrderIndex',1)
-for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(GM(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
-end
-hold off;
-set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-xlabel('Frequency [Hz]'); ylabel('Magnitude');
-legend('location', 'southeast');
-ylim([1e-8, 1e0]);
-
-figure;
-
-% Magnitude
-hold on;
-for i_in = 1:3
-    for i_out = [1:i_in-1, i_in+1:3]
-        plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-             'HandleVisibility', 'off');
-    end
-end
-plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-     'DisplayName', '$G_x(i,j)\ i \neq j$');
-set(gca,'ColorOrderIndex',1)
-for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
-end
-hold off;
-set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
-xlabel('Frequency [Hz]'); ylabel('Magnitude');
-legend('location', 'southeast');
-ylim([1e-8, 1e0]);
-
 figure;
 
 % Magnitude
@@ -1064,13 +1039,13 @@ for i_in = 1:3
     end
 end
 plot(freqs, abs(squeeze(freqresp(Gsvdd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-     'DisplayName', '$G_x(i,j)\ i \neq j$');
+     'DisplayName', '$G_{svd}(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-  plot(freqs, abs(squeeze(freqresp(Gsvdd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gsvdd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{svd}(%d,%d)$', i_in_out, i_in_out));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 xlabel('Frequency [Hz]'); ylabel('Magnitude');
-legend('location', 'southeast');
+legend('location', 'northwest');
 ylim([1e-8, 1e0]);

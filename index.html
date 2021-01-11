@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2021-01-08 ven. 13:57 -->
+<!-- 2021-01-11 lun. 09:09 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <title>Diagonal control using the SVD and the Jacobian Matrix</title>
 <meta name="generator" content="Org mode" />
@@ -11,22 +11,22 @@
 <link rel="stylesheet" type="text/css" href="https://research.tdehaeze.xyz/css/style.css"/>
 <script type="text/javascript" src="https://research.tdehaeze.xyz/js/script.js"></script>
 <script>
-             MathJax = {
-               svg: {
-                 scale: 1,
-                 fontCache: "global"
-               },
-               tex: {
-                 tags: "ams",
-                 multlineWidth: "%MULTLINEWIDTH",
-                 tagSide: "right",
-                         macros: {bm: ["\\boldsymbol{#1}",1],},
-                 tagIndent: ".8em"
-               }
-             };
-             </script>
-             <script id="MathJax-script" async
-               src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+           MathJax = {
+             svg: {
+               scale: 1,
+               fontCache: "global"
+             },
+             tex: {
+               tags: "ams",
+               multlineWidth: "%MULTLINEWIDTH",
+               tagSide: "right",
+                       macros: {bm: ["\\boldsymbol{#1}",1],},
+               tagIndent: ".8em"
+             }
+           };
+           </script>
+           <script id="MathJax-script" async
+             src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
 <div id="org-div-home-and-up">
@@ -39,41 +39,41 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgc161e51">1. Gravimeter - Simscape Model</a>
+<li><a href="#orgf941d81">1. Gravimeter - Simscape Model</a>
 <ul>
-<li><a href="#org2b94fb4">1.1. Introduction</a></li>
-<li><a href="#org1068702">1.2. Gravimeter Model - Parameters</a></li>
-<li><a href="#org64981fa">1.3. System Identification</a></li>
-<li><a href="#org47f1275">1.4. Decoupling using the Jacobian</a></li>
-<li><a href="#org1cd8ecb">1.5. Decoupling using the SVD</a></li>
-<li><a href="#org460478c">1.6. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
-<li><a href="#org4b89a71">1.7. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
-<li><a href="#org78d0b3c">1.8. Obtained Decoupled Plants</a></li>
-<li><a href="#orgeec17f1">1.9. Diagonal Controller</a></li>
-<li><a href="#orgb44bc2a">1.10. Closed-Loop system Performances</a></li>
-<li><a href="#orgc3b906c">1.11. Robustness to a change of actuator position</a></li>
-<li><a href="#org3c99d2a">1.12. Combined / comparison of K and M decoupling</a>
+<li><a href="#orgd71b45c">1.1. Introduction</a></li>
+<li><a href="#orga826e17">1.2. Gravimeter Model - Parameters</a></li>
+<li><a href="#orgb93f5ad">1.3. System Identification</a></li>
+<li><a href="#org6e67a49">1.4. Decoupling using the Jacobian</a></li>
+<li><a href="#orgba9173b">1.5. Decoupling using the SVD</a></li>
+<li><a href="#orgdb0fed0">1.6. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
+<li><a href="#orge1275d5">1.7. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
+<li><a href="#org3fdf789">1.8. Obtained Decoupled Plants</a></li>
+<li><a href="#orgc6e5815">1.9. Diagonal Controller</a></li>
+<li><a href="#orge79e44b">1.10. Closed-Loop system Performances</a></li>
+<li><a href="#orgbb745e6">1.11. Robustness to a change of actuator position</a></li>
+<li><a href="#org89d44ae">1.12. Combined / comparison of K and M decoupling</a>
 <ul>
-<li><a href="#org1af8b78">1.12.1. Decoupling of the mass matrix</a></li>
-<li><a href="#org94b1a6e">1.12.2. Decoupling of the stiffness matrix</a></li>
-<li><a href="#org0400e21">1.12.3. Combined decoupling of the mass and stiffness matrices</a></li>
-<li><a href="#orgfb1dce1">1.12.4. Conclusion</a></li>
+<li><a href="#org3cc6fa7">1.12.1. Decoupling of the mass matrix</a></li>
+<li><a href="#org00808bc">1.12.2. Decoupling of the stiffness matrix</a></li>
+<li><a href="#org71f7b09">1.12.3. Combined decoupling of the mass and stiffness matrices</a></li>
+<li><a href="#org174077b">1.12.4. Conclusion</a></li>
 </ul>
 </li>
-<li><a href="#org7a431a6">1.13. SVD decoupling performances</a></li>
+<li><a href="#org104acaf">1.13. SVD decoupling performances</a></li>
 </ul>
 </li>
-<li><a href="#org1b57bf2">2. Stewart Platform - Simscape Model</a>
+<li><a href="#org2e39f13">2. Stewart Platform - Simscape Model</a>
 <ul>
-<li><a href="#orgca0d143">2.1. Simscape Model - Parameters</a></li>
-<li><a href="#orge966157">2.2. Identification of the plant</a></li>
-<li><a href="#org35c4aae">2.3. Decoupling using the Jacobian</a></li>
-<li><a href="#org896c978">2.4. Decoupling using the SVD</a></li>
-<li><a href="#orgb0956ea">2.5. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
-<li><a href="#orgfd99bee">2.6. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
-<li><a href="#orgceebcef">2.7. Obtained Decoupled Plants</a></li>
-<li><a href="#org3a97dc4">2.8. Diagonal Controller</a></li>
-<li><a href="#org8d85d27">2.9. Closed-Loop system Performances</a></li>
+<li><a href="#orgb17cfae">2.1. Simscape Model - Parameters</a></li>
+<li><a href="#orge9cd306">2.2. Identification of the plant</a></li>
+<li><a href="#org072fd79">2.3. Decoupling using the Jacobian</a></li>
+<li><a href="#orgd4744ca">2.4. Decoupling using the SVD</a></li>
+<li><a href="#orgb67bd2a">2.5. Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</a></li>
+<li><a href="#orgdc07653">2.6. Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</a></li>
+<li><a href="#orga2a4d78">2.7. Obtained Decoupled Plants</a></li>
+<li><a href="#orgbe86d5d">2.8. Diagonal Controller</a></li>
+<li><a href="#org80a8e85">2.9. Closed-Loop system Performances</a></li>
 </ul>
 </li>
 </ul>
@@ -92,58 +92,58 @@ Then, a diagonal controller is used.
 These two methods are tested on two plants:
 </p>
 <ul class="org-ul">
-<li>In Section <a href="#orge799d96">1</a> on a 3-DoF gravimeter</li>
-<li>In Section <a href="#org4fdf996">2</a> on a 6-DoF Stewart platform</li>
+<li>In Section <a href="#org4d66523">1</a> on a 3-DoF gravimeter</li>
+<li>In Section <a href="#org5bbb8c3">2</a> on a 6-DoF Stewart platform</li>
 </ul>
 
-<div id="outline-container-orgc161e51" class="outline-2">
-<h2 id="orgc161e51"><span class="section-number-2">1</span> Gravimeter - Simscape Model</h2>
+<div id="outline-container-orgf941d81" class="outline-2">
+<h2 id="orgf941d81"><span class="section-number-2">1</span> Gravimeter - Simscape Model</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-<a id="orge799d96"></a>
+<a id="org4d66523"></a>
 </p>
 </div>
 
-<div id="outline-container-org2b94fb4" class="outline-3">
-<h3 id="org2b94fb4"><span class="section-number-3">1.1</span> Introduction</h3>
+<div id="outline-container-orgd71b45c" class="outline-3">
+<h3 id="orgd71b45c"><span class="section-number-3">1.1</span> Introduction</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 In this part, diagonal control using both the SVD and the Jacobian matrices are applied on a gravimeter model:
 </p>
 <ul class="org-ul">
-<li>Section <a href="#org52ee61c">1.2</a>: the model is described and its parameters are defined.</li>
-<li>Section <a href="#org971a38f">1.3</a>: the plant dynamics from the actuators to the sensors is computed from a Simscape model.</li>
-<li>Section <a href="#org162e604">1.4</a>: the plant is decoupled using the Jacobian matrices.</li>
-<li>Section <a href="#orgafc4b89">1.5</a>: the Singular Value Decomposition is performed on a real approximation of the plant transfer matrix and further use to decouple the system.</li>
-<li>Section <a href="#org13966f7">1.6</a>: the effectiveness of the decoupling is computed using the Gershorin radii</li>
-<li>Section <a href="#org8670ef6">1.7</a>: the effectiveness of the decoupling is computed using the Relative Gain Array</li>
-<li>Section <a href="#org87a2489">1.8</a>: the obtained decoupled plants are compared</li>
-<li>Section <a href="#orgda73577">1.9</a>: the diagonal controller is developed</li>
-<li>Section <a href="#org604735b">1.10</a>: the obtained closed-loop performances for the two methods are compared</li>
+<li>Section <a href="#org7457b44">1.2</a>: the model is described and its parameters are defined.</li>
+<li>Section <a href="#org8c3a1dc">1.3</a>: the plant dynamics from the actuators to the sensors is computed from a Simscape model.</li>
+<li>Section <a href="#orga41db44">1.4</a>: the plant is decoupled using the Jacobian matrices.</li>
+<li>Section <a href="#org7f8ba13">1.5</a>: the Singular Value Decomposition is performed on a real approximation of the plant transfer matrix and further use to decouple the system.</li>
+<li>Section <a href="#orgba7ada6">1.6</a>: the effectiveness of the decoupling is computed using the Gershorin radii</li>
+<li>Section <a href="#org8acb93f">1.7</a>: the effectiveness of the decoupling is computed using the Relative Gain Array</li>
+<li>Section <a href="#org6195fe5">1.8</a>: the obtained decoupled plants are compared</li>
+<li>Section <a href="#org455ef8e">1.9</a>: the diagonal controller is developed</li>
+<li>Section <a href="#org61fa77b">1.10</a>: the obtained closed-loop performances for the two methods are compared</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org1068702" class="outline-3">
-<h3 id="org1068702"><span class="section-number-3">1.2</span> Gravimeter Model - Parameters</h3>
+<div id="outline-container-orga826e17" class="outline-3">
+<h3 id="orga826e17"><span class="section-number-3">1.2</span> Gravimeter Model - Parameters</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
-<a id="org52ee61c"></a>
+<a id="org7457b44"></a>
 </p>
 
 <p>
-The model of the gravimeter is schematically shown in Figure <a href="#orgbea95a3">1</a>.
+The model of the gravimeter is schematically shown in Figure <a href="#orgda8b2e3">1</a>.
 </p>
 
 
-<div id="orgbea95a3" class="figure">
+<div id="orgda8b2e3" class="figure">
 <p><img src="figs/gravimeter_model.png" alt="gravimeter_model.png" />
 </p>
 <p><span class="figure-number">Figure 1: </span>Model of the gravimeter</p>
 </div>
 
 
-<div id="orgb06059e" class="figure">
+<div id="org039f624" class="figure">
 <p><img src="figs/leg_model.png" alt="leg_model.png" />
 </p>
 <p><span class="figure-number">Figure 2: </span>Model of the struts</p>
@@ -153,55 +153,55 @@ The model of the gravimeter is schematically shown in Figure <a href="#orgbea95a
 The parameters used for the simulation are the following:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  l  = 1.0; <span class="org-comment">% Length of the mass [m]</span>
-  h  = 1.7; <span class="org-comment">% Height of the mass [m]</span>
+<pre class="src src-matlab">l  = 1.0; <span class="org-comment">% Length of the mass [m]</span>
+h  = 1.7; <span class="org-comment">% Height of the mass [m]</span>
 
-  la = l<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
-  ha = h<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
+la = l<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
+ha = h<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
 
-  m = 400; <span class="org-comment">% Mass [kg]</span>
-  I = 115; <span class="org-comment">% Inertia [kg m^2]</span>
+m = 400; <span class="org-comment">% Mass [kg]</span>
+I = 115; <span class="org-comment">% Inertia [kg m^2]</span>
 
-  k = 15e3; <span class="org-comment">% Actuator Stiffness [N/m]</span>
-  c = 2e1; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
+k = 15e3; <span class="org-comment">% Actuator Stiffness [N/m]</span>
+c = 2e1; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
 
-  deq = 0.2; <span class="org-comment">% Length of the actuators [m]</span>
+deq = 0.2; <span class="org-comment">% Length of the actuators [m]</span>
 
-  g = 0; <span class="org-comment">% Gravity [m/s2]</span>
+g = 0; <span class="org-comment">% Gravity [m/s2]</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org64981fa" class="outline-3">
-<h3 id="org64981fa"><span class="section-number-3">1.3</span> System Identification</h3>
+<div id="outline-container-orgb93f5ad" class="outline-3">
+<h3 id="orgb93f5ad"><span class="section-number-3">1.3</span> System Identification</h3>
 <div class="outline-text-3" id="text-1-3">
 <p>
-<a id="org971a38f"></a>
+<a id="org8c3a1dc"></a>
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  <span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
-  mdl = <span class="org-string">'gravimeter'</span>;
+<pre class="src src-matlab"><span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
+mdl = <span class="org-string">'gravimeter'</span>;
 
-  <span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
-  clear io; io_i = 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F1'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F2'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F3'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+<span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
+clear io; io_i = 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F1'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F2'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F3'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
 
-  G = linearize(mdl, io);
-  G.InputName  = {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>};
-  G.OutputName = {<span class="org-string">'Ax1'</span>, <span class="org-string">'Ay1'</span>, <span class="org-string">'Ax2'</span>, <span class="org-string">'Ay2'</span>};
+G = linearize(mdl, io);
+G.InputName  = {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>};
+G.OutputName = {<span class="org-string">'Ax1'</span>, <span class="org-string">'Ay1'</span>, <span class="org-string">'Ax2'</span>, <span class="org-string">'Ay2'</span>};
 </pre>
 </div>
 
 <p>
-The inputs and outputs of the plant are shown in Figure <a href="#orgd95ddc7">3</a>.
+The inputs and outputs of the plant are shown in Figure <a href="#org97413c0">3</a>.
 </p>
 
 <p>
@@ -218,7 +218,7 @@ And 4 outputs (the two 2-DoF accelerometers):
 \end{equation}
 
 
-<div id="orgd95ddc7" class="figure">
+<div id="org97413c0" class="figure">
 <p><img src="figs/gravimeter_plant_schematic.png" alt="gravimeter_plant_schematic.png" />
 </p>
 <p><span class="figure-number">Figure 3: </span>Schematic of the gravimeter plant</p>
@@ -264,7 +264,7 @@ We can check the poles of the plant:
 As expected, the plant as 6 states (2 translations + 1 rotation)
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  size(G)
+<pre class="src src-matlab">size(G)
 </pre>
 </div>
 
@@ -274,11 +274,11 @@ State-space model with 4 outputs, 3 inputs, and 6 states.
 
 
 <p>
-The bode plot of all elements of the plant are shown in Figure <a href="#orgd28d617">4</a>.
+The bode plot of all elements of the plant are shown in Figure <a href="#orge2f826e">4</a>.
 </p>
 
 
-<div id="orgd28d617" class="figure">
+<div id="orge2f826e" class="figure">
 <p><img src="figs/open_loop_tf.png" alt="open_loop_tf.png" />
 </p>
 <p><span class="figure-number">Figure 4: </span>Open Loop Transfer Function from 3 Actuators to 4 Accelerometers</p>
@@ -286,15 +286,15 @@ The bode plot of all elements of the plant are shown in Figure <a href="#orgd28d
 </div>
 </div>
 
-<div id="outline-container-org47f1275" class="outline-3">
-<h3 id="org47f1275"><span class="section-number-3">1.4</span> Decoupling using the Jacobian</h3>
+<div id="outline-container-org6e67a49" class="outline-3">
+<h3 id="org6e67a49"><span class="section-number-3">1.4</span> Decoupling using the Jacobian</h3>
 <div class="outline-text-3" id="text-1-4">
 <p>
-<a id="org162e604"></a>
+<a id="orga41db44"></a>
 </p>
 
 <p>
-Consider the control architecture shown in Figure <a href="#org959bcce">5</a>.
+Consider the control architecture shown in Figure <a href="#org2d0a2c4">5</a>.
 </p>
 
 <p>
@@ -312,16 +312,16 @@ The Jacobian matrix \(J_{a}\) is used to compute the vertical acceleration, hori
 \end{equation}
 
 <p>
-We thus define a new plant as defined in Figure <a href="#org959bcce">5</a>.
+We thus define a new plant as defined in Figure <a href="#org2d0a2c4">5</a>.
 \[ \bm{G}_x(s) = J_a^{-1} \bm{G}(s) J_{\tau}^{-T} \]
 </p>
 
 <p>
-\(\bm{G}_x(s)\) correspond to the $3 &times; 3$transfer function matrix from forces and torques applied to the gravimeter at its center of mass to the absolute acceleration of the gravimeter&rsquo;s center of mass (Figure <a href="#org959bcce">5</a>).
+\(\bm{G}_x(s)\) correspond to the $3 &times; 3$transfer function matrix from forces and torques applied to the gravimeter at its center of mass to the absolute acceleration of the gravimeter&rsquo;s center of mass (Figure <a href="#org2d0a2c4">5</a>).
 </p>
 
 
-<div id="org959bcce" class="figure">
+<div id="org2d0a2c4" class="figure">
 <p><img src="figs/gravimeter_decouple_jacobian.png" alt="gravimeter_decouple_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 5: </span>Decoupled plant \(\bm{G}_x\) using the Jacobian matrix \(J\)</p>
@@ -331,14 +331,14 @@ We thus define a new plant as defined in Figure <a href="#org959bcce">5</a>.
 The Jacobian corresponding to the sensors and actuators are defined below:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  Ja = [1 0 <span class="org-type">-</span>h<span class="org-type">/</span>2
-        0 1  l<span class="org-type">/</span>2
-        1 0  h<span class="org-type">/</span>2
-        0 1  0];
+<pre class="src src-matlab">Ja = [1 0 <span class="org-type">-</span>h<span class="org-type">/</span>2
+      0 1  l<span class="org-type">/</span>2
+      1 0  h<span class="org-type">/</span>2
+      0 1  0];
 
-  Jt = [1 0 <span class="org-type">-</span>ha
-        0 1  la
-        0 1 <span class="org-type">-</span>la];
+Jt = [1 0 <span class="org-type">-</span>ha
+      0 1  la
+      0 1 <span class="org-type">-</span>la];
 </pre>
 </div>
 
@@ -346,9 +346,9 @@ The Jacobian corresponding to the sensors and actuators are defined below:
 And the plant \(\bm{G}_x\) is computed:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  Gx = pinv(Ja)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(Jt<span class="org-type">'</span>);
-  Gx.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
-  Gx.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
+<pre class="src src-matlab">Gx = pinv(Ja)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(Jt<span class="org-type">'</span>);
+Gx.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
+Gx.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
 </pre>
 </div>
 
@@ -359,11 +359,11 @@ State-space model with 3 outputs, 3 inputs, and 6 states.
 
 
 <p>
-The diagonal and off-diagonal elements of \(G_x\) are shown in Figure <a href="#org74f33b3">6</a>.
+The diagonal and off-diagonal elements of \(G_x\) are shown in Figure <a href="#orgb83367c">6</a>.
 </p>
 
 
-<div id="org74f33b3" class="figure">
+<div id="orgb83367c" class="figure">
 <p><img src="figs/gravimeter_jacobian_plant.png" alt="gravimeter_jacobian_plant.png" />
 </p>
 <p><span class="figure-number">Figure 6: </span>Diagonal and off-diagonal elements of \(G_x\)</p>
@@ -371,11 +371,11 @@ The diagonal and off-diagonal elements of \(G_x\) are shown in Figure <a href="#
 </div>
 </div>
 
-<div id="outline-container-org1cd8ecb" class="outline-3">
-<h3 id="org1cd8ecb"><span class="section-number-3">1.5</span> Decoupling using the SVD</h3>
+<div id="outline-container-orgba9173b" class="outline-3">
+<h3 id="orgba9173b"><span class="section-number-3">1.5</span> Decoupling using the SVD</h3>
 <div class="outline-text-3" id="text-1-5">
 <p>
-<a id="orgafc4b89"></a>
+<a id="org7f8ba13"></a>
 </p>
 
 <p>
@@ -386,9 +386,9 @@ In order to decouple the plant using the SVD, first a real approximation of the 
 Let&rsquo;s compute a real approximation of the complex matrix \(H_1\) which corresponds to the the transfer function \(G(j\omega_c)\) from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency \(\omega_c\).
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>10; <span class="org-comment">% Decoupling frequency [rad/s]</span>
+<pre class="src src-matlab">wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>10; <span class="org-comment">% Decoupling frequency [rad/s]</span>
 
-  H1 = evalfr(G, <span class="org-constant">j</span><span class="org-type">*</span>wc);
+H1 = evalfr(G, <span class="org-constant">j</span><span class="org-type">*</span>wc);
 </pre>
 </div>
 
@@ -396,8 +396,8 @@ Let&rsquo;s compute a real approximation of the complex matrix \(H_1\) which cor
 The real approximation is computed as follows:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  D = pinv(real(H1<span class="org-type">'*</span>H1));
-  H1 = pinv(D<span class="org-type">*</span>real(H1<span class="org-type">'*</span>diag(exp(<span class="org-constant">j</span><span class="org-type">*</span>angle(diag(H1<span class="org-type">*</span>D<span class="org-type">*</span>H1<span class="org-type">.'</span>))<span class="org-type">/</span>2))));
+<pre class="src src-matlab">D = pinv(real(H1<span class="org-type">'*</span>H1));
+H1 = pinv(D<span class="org-type">*</span>real(H1<span class="org-type">'*</span>diag(exp(<span class="org-constant">j</span><span class="org-type">*</span>angle(diag(H1<span class="org-type">*</span>D<span class="org-type">*</span>H1<span class="org-type">.'</span>))<span class="org-type">/</span>2))));
 </pre>
 </div>
 
@@ -445,7 +445,7 @@ Now, the Singular Value Decomposition of \(H_1\) is performed:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  [U,S,V] = svd(H1);
+<pre class="src src-matlab">[U,S,V] = svd(H1);
 </pre>
 </div>
 
@@ -524,11 +524,11 @@ Now, the Singular Value Decomposition of \(H_1\) is performed:
 </table>
 
 <p>
-The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#org967d961">7</a>.
+The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#org55d77b0">7</a>.
 </p>
 
 
-<div id="org967d961" class="figure">
+<div id="org55d77b0" class="figure">
 <p><img src="figs/gravimeter_decouple_svd.png" alt="gravimeter_decouple_svd.png" />
 </p>
 <p><span class="figure-number">Figure 7: </span>Decoupled plant \(\bm{G}_{SVD}\) using the Singular Value Decomposition</p>
@@ -540,7 +540,7 @@ The decoupled plant is then:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  Gsvd = inv(U)<span class="org-type">*</span>G<span class="org-type">*</span>inv(V<span class="org-type">'</span>);
+<pre class="src src-matlab">Gsvd = inv(U)<span class="org-type">*</span>G<span class="org-type">*</span>inv(V<span class="org-type">'</span>);
 </pre>
 </div>
 
@@ -554,15 +554,15 @@ State-space model with 4 outputs, 3 inputs, and 6 states.
 The 4th output (corresponding to the null singular value) is discarded, and we only keep the \(3 \times 3\) plant:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  Gsvd = Gsvd(1<span class="org-type">:</span>3, 1<span class="org-type">:</span>3);
+<pre class="src src-matlab">Gsvd = Gsvd(1<span class="org-type">:</span>3, 1<span class="org-type">:</span>3);
 </pre>
 </div>
 
 <p>
-The diagonal and off-diagonal elements of the &ldquo;SVD&rdquo; plant are shown in Figure <a href="#orgb99dff3">8</a>.
+The diagonal and off-diagonal elements of the &ldquo;SVD&rdquo; plant are shown in Figure <a href="#org72003df">8</a>.
 </p>
 
-<div id="orgb99dff3" class="figure">
+<div id="org72003df" class="figure">
 <p><img src="figs/gravimeter_svd_plant.png" alt="gravimeter_svd_plant.png" />
 </p>
 <p><span class="figure-number">Figure 8: </span>Diagonal and off-diagonal elements of \(G_{svd}\)</p>
@@ -570,11 +570,11 @@ The diagonal and off-diagonal elements of the &ldquo;SVD&rdquo; plant are shown 
 </div>
 </div>
 
-<div id="outline-container-org460478c" class="outline-3">
-<h3 id="org460478c"><span class="section-number-3">1.6</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
+<div id="outline-container-orgdb0fed0" class="outline-3">
+<h3 id="orgdb0fed0"><span class="section-number-3">1.6</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
 <div class="outline-text-3" id="text-1-6">
 <p>
-<a id="org13966f7"></a>
+<a id="orgba7ada6"></a>
 </p>
 
 <p>
@@ -587,7 +587,7 @@ The &ldquo;Gershgorin Radii&rdquo; of a matrix \(S\) is defined by:
 </p>
 
 
-<div id="org4fba603" class="figure">
+<div id="org733c69c" class="figure">
 <p><img src="figs/gravimeter_gershgorin_radii.png" alt="gravimeter_gershgorin_radii.png" />
 </p>
 <p><span class="figure-number">Figure 9: </span>Gershgorin Radii of the Coupled and Decoupled plants</p>
@@ -595,11 +595,11 @@ The &ldquo;Gershgorin Radii&rdquo; of a matrix \(S\) is defined by:
 </div>
 </div>
 
-<div id="outline-container-org4b89a71" class="outline-3">
-<h3 id="org4b89a71"><span class="section-number-3">1.7</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
+<div id="outline-container-orge1275d5" class="outline-3">
+<h3 id="orge1275d5"><span class="section-number-3">1.7</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
 <div class="outline-text-3" id="text-1-7">
 <p>
-<a id="org8670ef6"></a>
+<a id="org8acb93f"></a>
 </p>
 
 <p>
@@ -613,11 +613,11 @@ where \(\times\) denotes an element by element multiplication and \(G(s)\) is an
 </p>
 
 <p>
-The obtained RGA elements are shown in Figure <a href="#orgf834281">10</a>.
+The obtained RGA elements are shown in Figure <a href="#orgeaccd91">10</a>.
 </p>
 
 
-<div id="orgf834281" class="figure">
+<div id="orgeaccd91" class="figure">
 <p><img src="figs/gravimeter_rga.png" alt="gravimeter_rga.png" />
 </p>
 <p><span class="figure-number">Figure 10: </span>Obtained norm of RGA elements for the SVD decoupled plant and the Jacobian decoupled plant</p>
@@ -631,7 +631,7 @@ The RGA-number is also a measure of diagonal dominance:
 \end{equation}
 
 
-<div id="org7f17723" class="figure">
+<div id="org54abca9" class="figure">
 <p><img src="figs/gravimeter_rga_num.png" alt="gravimeter_rga_num.png" />
 </p>
 <p><span class="figure-number">Figure 11: </span>RGA-Number for the Gravimeter</p>
@@ -639,30 +639,30 @@ The RGA-number is also a measure of diagonal dominance:
 </div>
 </div>
 
-<div id="outline-container-org78d0b3c" class="outline-3">
-<h3 id="org78d0b3c"><span class="section-number-3">1.8</span> Obtained Decoupled Plants</h3>
+<div id="outline-container-org3fdf789" class="outline-3">
+<h3 id="org3fdf789"><span class="section-number-3">1.8</span> Obtained Decoupled Plants</h3>
 <div class="outline-text-3" id="text-1-8">
 <p>
-<a id="org87a2489"></a>
+<a id="org6195fe5"></a>
 </p>
 
 <p>
-The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#org8f827f7">12</a>.
+The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#org428119b">12</a>.
 </p>
 
 
-<div id="org8f827f7" class="figure">
+<div id="org428119b" class="figure">
 <p><img src="figs/gravimeter_decoupled_plant_svd.png" alt="gravimeter_decoupled_plant_svd.png" />
 </p>
 <p><span class="figure-number">Figure 12: </span>Decoupled Plant using SVD</p>
 </div>
 
 <p>
-Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#orgf479286">13</a>.
+Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#orgb8f1ebd">13</a>.
 </p>
 
 
-<div id="orgf479286" class="figure">
+<div id="orgb8f1ebd" class="figure">
 <p><img src="figs/gravimeter_decoupled_plant_jacobian.png" alt="gravimeter_decoupled_plant_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 13: </span>Gravimeter Platform Plant from forces (resp. torques) applied by the legs to the acceleration (resp. angular acceleration) of the platform as well as all the coupling terms between the two (non-diagonal terms of the transfer function matrix)</p>
@@ -670,12 +670,12 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
 </div>
 </div>
 
-<div id="outline-container-orgeec17f1" class="outline-3">
-<h3 id="orgeec17f1"><span class="section-number-3">1.9</span> Diagonal Controller</h3>
+<div id="outline-container-orgc6e5815" class="outline-3">
+<h3 id="orgc6e5815"><span class="section-number-3">1.9</span> Diagonal Controller</h3>
 <div class="outline-text-3" id="text-1-9">
 <p>
-<a id="orgda73577"></a>
-The control diagram for the centralized control is shown in Figure <a href="#org028e441">14</a>.
+<a id="org455ef8e"></a>
+The control diagram for the centralized control is shown in Figure <a href="#org1fbe2e8">14</a>.
 </p>
 
 <p>
@@ -684,19 +684,19 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 </p>
 
 
-<div id="org028e441" class="figure">
+<div id="org1fbe2e8" class="figure">
 <p><img src="figs/centralized_control_gravimeter.png" alt="centralized_control_gravimeter.png" />
 </p>
 <p><span class="figure-number">Figure 14: </span>Control Diagram for the Centralized control</p>
 </div>
 
 <p>
-The SVD control architecture is shown in Figure <a href="#org0e0cc89">15</a>.
+The SVD control architecture is shown in Figure <a href="#orgb8ae1bd">15</a>.
 The matrices \(U\) and \(V\) are used to decoupled the plant \(G\).
 </p>
 
 
-<div id="org0e0cc89" class="figure">
+<div id="orgb8ae1bd" class="figure">
 <p><img src="figs/svd_control_gravimeter.png" alt="svd_control_gravimeter.png" />
 </p>
 <p><span class="figure-number">Figure 15: </span>Control Diagram for the SVD control</p>
@@ -713,32 +713,32 @@ We choose the controller to be a low pass filter:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>10;  <span class="org-comment">% Crossover Frequency [rad/s]</span>
-  w0 = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>0.1; <span class="org-comment">% Controller Pole [rad/s]</span>
+<pre class="src src-matlab">wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>10;  <span class="org-comment">% Crossover Frequency [rad/s]</span>
+w0 = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>0.1; <span class="org-comment">% Controller Pole [rad/s]</span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  K_cen = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gx, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
-  L_cen = K_cen<span class="org-type">*</span>Gx;
-  G_cen = feedback(G, pinv(Jt<span class="org-type">'</span>)<span class="org-type">*</span>K_cen<span class="org-type">*</span>pinv(Ja));
+<pre class="src src-matlab">K_cen = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gx, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
+L_cen = K_cen<span class="org-type">*</span>Gx;
+G_cen = feedback(G, pinv(Jt<span class="org-type">'</span>)<span class="org-type">*</span>K_cen<span class="org-type">*</span>pinv(Ja));
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  K_svd = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gsvd, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
-  L_svd = K_svd<span class="org-type">*</span>Gsvd;
-  U_inv = inv(U);
-  G_svd = feedback(G, inv(V<span class="org-type">'</span>)<span class="org-type">*</span>K_svd<span class="org-type">*</span>U_inv(1<span class="org-type">:</span>3, <span class="org-type">:</span>));
+<pre class="src src-matlab">K_svd = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gsvd, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
+L_svd = K_svd<span class="org-type">*</span>Gsvd;
+U_inv = inv(U);
+G_svd = feedback(G, inv(V<span class="org-type">'</span>)<span class="org-type">*</span>K_svd<span class="org-type">*</span>U_inv(1<span class="org-type">:</span>3, <span class="org-type">:</span>));
 </pre>
 </div>
 
 <p>
-The obtained diagonal elements of the loop gains are shown in Figure <a href="#orga6f62fe">16</a>.
+The obtained diagonal elements of the loop gains are shown in Figure <a href="#org819d102">16</a>.
 </p>
 
 
-<div id="orga6f62fe" class="figure">
+<div id="org819d102" class="figure">
 <p><img src="figs/gravimeter_comp_loop_gain_diagonal.png" alt="gravimeter_comp_loop_gain_diagonal.png" />
 </p>
 <p><span class="figure-number">Figure 16: </span>Comparison of the diagonal elements of the loop gains for the SVD control architecture and the Jacobian one</p>
@@ -746,18 +746,18 @@ The obtained diagonal elements of the loop gains are shown in Figure <a href="#o
 </div>
 </div>
 
-<div id="outline-container-orgb44bc2a" class="outline-3">
-<h3 id="orgb44bc2a"><span class="section-number-3">1.10</span> Closed-Loop system Performances</h3>
+<div id="outline-container-orge79e44b" class="outline-3">
+<h3 id="orge79e44b"><span class="section-number-3">1.10</span> Closed-Loop system Performances</h3>
 <div class="outline-text-3" id="text-1-10">
 <p>
-<a id="org604735b"></a>
+<a id="org61fa77b"></a>
 </p>
 
 <p>
 Let&rsquo;s first verify the stability of the closed-loop systems:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  isstable(G_cen)
+<pre class="src src-matlab">isstable(G_cen)
 </pre>
 </div>
 
@@ -769,7 +769,7 @@ ans =
 
 
 <div class="org-src-container">
-<pre class="src src-matlab">  isstable(G_svd)
+<pre class="src src-matlab">isstable(G_svd)
 </pre>
 </div>
 
@@ -781,18 +781,18 @@ ans =
 
 
 <p>
-The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#org7361c67">17</a>.
+The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#org817a11e">17</a>.
 </p>
 
 
-<div id="org7361c67" class="figure">
+<div id="org817a11e" class="figure">
 <p><img src="figs/gravimeter_platform_simscape_cl_transmissibility.png" alt="gravimeter_platform_simscape_cl_transmissibility.png" />
 </p>
 <p><span class="figure-number">Figure 17: </span>Obtained Transmissibility</p>
 </div>
 
 
-<div id="org346f8e3" class="figure">
+<div id="org60c7852" class="figure">
 <p><img src="figs/gravimeter_cl_transmissibility_coupling.png" alt="gravimeter_cl_transmissibility_coupling.png" />
 </p>
 <p><span class="figure-number">Figure 18: </span>Obtain coupling terms of the transmissibility matrix</p>
@@ -801,15 +801,15 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 </div>
 
 
-<div id="outline-container-orgc3b906c" class="outline-3">
-<h3 id="orgc3b906c"><span class="section-number-3">1.11</span> Robustness to a change of actuator position</h3>
+<div id="outline-container-orgbb745e6" class="outline-3">
+<h3 id="orgbb745e6"><span class="section-number-3">1.11</span> Robustness to a change of actuator position</h3>
 <div class="outline-text-3" id="text-1-11">
 <p>
 Let say we change the position of the actuators:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  la = l<span class="org-type">/</span>2<span class="org-type">*</span>0.7; <span class="org-comment">% Position of Act. [m]</span>
-  ha = h<span class="org-type">/</span>2<span class="org-type">*</span>0.7; <span class="org-comment">% Position of Act. [m]</span>
+<pre class="src src-matlab">la = l<span class="org-type">/</span>2<span class="org-type">*</span>0.7; <span class="org-comment">% Position of Act. [m]</span>
+ha = h<span class="org-type">/</span>2<span class="org-type">*</span>0.7; <span class="org-comment">% Position of Act. [m]</span>
 </pre>
 </div>
 
@@ -822,7 +822,7 @@ The closed-loop system are still stable, and their
 </p>
 
 
-<div id="org8498691" class="figure">
+<div id="org04c5145" class="figure">
 <p><img src="figs/gravimeter_transmissibility_offset_act.png" alt="gravimeter_transmissibility_offset_act.png" />
 </p>
 <p><span class="figure-number">Figure 19: </span>Transmissibility for the initial CL system and when the position of  actuators are changed</p>
@@ -830,8 +830,8 @@ The closed-loop system are still stable, and their
 </div>
 </div>
 
-<div id="outline-container-org3c99d2a" class="outline-3">
-<h3 id="org3c99d2a"><span class="section-number-3">1.12</span> Combined / comparison of K and M decoupling</h3>
+<div id="outline-container-org89d44ae" class="outline-3">
+<h3 id="org89d44ae"><span class="section-number-3">1.12</span> Combined / comparison of K and M decoupling</h3>
 <div class="outline-text-3" id="text-1-12">
 <p>
 If we want to decouple the system at low frequency (determined by the stiffness matrix), we have to compute the Jacobians at a point where the stiffness matrix is diagonal.
@@ -852,39 +852,39 @@ To do so, the actuators (springs) should be positioned such that the stiffness m
 </p>
 </div>
 
-<div id="outline-container-org1af8b78" class="outline-4">
-<h4 id="org1af8b78"><span class="section-number-4">1.12.1</span> Decoupling of the mass matrix</h4>
+<div id="outline-container-org3cc6fa7" class="outline-4">
+<h4 id="org3cc6fa7"><span class="section-number-4">1.12.1</span> Decoupling of the mass matrix</h4>
 <div class="outline-text-4" id="text-1-12-1">
 
-<div id="org4b7d5d2" class="figure">
+<div id="org6a13e78" class="figure">
 <p><img src="figs/gravimeter_model_M.png" alt="gravimeter_model_M.png" />
 </p>
 <p><span class="figure-number">Figure 20: </span>Choice of {O} such that the Mass Matrix is Diagonal</p>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  la = l<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
-  ha = h<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
+<pre class="src src-matlab">la = l<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
+ha = h<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  <span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
-  mdl = <span class="org-string">'gravimeter'</span>;
+<pre class="src src-matlab"><span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
+mdl = <span class="org-string">'gravimeter'</span>;
 
-  <span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
-  clear io; io_i = 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F1'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F2'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F3'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+<span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
+clear io; io_i = 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F1'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F2'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F3'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
 
-  G = linearize(mdl, io);
-  G.InputName  = {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>};
-  G.OutputName = {<span class="org-string">'Ax1'</span>, <span class="org-string">'Ay1'</span>, <span class="org-string">'Ax2'</span>, <span class="org-string">'Ay2'</span>};
+G = linearize(mdl, io);
+G.InputName  = {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>};
+G.OutputName = {<span class="org-string">'Ax1'</span>, <span class="org-string">'Ay1'</span>, <span class="org-string">'Ax2'</span>, <span class="org-string">'Ay2'</span>};
 </pre>
 </div>
 
@@ -892,26 +892,26 @@ To do so, the actuators (springs) should be positioned such that the stiffness m
 Decoupling at the CoM (Mass decoupled)
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  JMa = [1 0 <span class="org-type">-</span>h<span class="org-type">/</span>2
-         0 1  l<span class="org-type">/</span>2
-         1 0  h<span class="org-type">/</span>2
-         0 1  0];
+<pre class="src src-matlab">JMa = [1 0 <span class="org-type">-</span>h<span class="org-type">/</span>2
+       0 1  l<span class="org-type">/</span>2
+       1 0  h<span class="org-type">/</span>2
+       0 1  0];
 
-  JMt = [1 0 <span class="org-type">-</span>ha
-         0 1  la
-         0 1 <span class="org-type">-</span>la];
+JMt = [1 0 <span class="org-type">-</span>ha
+       0 1  la
+       0 1 <span class="org-type">-</span>la];
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  GM = pinv(JMa)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(JMt<span class="org-type">'</span>);
-  GM.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
-  GM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
+<pre class="src src-matlab">GM = pinv(JMa)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(JMt<span class="org-type">'</span>);
+GM.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
+GM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
 </pre>
 </div>
 
 
-<div id="org2604909" class="figure">
+<div id="orgca7615b" class="figure">
 <p><img src="figs/jac_decoupling_M.png" alt="jac_decoupling_M.png" />
 </p>
 <p><span class="figure-number">Figure 21: </span>Diagonal and off-diagonal elements of the decoupled plant</p>
@@ -919,11 +919,11 @@ Decoupling at the CoM (Mass decoupled)
 </div>
 </div>
 
-<div id="outline-container-org94b1a6e" class="outline-4">
-<h4 id="org94b1a6e"><span class="section-number-4">1.12.2</span> Decoupling of the stiffness matrix</h4>
+<div id="outline-container-org00808bc" class="outline-4">
+<h4 id="org00808bc"><span class="section-number-4">1.12.2</span> Decoupling of the stiffness matrix</h4>
 <div class="outline-text-4" id="text-1-12-2">
 
-<div id="orgdca8baa" class="figure">
+<div id="org3b5b16e" class="figure">
 <p><img src="figs/gravimeter_model_K.png" alt="gravimeter_model_K.png" />
 </p>
 <p><span class="figure-number">Figure 22: </span>Choice of {O} such that the Stiffness Matrix is Diagonal</p>
@@ -933,14 +933,14 @@ Decoupling at the CoM (Mass decoupled)
 Decoupling at the point where K is diagonal (x = 0, y = -h/2 from the schematic {O} frame):
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  JKa = [1 0  0
-         0 1 <span class="org-type">-</span>l<span class="org-type">/</span>2
-         1 0 <span class="org-type">-</span>h
-         0 1  0];
+<pre class="src src-matlab">JKa = [1 0  0
+       0 1 <span class="org-type">-</span>l<span class="org-type">/</span>2
+       1 0 <span class="org-type">-</span>h
+       0 1  0];
 
-  JKt = [1 0  0
-         0 1 <span class="org-type">-</span>la
-         0 1  la];
+JKt = [1 0  0
+       0 1 <span class="org-type">-</span>la
+       0 1  la];
 </pre>
 </div>
 
@@ -948,14 +948,14 @@ Decoupling at the point where K is diagonal (x = 0, y = -h/2 from the schematic 
 And the plant \(\bm{G}_x\) is computed:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  GK = pinv(JKa)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(JKt<span class="org-type">'</span>);
-  GK.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
-  GK.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
+<pre class="src src-matlab">GK = pinv(JKa)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(JKt<span class="org-type">'</span>);
+GK.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
+GK.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
 </pre>
 </div>
 
 
-<div id="org9d436e9" class="figure">
+<div id="org9c1ee91" class="figure">
 <p><img src="figs/jac_decoupling_K.png" alt="jac_decoupling_K.png" />
 </p>
 <p><span class="figure-number">Figure 23: </span>Diagonal and off-diagonal elements of the decoupled plant</p>
@@ -963,11 +963,11 @@ And the plant \(\bm{G}_x\) is computed:
 </div>
 </div>
 
-<div id="outline-container-org0400e21" class="outline-4">
-<h4 id="org0400e21"><span class="section-number-4">1.12.3</span> Combined decoupling of the mass and stiffness matrices</h4>
+<div id="outline-container-org71f7b09" class="outline-4">
+<h4 id="org71f7b09"><span class="section-number-4">1.12.3</span> Combined decoupling of the mass and stiffness matrices</h4>
 <div class="outline-text-4" id="text-1-12-3">
 
-<div id="org12828a4" class="figure">
+<div id="orgb841a78" class="figure">
 <p><img src="figs/gravimeter_model_KM.png" alt="gravimeter_model_KM.png" />
 </p>
 <p><span class="figure-number">Figure 24: </span>Ideal location of the actuators such that both the mass and stiffness matrices are diagonal</p>
@@ -978,52 +978,52 @@ To do so, the actuator position should be modified
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  la = l<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
-  ha = 0; <span class="org-comment">% Position of Act. [m]</span>
+<pre class="src src-matlab">la = l<span class="org-type">/</span>2; <span class="org-comment">% Position of Act. [m]</span>
+ha = 0; <span class="org-comment">% Position of Act. [m]</span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  <span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
-  mdl = <span class="org-string">'gravimeter'</span>;
+<pre class="src src-matlab"><span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
+mdl = <span class="org-string">'gravimeter'</span>;
 
-  <span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
-  clear io; io_i = 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F1'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F2'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/F3'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+<span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
+clear io; io_i = 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F1'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F2'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/F3'</span>], 1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_side'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Acc_top'</span>], 2, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1;
 
-  G = linearize(mdl, io);
-  G.InputName  = {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>};
-  G.OutputName = {<span class="org-string">'Ax1'</span>, <span class="org-string">'Ay1'</span>, <span class="org-string">'Ax2'</span>, <span class="org-string">'Ay2'</span>};
+G = linearize(mdl, io);
+G.InputName  = {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>};
+G.OutputName = {<span class="org-string">'Ax1'</span>, <span class="org-string">'Ay1'</span>, <span class="org-string">'Ax2'</span>, <span class="org-string">'Ay2'</span>};
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  JMa = [1 0 <span class="org-type">-</span>h<span class="org-type">/</span>2
-         0 1  l<span class="org-type">/</span>2
-         1 0  h<span class="org-type">/</span>2
-         0 1  0];
+<pre class="src src-matlab">JMa = [1 0 <span class="org-type">-</span>h<span class="org-type">/</span>2
+       0 1  l<span class="org-type">/</span>2
+       1 0  h<span class="org-type">/</span>2
+       0 1  0];
 
-  JMt = [1 0 <span class="org-type">-</span>ha
-         0 1  la
-         0 1 <span class="org-type">-</span>la];
+JMt = [1 0 <span class="org-type">-</span>ha
+       0 1  la
+       0 1 <span class="org-type">-</span>la];
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  GKM = pinv(JMa)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(JMt<span class="org-type">'</span>);
-  GKM.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
-  GKM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
+<pre class="src src-matlab">GKM = pinv(JMa)<span class="org-type">*</span>G<span class="org-type">*</span>pinv(JMt<span class="org-type">'</span>);
+GKM.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Mz'</span>};
+GKM.OutputName  = {<span class="org-string">'Dx'</span>, <span class="org-string">'Dy'</span>, <span class="org-string">'Rz'</span>};
 </pre>
 </div>
 
 
-<div id="org0aaa15b" class="figure">
+<div id="orge49d479" class="figure">
 <p><img src="figs/jac_decoupling_KM.png" alt="jac_decoupling_KM.png" />
 </p>
 <p><span class="figure-number">Figure 25: </span>Diagonal and off-diagonal elements of the decoupled plant</p>
@@ -1031,8 +1031,8 @@ To do so, the actuator position should be modified
 </div>
 </div>
 
-<div id="outline-container-orgfb1dce1" class="outline-4">
-<h4 id="orgfb1dce1"><span class="section-number-4">1.12.4</span> Conclusion</h4>
+<div id="outline-container-org174077b" class="outline-4">
+<h4 id="org174077b"><span class="section-number-4">1.12.4</span> Conclusion</h4>
 <div class="outline-text-4" id="text-1-12-4">
 <p>
 Ideally, the mechanical system should be designed in order to have a decoupled stiffness matrix at the CoM of the solid.
@@ -1046,8 +1046,8 @@ Or it can be decoupled at high frequency if the Jacobians are evaluated at the C
 </div>
 </div>
 
-<div id="outline-container-org7a431a6" class="outline-3">
-<h3 id="org7a431a6"><span class="section-number-3">1.13</span> SVD decoupling performances</h3>
+<div id="outline-container-org104acaf" class="outline-3">
+<h3 id="org104acaf"><span class="section-number-3">1.13</span> SVD decoupling performances</h3>
 <div class="outline-text-3" id="text-1-13">
 <p>
 As the SVD is applied on a <b>real approximation</b> of the plant dynamics at a frequency \(\omega_0\), it is foreseen that the effectiveness of the decoupling depends on the validity of the real approximation.
@@ -1058,30 +1058,30 @@ Let&rsquo;s do the SVD decoupling on a plant that is mostly real (low damping) a
 </p>
 
 <p>
-Start with small damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org564dcae">26</a>.
+Start with small damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org51bbb8c">26</a>.
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  c = 2e1; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
+<pre class="src src-matlab">c = 2e1; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
 </pre>
 </div>
 
 
-<div id="org564dcae" class="figure">
+<div id="org51bbb8c" class="figure">
 <p><img src="figs/gravimeter_svd_low_damping.png" alt="gravimeter_svd_low_damping.png" />
 </p>
 <p><span class="figure-number">Figure 26: </span>Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with small damping</p>
 </div>
 
 <p>
-Now take a larger damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org0d243ba">27</a>.
+Now take a larger damping, the obtained diagonal and off-diagonal terms are shown in Figure <a href="#org26ec1da">27</a>.
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  c = 5e2; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
+<pre class="src src-matlab">c = 5e2; <span class="org-comment">% Actuator Damping [N/(m/s)]</span>
 </pre>
 </div>
 
 
-<div id="org0d243ba" class="figure">
+<div id="org26ec1da" class="figure">
 <p><img src="figs/gravimeter_svd_high_damping.png" alt="gravimeter_svd_high_damping.png" />
 </p>
 <p><span class="figure-number">Figure 27: </span>Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with high damping</p>
@@ -1090,14 +1090,14 @@ Now take a larger damping, the obtained diagonal and off-diagonal terms are show
 </div>
 </div>
 
-<div id="outline-container-org1b57bf2" class="outline-2">
-<h2 id="org1b57bf2"><span class="section-number-2">2</span> Stewart Platform - Simscape Model</h2>
+<div id="outline-container-org2e39f13" class="outline-2">
+<h2 id="org2e39f13"><span class="section-number-2">2</span> Stewart Platform - Simscape Model</h2>
 <div class="outline-text-2" id="text-2">
 <p>
-<a id="org4fdf996"></a>
+<a id="org5bbb8c3"></a>
 </p>
 <p>
-In this analysis, we wish to applied SVD control to the Stewart Platform shown in Figure <a href="#orgd4d0922">28</a>.
+In this analysis, we wish to applied SVD control to the Stewart Platform shown in Figure <a href="#org92b1ebc">28</a>.
 </p>
 
 <p>
@@ -1110,7 +1110,7 @@ Some notes about the system:
 </ul>
 
 
-<div id="orgd4d0922" class="figure">
+<div id="org92b1ebc" class="figure">
 <p><img src="figs/SP_assembly.png" alt="SP_assembly.png" />
 </p>
 <p><span class="figure-number">Figure 28: </span>Stewart Platform CAD View</p>
@@ -1120,26 +1120,26 @@ Some notes about the system:
 The analysis of the SVD/Jacobian control applied to the Stewart platform is performed in the following sections:
 </p>
 <ul class="org-ul">
-<li>Section <a href="#orga1c7044">2.1</a>: The parameters of the Simscape model of the Stewart platform are defined</li>
-<li>Section <a href="#org546bad6">2.2</a>: The plant is identified from the Simscape model and the system coupling is shown</li>
-<li>Section <a href="#org21232c0">2.3</a>: The plant is first decoupled using the Jacobian</li>
-<li>Section <a href="#orgcf9c0ae">2.4</a>: The decoupling is performed thanks to the SVD. To do so a real approximation of the plant is computed.</li>
-<li>Section <a href="#org7b3f007">2.5</a>: The effectiveness of the decoupling with the Jacobian and SVD are compared using the Gershorin Radii</li>
-<li>Section <a href="#orgf2dc7ad">2.6</a>:</li>
-<li>Section <a href="#org6b5b9d2">2.7</a>: The dynamics of the decoupled plants are shown</li>
-<li>Section <a href="#org442d74c">2.8</a>: A diagonal controller is defined to control the decoupled plant</li>
-<li>Section <a href="#orgc1221f1">2.9</a>: Finally, the closed loop system properties are studied</li>
+<li>Section <a href="#org02a6930">2.1</a>: The parameters of the Simscape model of the Stewart platform are defined</li>
+<li>Section <a href="#org788c46f">2.2</a>: The plant is identified from the Simscape model and the system coupling is shown</li>
+<li>Section <a href="#org25f81b3">2.3</a>: The plant is first decoupled using the Jacobian</li>
+<li>Section <a href="#orgedea118">2.4</a>: The decoupling is performed thanks to the SVD. To do so a real approximation of the plant is computed.</li>
+<li>Section <a href="#org3684d49">2.5</a>: The effectiveness of the decoupling with the Jacobian and SVD are compared using the Gershorin Radii</li>
+<li>Section <a href="#orgb8953c6">2.6</a>:</li>
+<li>Section <a href="#orgcf7b1be">2.7</a>: The dynamics of the decoupled plants are shown</li>
+<li>Section <a href="#org12ac36f">2.8</a>: A diagonal controller is defined to control the decoupled plant</li>
+<li>Section <a href="#org67088bc">2.9</a>: Finally, the closed loop system properties are studied</li>
 </ul>
 </div>
 
-<div id="outline-container-orgca0d143" class="outline-3">
-<h3 id="orgca0d143"><span class="section-number-3">2.1</span> Simscape Model - Parameters</h3>
+<div id="outline-container-orgb17cfae" class="outline-3">
+<h3 id="orgb17cfae"><span class="section-number-3">2.1</span> Simscape Model - Parameters</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
-<a id="orga1c7044"></a>
+<a id="org02a6930"></a>
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  open(<span class="org-string">'drone_platform.slx'</span>);
+<pre class="src src-matlab">open(<span class="org-string">'drone_platform.slx'</span>);
 </pre>
 </div>
 
@@ -1147,13 +1147,13 @@ The analysis of the SVD/Jacobian control applied to the Stewart platform is perf
 Definition of spring parameters:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  kx = 0.5<span class="org-type">*</span>1e3<span class="org-type">/</span>3; <span class="org-comment">% [N/m]</span>
-  ky = 0.5<span class="org-type">*</span>1e3<span class="org-type">/</span>3;
-  kz = 1e3<span class="org-type">/</span>3;
+<pre class="src src-matlab">kx = 0.5<span class="org-type">*</span>1e3<span class="org-type">/</span>3; <span class="org-comment">% [N/m]</span>
+ky = 0.5<span class="org-type">*</span>1e3<span class="org-type">/</span>3;
+kz = 1e3<span class="org-type">/</span>3;
 
-  cx = 0.025; <span class="org-comment">% [Nm/rad]</span>
-  cy = 0.025;
-  cz = 0.025;
+cx = 0.025; <span class="org-comment">% [Nm/rad]</span>
+cy = 0.025;
+cz = 0.025;
 </pre>
 </div>
 
@@ -1161,7 +1161,7 @@ Definition of spring parameters:
 We suppose the sensor is perfectly positioned.
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  sens_pos_error = zeros(3,1);
+<pre class="src src-matlab">sens_pos_error = zeros(3,1);
 </pre>
 </div>
 
@@ -1169,7 +1169,7 @@ We suppose the sensor is perfectly positioned.
 Gravity:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  g = 0;
+<pre class="src src-matlab">g = 0;
 </pre>
 </div>
 
@@ -1177,7 +1177,7 @@ Gravity:
 We load the Jacobian (previously computed from the geometry):
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  load(<span class="org-string">'jacobian.mat'</span>, <span class="org-string">'Aa'</span>, <span class="org-string">'Ab'</span>, <span class="org-string">'As'</span>, <span class="org-string">'l'</span>, <span class="org-string">'J'</span>);
+<pre class="src src-matlab">load(<span class="org-string">'jacobian.mat'</span>, <span class="org-string">'Aa'</span>, <span class="org-string">'Ab'</span>, <span class="org-string">'As'</span>, <span class="org-string">'l'</span>, <span class="org-string">'J'</span>);
 </pre>
 </div>
 
@@ -1185,21 +1185,21 @@ We load the Jacobian (previously computed from the geometry):
 We initialize other parameters:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  U = eye(6);
-  V = eye(6);
-  Kc = tf(zeros(6));
+<pre class="src src-matlab">U = eye(6);
+V = eye(6);
+Kc = tf(zeros(6));
 </pre>
 </div>
 
 
-<div id="orgbb8f3ee" class="figure">
+<div id="org228ccea" class="figure">
 <p><img src="figs/stewart_simscape.png" alt="stewart_simscape.png" />
 </p>
 <p><span class="figure-number">Figure 29: </span>General view of the Simscape Model</p>
 </div>
 
 
-<div id="orge14b371" class="figure">
+<div id="org905e357" class="figure">
 <p><img src="figs/stewart_platform_details.png" alt="stewart_platform_details.png" />
 </p>
 <p><span class="figure-number">Figure 30: </span>Simscape model of the Stewart platform</p>
@@ -1207,15 +1207,15 @@ We initialize other parameters:
 </div>
 </div>
 
-<div id="outline-container-orge966157" class="outline-3">
-<h3 id="orge966157"><span class="section-number-3">2.2</span> Identification of the plant</h3>
+<div id="outline-container-orge9cd306" class="outline-3">
+<h3 id="orge9cd306"><span class="section-number-3">2.2</span> Identification of the plant</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
-<a id="org546bad6"></a>
+<a id="org788c46f"></a>
 </p>
 
 <p>
-The plant shown in Figure <a href="#org88a491a">31</a> is identified from the Simscape model.
+The plant shown in Figure <a href="#org2068c5a">31</a> is identified from the Simscape model.
 </p>
 
 <p>
@@ -1231,31 +1231,31 @@ The outputs are the 6 accelerations measured by the inertial unit.
 </p>
 
 
-<div id="org88a491a" class="figure">
+<div id="org2068c5a" class="figure">
 <p><img src="figs/stewart_platform_plant.png" alt="stewart_platform_plant.png" />
 </p>
 <p><span class="figure-number">Figure 31: </span>Considered plant \(\bm{G} = \begin{bmatrix}G_d\\G_u\end{bmatrix}\). \(D_w\) is the translation/rotation of the support, \(\tau\) the actuator forces, \(a\) the acceleration/angular acceleration of the top platform</p>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  <span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
-  mdl = <span class="org-string">'drone_platform'</span>;
+<pre class="src src-matlab"><span class="org-matlab-cellbreak"><span class="org-comment">%% Name of the Simulink File</span></span>
+mdl = <span class="org-string">'drone_platform'</span>;
 
-  <span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
-  clear io; io_i = 1;
-  io(io_i) = linio([mdl, <span class="org-string">'/Dw'</span>],              1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1; <span class="org-comment">% Ground Motion</span>
-  io(io_i) = linio([mdl, <span class="org-string">'/V-T'</span>],             1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1; <span class="org-comment">% Actuator Forces</span>
-  io(io_i) = linio([mdl, <span class="org-string">'/Inertial Sensor'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1; <span class="org-comment">% Top platform acceleration</span>
+<span class="org-matlab-cellbreak"><span class="org-comment">%% Input/Output definition</span></span>
+clear io; io_i = 1;
+io(io_i) = linio([mdl, <span class="org-string">'/Dw'</span>],              1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1; <span class="org-comment">% Ground Motion</span>
+io(io_i) = linio([mdl, <span class="org-string">'/V-T'</span>],             1, <span class="org-string">'openinput'</span>);  io_i = io_i <span class="org-type">+</span> 1; <span class="org-comment">% Actuator Forces</span>
+io(io_i) = linio([mdl, <span class="org-string">'/Inertial Sensor'</span>], 1, <span class="org-string">'openoutput'</span>); io_i = io_i <span class="org-type">+</span> 1; <span class="org-comment">% Top platform acceleration</span>
 
-  G = linearize(mdl, io);
-  G.InputName  = {<span class="org-string">'Dwx'</span>, <span class="org-string">'Dwy'</span>, <span class="org-string">'Dwz'</span>, <span class="org-string">'Rwx'</span>, <span class="org-string">'Rwy'</span>, <span class="org-string">'Rwz'</span>, ...
-                  <span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>, <span class="org-string">'F4'</span>, <span class="org-string">'F5'</span>, <span class="org-string">'F6'</span>};
-  G.OutputName = {<span class="org-string">'Ax'</span>, <span class="org-string">'Ay'</span>, <span class="org-string">'Az'</span>, <span class="org-string">'Arx'</span>, <span class="org-string">'Ary'</span>, <span class="org-string">'Arz'</span>};
+G = linearize(mdl, io);
+G.InputName  = {<span class="org-string">'Dwx'</span>, <span class="org-string">'Dwy'</span>, <span class="org-string">'Dwz'</span>, <span class="org-string">'Rwx'</span>, <span class="org-string">'Rwy'</span>, <span class="org-string">'Rwz'</span>, ...
+                <span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>, <span class="org-string">'F4'</span>, <span class="org-string">'F5'</span>, <span class="org-string">'F6'</span>};
+G.OutputName = {<span class="org-string">'Ax'</span>, <span class="org-string">'Ay'</span>, <span class="org-string">'Az'</span>, <span class="org-string">'Arx'</span>, <span class="org-string">'Ary'</span>, <span class="org-string">'Arz'</span>};
 
-  <span class="org-comment">% Plant</span>
-  Gu = G(<span class="org-type">:</span>, {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>, <span class="org-string">'F4'</span>, <span class="org-string">'F5'</span>, <span class="org-string">'F6'</span>});
-  <span class="org-comment">% Disturbance dynamics</span>
-  Gd = G(<span class="org-type">:</span>, {<span class="org-string">'Dwx'</span>, <span class="org-string">'Dwy'</span>, <span class="org-string">'Dwz'</span>, <span class="org-string">'Rwx'</span>, <span class="org-string">'Rwy'</span>, <span class="org-string">'Rwz'</span>});
+<span class="org-comment">% Plant</span>
+Gu = G(<span class="org-type">:</span>, {<span class="org-string">'F1'</span>, <span class="org-string">'F2'</span>, <span class="org-string">'F3'</span>, <span class="org-string">'F4'</span>, <span class="org-string">'F5'</span>, <span class="org-string">'F6'</span>});
+<span class="org-comment">% Disturbance dynamics</span>
+Gd = G(<span class="org-type">:</span>, {<span class="org-string">'Dwx'</span>, <span class="org-string">'Dwy'</span>, <span class="org-string">'Dwz'</span>, <span class="org-string">'Rwx'</span>, <span class="org-string">'Rwy'</span>, <span class="org-string">'Rwz'</span>});
 </pre>
 </div>
 
@@ -1263,7 +1263,7 @@ The outputs are the 6 accelerations measured by the inertial unit.
 There are 24 states (6dof for the bottom platform + 6dof for the top platform).
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  size(G)
+<pre class="src src-matlab">size(G)
 </pre>
 </div>
 
@@ -1273,7 +1273,7 @@ State-space model with 6 outputs, 12 inputs, and 24 states.
 
 
 <p>
-The elements of the transfer matrix \(\bm{G}\) corresponding to the transfer function from actuator forces \(\tau\) to the measured acceleration \(a\) are shown in Figure <a href="#orgb128dfb">32</a>.
+The elements of the transfer matrix \(\bm{G}\) corresponding to the transfer function from actuator forces \(\tau\) to the measured acceleration \(a\) are shown in Figure <a href="#org58f311e">32</a>.
 </p>
 
 <p>
@@ -1281,7 +1281,7 @@ One can easily see that the system is strongly coupled.
 </p>
 
 
-<div id="orgb128dfb" class="figure">
+<div id="org58f311e" class="figure">
 <p><img src="figs/stewart_platform_coupled_plant.png" alt="stewart_platform_coupled_plant.png" />
 </p>
 <p><span class="figure-number">Figure 32: </span>Magnitude of all 36 elements of the transfer function matrix \(G_u\)</p>
@@ -1289,12 +1289,12 @@ One can easily see that the system is strongly coupled.
 </div>
 </div>
 
-<div id="outline-container-org35c4aae" class="outline-3">
-<h3 id="org35c4aae"><span class="section-number-3">2.3</span> Decoupling using the Jacobian</h3>
+<div id="outline-container-org072fd79" class="outline-3">
+<h3 id="org072fd79"><span class="section-number-3">2.3</span> Decoupling using the Jacobian</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
-<a id="org21232c0"></a>
-Consider the control architecture shown in Figure <a href="#orgffc1e65">33</a>.
+<a id="org25f81b3"></a>
+Consider the control architecture shown in Figure <a href="#org782c767">33</a>.
 The Jacobian matrix is used to transform forces/torques applied on the top platform to the equivalent forces applied by each actuator.
 </p>
 
@@ -1376,7 +1376,7 @@ The Jacobian matrix is computed from the geometry of the platform (position and 
 </table>
 
 
-<div id="orgffc1e65" class="figure">
+<div id="org782c767" class="figure">
 <p><img src="figs/plant_decouple_jacobian.png" alt="plant_decouple_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 33: </span>Decoupled plant \(\bm{G}_x\) using the Jacobian matrix \(J\)</p>
@@ -1392,18 +1392,18 @@ We define a new plant:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  Gx = Gu<span class="org-type">*</span>inv(J<span class="org-type">'</span>);
-  Gx.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Fz'</span>, <span class="org-string">'Mx'</span>, <span class="org-string">'My'</span>, <span class="org-string">'Mz'</span>};
+<pre class="src src-matlab">Gx = Gu<span class="org-type">*</span>inv(J<span class="org-type">'</span>);
+Gx.InputName  = {<span class="org-string">'Fx'</span>, <span class="org-string">'Fy'</span>, <span class="org-string">'Fz'</span>, <span class="org-string">'Mx'</span>, <span class="org-string">'My'</span>, <span class="org-string">'Mz'</span>};
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org896c978" class="outline-3">
-<h3 id="org896c978"><span class="section-number-3">2.4</span> Decoupling using the SVD</h3>
+<div id="outline-container-orgd4744ca" class="outline-3">
+<h3 id="orgd4744ca"><span class="section-number-3">2.4</span> Decoupling using the SVD</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
-<a id="orgcf9c0ae"></a>
+<a id="orgedea118"></a>
 </p>
 
 <p>
@@ -1414,9 +1414,9 @@ In order to decouple the plant using the SVD, first a real approximation of the 
 Let&rsquo;s compute a real approximation of the complex matrix \(H_1\) which corresponds to the the transfer function \(G_u(j\omega_c)\) from forces applied by the actuators to the measured acceleration of the top platform evaluated at the frequency \(\omega_c\).
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>30; <span class="org-comment">% Decoupling frequency [rad/s]</span>
+<pre class="src src-matlab">wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>30; <span class="org-comment">% Decoupling frequency [rad/s]</span>
 
-  H1 = evalfr(Gu, <span class="org-constant">j</span><span class="org-type">*</span>wc);
+H1 = evalfr(Gu, <span class="org-constant">j</span><span class="org-type">*</span>wc);
 </pre>
 </div>
 
@@ -1424,8 +1424,8 @@ Let&rsquo;s compute a real approximation of the complex matrix \(H_1\) which cor
 The real approximation is computed as follows:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  D = pinv(real(H1<span class="org-type">'*</span>H1));
-  H1 = inv(D<span class="org-type">*</span>real(H1<span class="org-type">'*</span>diag(exp(<span class="org-constant">j</span><span class="org-type">*</span>angle(diag(H1<span class="org-type">*</span>D<span class="org-type">*</span>H1<span class="org-type">.'</span>))<span class="org-type">/</span>2))));
+<pre class="src src-matlab">D = pinv(real(H1<span class="org-type">'*</span>H1));
+H1 = inv(D<span class="org-type">*</span>real(H1<span class="org-type">'*</span>diag(exp(<span class="org-constant">j</span><span class="org-type">*</span>angle(diag(H1<span class="org-type">*</span>D<span class="org-type">*</span>H1<span class="org-type">.'</span>))<span class="org-type">/</span>2))));
 </pre>
 </div>
 
@@ -1588,7 +1588,7 @@ Now, the Singular Value Decomposition of \(H_1\) is performed:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  [U,<span class="org-type">~</span>,V] = svd(H1);
+<pre class="src src-matlab">[U,<span class="org-type">~</span>,V] = svd(H1);
 </pre>
 </div>
 
@@ -1739,11 +1739,11 @@ Now, the Singular Value Decomposition of \(H_1\) is performed:
 </table>
 
 <p>
-The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#orga5ec73d">34</a>.
+The obtained matrices \(U\) and \(V\) are used to decouple the system as shown in Figure <a href="#orgda7c7c4">34</a>.
 </p>
 
 
-<div id="orga5ec73d" class="figure">
+<div id="orgda7c7c4" class="figure">
 <p><img src="figs/plant_decouple_svd.png" alt="plant_decouple_svd.png" />
 </p>
 <p><span class="figure-number">Figure 34: </span>Decoupled plant \(\bm{G}_{SVD}\) using the Singular Value Decomposition</p>
@@ -1755,17 +1755,17 @@ The decoupled plant is then:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  Gsvd = inv(U)<span class="org-type">*</span>Gu<span class="org-type">*</span>inv(V<span class="org-type">'</span>);
+<pre class="src src-matlab">Gsvd = inv(U)<span class="org-type">*</span>Gu<span class="org-type">*</span>inv(V<span class="org-type">'</span>);
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgb0956ea" class="outline-3">
-<h3 id="orgb0956ea"><span class="section-number-3">2.5</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
+<div id="outline-container-orgb67bd2a" class="outline-3">
+<h3 id="orgb67bd2a"><span class="section-number-3">2.5</span> Verification of the decoupling using the &ldquo;Gershgorin Radii&rdquo;</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
-<a id="org7b3f007"></a>
+<a id="org3684d49"></a>
 </p>
 
 <p>
@@ -1781,7 +1781,7 @@ The &ldquo;Gershgorin Radii&rdquo; of a matrix \(S\) is defined by:
 This is computed over the following frequencies.
 </p>
 
-<div id="orgb14b597" class="figure">
+<div id="org399f7f2" class="figure">
 <p><img src="figs/simscape_model_gershgorin_radii.png" alt="simscape_model_gershgorin_radii.png" />
 </p>
 <p><span class="figure-number">Figure 35: </span>Gershgorin Radii of the Coupled and Decoupled plants</p>
@@ -1789,11 +1789,11 @@ This is computed over the following frequencies.
 </div>
 </div>
 
-<div id="outline-container-orgfd99bee" class="outline-3">
-<h3 id="orgfd99bee"><span class="section-number-3">2.6</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
+<div id="outline-container-orgdc07653" class="outline-3">
+<h3 id="orgdc07653"><span class="section-number-3">2.6</span> Verification of the decoupling using the &ldquo;Relative Gain Array&rdquo;</h3>
 <div class="outline-text-3" id="text-2-6">
 <p>
-<a id="orgf2dc7ad"></a>
+<a id="orgb8953c6"></a>
 </p>
 
 <p>
@@ -1807,11 +1807,11 @@ where \(\times\) denotes an element by element multiplication and \(G(s)\) is an
 </p>
 
 <p>
-The obtained RGA elements are shown in Figure <a href="#org4ac1778">36</a>.
+The obtained RGA elements are shown in Figure <a href="#orgdb7c7c2">36</a>.
 </p>
 
 
-<div id="org4ac1778" class="figure">
+<div id="orgdb7c7c2" class="figure">
 <p><img src="figs/simscape_model_rga.png" alt="simscape_model_rga.png" />
 </p>
 <p><span class="figure-number">Figure 36: </span>Obtained norm of RGA elements for the SVD decoupled plant and the Jacobian decoupled plant</p>
@@ -1819,30 +1819,30 @@ The obtained RGA elements are shown in Figure <a href="#org4ac1778">36</a>.
 </div>
 </div>
 
-<div id="outline-container-orgceebcef" class="outline-3">
-<h3 id="orgceebcef"><span class="section-number-3">2.7</span> Obtained Decoupled Plants</h3>
+<div id="outline-container-orga2a4d78" class="outline-3">
+<h3 id="orga2a4d78"><span class="section-number-3">2.7</span> Obtained Decoupled Plants</h3>
 <div class="outline-text-3" id="text-2-7">
 <p>
-<a id="org6b5b9d2"></a>
+<a id="orgcf7b1be"></a>
 </p>
 
 <p>
-The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#org260d122">37</a>.
+The bode plot of the diagonal and off-diagonal elements of \(G_{SVD}\) are shown in Figure <a href="#org13819c8">37</a>.
 </p>
 
 
-<div id="org260d122" class="figure">
+<div id="org13819c8" class="figure">
 <p><img src="figs/simscape_model_decoupled_plant_svd.png" alt="simscape_model_decoupled_plant_svd.png" />
 </p>
 <p><span class="figure-number">Figure 37: </span>Decoupled Plant using SVD</p>
 </div>
 
 <p>
-Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#orge8071f1">38</a>.
+Similarly, the bode plots of the diagonal elements and off-diagonal elements of the decoupled plant \(G_x(s)\) using the Jacobian are shown in Figure <a href="#org5d74751">38</a>.
 </p>
 
 
-<div id="orge8071f1" class="figure">
+<div id="org5d74751" class="figure">
 <p><img src="figs/simscape_model_decoupled_plant_jacobian.png" alt="simscape_model_decoupled_plant_jacobian.png" />
 </p>
 <p><span class="figure-number">Figure 38: </span>Stewart Platform Plant from forces (resp. torques) applied by the legs to the acceleration (resp. angular acceleration) of the platform as well as all the coupling terms between the two (non-diagonal terms of the transfer function matrix)</p>
@@ -1850,12 +1850,12 @@ Similarly, the bode plots of the diagonal elements and off-diagonal elements of 
 </div>
 </div>
 
-<div id="outline-container-org3a97dc4" class="outline-3">
-<h3 id="org3a97dc4"><span class="section-number-3">2.8</span> Diagonal Controller</h3>
+<div id="outline-container-orgbe86d5d" class="outline-3">
+<h3 id="orgbe86d5d"><span class="section-number-3">2.8</span> Diagonal Controller</h3>
 <div class="outline-text-3" id="text-2-8">
 <p>
-<a id="org442d74c"></a>
-The control diagram for the centralized control is shown in Figure <a href="#org6722000">39</a>.
+<a id="org12ac36f"></a>
+The control diagram for the centralized control is shown in Figure <a href="#org641c800">39</a>.
 </p>
 
 <p>
@@ -1864,19 +1864,19 @@ The Jacobian is used to convert forces in the cartesian frame to forces applied 
 </p>
 
 
-<div id="org6722000" class="figure">
+<div id="org641c800" class="figure">
 <p><img src="figs/centralized_control.png" alt="centralized_control.png" />
 </p>
 <p><span class="figure-number">Figure 39: </span>Control Diagram for the Centralized control</p>
 </div>
 
 <p>
-The SVD control architecture is shown in Figure <a href="#org72ab4c2">40</a>.
+The SVD control architecture is shown in Figure <a href="#org8f24f26">40</a>.
 The matrices \(U\) and \(V\) are used to decoupled the plant \(G\).
 </p>
 
 
-<div id="org72ab4c2" class="figure">
+<div id="org8f24f26" class="figure">
 <p><img src="figs/svd_control.png" alt="svd_control.png" />
 </p>
 <p><span class="figure-number">Figure 40: </span>Control Diagram for the SVD control</p>
@@ -1893,31 +1893,31 @@ We choose the controller to be a low pass filter:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>80;  <span class="org-comment">% Crossover Frequency [rad/s]</span>
-  w0 = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>0.1; <span class="org-comment">% Controller Pole [rad/s]</span>
+<pre class="src src-matlab">wc = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>80;  <span class="org-comment">% Crossover Frequency [rad/s]</span>
+w0 = 2<span class="org-type">*</span><span class="org-constant">pi</span><span class="org-type">*</span>0.1; <span class="org-comment">% Controller Pole [rad/s]</span>
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  K_cen = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gx, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
-  L_cen = K_cen<span class="org-type">*</span>Gx;
-  G_cen = feedback(G, pinv(J<span class="org-type">'</span>)<span class="org-type">*</span>K_cen, [7<span class="org-type">:</span>12], [1<span class="org-type">:</span>6]);
+<pre class="src src-matlab">K_cen = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gx, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
+L_cen = K_cen<span class="org-type">*</span>Gx;
+G_cen = feedback(G, pinv(J<span class="org-type">'</span>)<span class="org-type">*</span>K_cen, [7<span class="org-type">:</span>12], [1<span class="org-type">:</span>6]);
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-matlab">  K_svd = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gsvd, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
-  L_svd = K_svd<span class="org-type">*</span>Gsvd;
-  G_svd = feedback(G, inv(V<span class="org-type">'</span>)<span class="org-type">*</span>K_svd<span class="org-type">*</span>inv(U), [7<span class="org-type">:</span>12], [1<span class="org-type">:</span>6]);
+<pre class="src src-matlab">K_svd = diag(1<span class="org-type">./</span>diag(abs(evalfr(Gsvd, <span class="org-constant">j</span><span class="org-type">*</span>wc))))<span class="org-type">*</span>(1<span class="org-type">/</span>abs(evalfr(1<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0), <span class="org-constant">j</span><span class="org-type">*</span>wc)))<span class="org-type">/</span>(1 <span class="org-type">+</span> s<span class="org-type">/</span>w0);
+L_svd = K_svd<span class="org-type">*</span>Gsvd;
+G_svd = feedback(G, inv(V<span class="org-type">'</span>)<span class="org-type">*</span>K_svd<span class="org-type">*</span>inv(U), [7<span class="org-type">:</span>12], [1<span class="org-type">:</span>6]);
 </pre>
 </div>
 
 <p>
-The obtained diagonal elements of the loop gains are shown in Figure <a href="#orgc88b440">41</a>.
+The obtained diagonal elements of the loop gains are shown in Figure <a href="#org50b4289">41</a>.
 </p>
 
 
-<div id="orgc88b440" class="figure">
+<div id="org50b4289" class="figure">
 <p><img src="figs/stewart_comp_loop_gain_diagonal.png" alt="stewart_comp_loop_gain_diagonal.png" />
 </p>
 <p><span class="figure-number">Figure 41: </span>Comparison of the diagonal elements of the loop gains for the SVD control architecture and the Jacobian one</p>
@@ -1925,18 +1925,18 @@ The obtained diagonal elements of the loop gains are shown in Figure <a href="#o
 </div>
 </div>
 
-<div id="outline-container-org8d85d27" class="outline-3">
-<h3 id="org8d85d27"><span class="section-number-3">2.9</span> Closed-Loop system Performances</h3>
+<div id="outline-container-org80a8e85" class="outline-3">
+<h3 id="org80a8e85"><span class="section-number-3">2.9</span> Closed-Loop system Performances</h3>
 <div class="outline-text-3" id="text-2-9">
 <p>
-<a id="orgc1221f1"></a>
+<a id="org67088bc"></a>
 </p>
 
 <p>
 Let&rsquo;s first verify the stability of the closed-loop systems:
 </p>
 <div class="org-src-container">
-<pre class="src src-matlab">  isstable(G_cen)
+<pre class="src src-matlab">isstable(G_cen)
 </pre>
 </div>
 
@@ -1948,7 +1948,7 @@ ans =
 
 
 <div class="org-src-container">
-<pre class="src src-matlab">  isstable(G_svd)
+<pre class="src src-matlab">isstable(G_svd)
 </pre>
 </div>
 
@@ -1960,11 +1960,11 @@ ans =
 
 
 <p>
-The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#orga87ddd1">42</a>.
+The obtained transmissibility in Open-loop, for the centralized control as well as for the SVD control are shown in Figure <a href="#orgaef33a6">42</a>.
 </p>
 
 
-<div id="orga87ddd1" class="figure">
+<div id="orgaef33a6" class="figure">
 <p><img src="figs/stewart_platform_simscape_cl_transmissibility.png" alt="stewart_platform_simscape_cl_transmissibility.png" />
 </p>
 <p><span class="figure-number">Figure 42: </span>Obtained Transmissibility</p>
@@ -1975,7 +1975,7 @@ The obtained transmissibility in Open-loop, for the centralized control as well 
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Dehaeze Thomas</p>
-<p class="date">Created: 2021-01-08 ven. 13:57</p>
+<p class="date">Created: 2021-01-11 lun. 09:09</p>
 </div>
 </body>
 </html>

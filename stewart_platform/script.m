@@ -108,7 +108,7 @@ plot(freqs, abs(squeeze(freqresp(Gu(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,
      'DisplayName', '$G_u(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:6
-  plot(freqs, abs(squeeze(freqresp(Gu(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_u(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gu(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_u(%d,%d)$', i_in_out, i_in_out));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -246,21 +246,21 @@ ylim([1e-3, 1e3]);
 RGA_coupled = zeros(length(freqs), size(Gu,1), size(Gu,2));
 Gu_inv = inv(Gu);
 for f_i = 1:length(freqs)
-  RGA_coupled(f_i, :, :) = abs(evalfr(Gu, j*2*pi*freqs(f_i)).*evalfr(Gu_inv, j*2*pi*freqs(f_i))');
+    RGA_coupled(f_i, :, :) = abs(evalfr(Gu, j*2*pi*freqs(f_i)).*evalfr(Gu_inv, j*2*pi*freqs(f_i))');
 end
 
 % Relative Gain Array for the decoupled plant using SVD:
 RGA_svd = zeros(length(freqs), size(Gsvd,1), size(Gsvd,2));
 Gsvd_inv = inv(Gsvd);
 for f_i = 1:length(freqs)
-  RGA_svd(f_i, :, :) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
+    RGA_svd(f_i, :, :) = abs(evalfr(Gsvd, j*2*pi*freqs(f_i)).*evalfr(Gsvd_inv, j*2*pi*freqs(f_i))');
 end
 
 % Relative Gain Array for the decoupled plant using the Jacobian:
 RGA_x = zeros(length(freqs), size(Gx,1), size(Gx,2));
 Gx_inv = inv(Gx);
 for f_i = 1:length(freqs)
-  RGA_x(f_i, :, :) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
+    RGA_x(f_i, :, :) = abs(evalfr(Gx, j*2*pi*freqs(f_i)).*evalfr(Gx_inv, j*2*pi*freqs(f_i))');
 end
 
 figure;
@@ -280,8 +280,8 @@ plot(freqs, RGA_svd(:, 1, 2), '--', 'color', [0 0 0 0.2], ...
 plot(freqs, RGA_svd(:, 1, 1), 'k-', ...
      'DisplayName', '$RGA_{SVD}(i,i)$');
 for ch_i = 1:6
-  plot(freqs, RGA_svd(:, ch_i, ch_i), 'k-', ...
-       'HandleVisibility', 'off');
+    plot(freqs, RGA_svd(:, ch_i, ch_i), 'k-', ...
+         'HandleVisibility', 'off');
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -302,8 +302,8 @@ plot(freqs, RGA_x(:, 1, 2), '--', 'color', [0 0 0 0.2], ...
 plot(freqs, RGA_x(:, 1, 1), 'k-', ...
      'DisplayName', '$RGA_{X}(i,i)$');
 for ch_i = 1:6
-  plot(freqs, RGA_x(:, ch_i, ch_i), 'k-', ...
-       'HandleVisibility', 'off');
+    plot(freqs, RGA_x(:, ch_i, ch_i), 'k-', ...
+         'HandleVisibility', 'off');
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -335,8 +335,8 @@ plot(freqs, abs(squeeze(freqresp(Gsvd(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.5
      'DisplayName', '$G_{SVD}(i,j),\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for ch_i = 1:6
-  plot(freqs, abs(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))), ...
-       'DisplayName', sprintf('$G_{SVD}(%i,%i)$', ch_i, ch_i));
+    plot(freqs, abs(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))), ...
+         'DisplayName', sprintf('$G_{SVD}(%i,%i)$', ch_i, ch_i));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -348,7 +348,7 @@ ylim([1e-1, 1e5])
 ax2 = nexttile;
 hold on;
 for ch_i = 1:6
-  plot(freqs, 180/pi*angle(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))));
+    plot(freqs, 180/pi*angle(squeeze(freqresp(Gsvd(ch_i, ch_i), freqs, 'Hz'))));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
@@ -450,16 +450,16 @@ ax1 = nexttile([2, 1]);
 hold on;
 plot(freqs, abs(squeeze(freqresp(L_svd(1, 1), freqs, 'Hz'))), 'DisplayName', '$L_{SVD}(i,i)$');
 for i_in_out = 2:6
-  set(gca,'ColorOrderIndex',1)
-  plot(freqs, abs(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, abs(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
 end
 
 set(gca,'ColorOrderIndex',2)
 plot(freqs, abs(squeeze(freqresp(L_cen(1, 1), freqs, 'Hz'))), ...
      'DisplayName', '$L_{J}(i,i)$');
 for i_in_out = 2:6
-  set(gca,'ColorOrderIndex',2)
-  plot(freqs, abs(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, abs(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))), 'HandleVisibility', 'off');
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
@@ -471,13 +471,13 @@ ylim([5e-2, 2e3])
 ax2 = nexttile;
 hold on;
 for i_in_out = 1:6
-  set(gca,'ColorOrderIndex',1)
-  plot(freqs, 180/pi*angle(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))));
+    set(gca,'ColorOrderIndex',1)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_svd(i_in_out, i_in_out), freqs, 'Hz'))));
 end
 set(gca,'ColorOrderIndex',2)
 for i_in_out = 1:6
-  set(gca,'ColorOrderIndex',2)
-  plot(freqs, 180/pi*angle(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))));
+    set(gca,'ColorOrderIndex',2)
+    plot(freqs, 180/pi*angle(squeeze(freqresp(L_cen(i_in_out, i_in_out), freqs, 'Hz'))));
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'lin');
