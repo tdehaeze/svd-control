@@ -74,6 +74,9 @@ In this part, diagonal control using both the SVD and the Jacobian matrices are 
 - Section [[sec:gravimeter_decoupled_plant]]: the obtained decoupled plants are compared
 - Section [[sec:gravimeter_diagonal_control]]: the diagonal controller is developed
 - Section [[sec:gravimeter_closed_loop_results]]: the obtained closed-loop performances for the two methods are compared
+- Section [[sec:robustness_actuator_position]]: the robustness to a change of actuator position is evaluated
+- Section [[sec:choice_jacobian_reference]]: the choice of the reference frame for the evaluation of the Jacobian is discussed
+- Section [[sec:decoupling_performances]]: the decoupling performances of SVD is evaluated for a low damped and an highly damped system
 
 ** Matlab Init                                              :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
@@ -1065,9 +1068,9 @@ G_cen_b = feedback(G, pinv(Jt')*K_cen*pinv(Ja));
 G_svd_b = feedback(G, inv(V')*K_svd*U_inv(1:3, :));
 #+end_src
 
-The new plant is computed, and the centralized and SVD control architectures are applied using the previsouly computed Jacobian matrices and $U$ and $V$ matrices.
+The new plant is computed, and the centralized and SVD control architectures are applied using the previously computed Jacobian matrices and $U$ and $V$ matrices.
 
-The closed-loop system are still stable, and their
+The closed-loop system are still stable in both cases, and the obtained transmissibility are equivalent as shown in Figure [[fig:gravimeter_transmissibility_offset_act]].
 
 #+begin_src matlab :exports results
 freqs = logspace(-2, 2, 1000);
@@ -1365,6 +1368,7 @@ If not the case, the system can either be decoupled as low frequency if the Jaco
 Or it can be decoupled at high frequency if the Jacobians are evaluated at the CoM.
 
 ** SVD decoupling performances
+<<sec:decoupling_performances>>
 As the SVD is applied on a *real approximation* of the plant dynamics at a frequency $\omega_0$, it is foreseen that the effectiveness of the decoupling depends on the validity of the real approximation.
 
 Let's do the SVD decoupling on a plant that is mostly real (low damping) and one with a large imaginary part (larger damping).
