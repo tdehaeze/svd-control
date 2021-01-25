@@ -92,7 +92,7 @@ addpath('gravimeter');
 #+end_src
 
 #+begin_src matlab
-freqs = logspace(-1, 2, 1000);
+freqs = logspace(-1, 3, 1000);
 #+end_src
 
 ** Gravimeter Model - Parameters
@@ -863,14 +863,12 @@ w0 = 2*pi*0.1; % Controller Pole [rad/s]
 #+begin_src matlab
 K_cen = diag(1./diag(abs(evalfr(Gx, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
 L_cen = K_cen*Gx;
-G_cen = feedback(G, pinv(Jt')*K_cen*pinv(Ja));
 #+end_src
 
 #+begin_src matlab
 K_svd = diag(1./diag(abs(evalfr(Gsvd, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
 L_svd = K_svd*Gsvd;
 U_inv = inv(U);
-G_svd = feedback(G, inv(V')*K_svd*U_inv(1:3, :));
 #+end_src
 
 The obtained diagonal elements of the loop gains are shown in Figure [[fig:gravimeter_comp_loop_gain_diagonal]].
@@ -934,6 +932,41 @@ exportFig('figs/gravimeter_comp_loop_gain_diagonal.pdf', 'width', 'wide', 'heigh
 ** Closed-Loop system Performances
 <<sec:gravimeter_closed_loop_results>>
 
+Now the system is identified again with additional inputs and outputs:
+- $x$, $y$ and $R_z$ ground motion
+- $x$, $y$ and $R_z$ acceleration of the payload.
+
+#+begin_src matlab
+%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/Dx'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Dy'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Rz'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 3, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'Dx', 'Dy', 'Rz', 'F1', 'F2', 'F3'};
+G.OutputName = {'Ax', 'Ay', 'Arz', 'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+#+end_src
+
+The loop is closed using the developed controllers.
+#+begin_src matlab
+G_cen = lft(G, -pinv(Jt')*K_cen*pinv(Ja));
+G_svd = lft(G, -inv(V')*K_svd*U_inv(1:3, :));
+#+end_src
+
 Let's first verify the stability of the closed-loop systems:
 #+begin_src matlab :results output replace text
 isstable(G_cen)
@@ -963,9 +996,9 @@ tiledlayout(1, 3, 'TileSpacing', 'None', 'Padding', 'None');
 
 ax1 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G(    1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
-plot(freqs, abs(squeeze(freqresp(G_cen(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
-plot(freqs, abs(squeeze(freqresp(G_svd(1,1)/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+plot(freqs, abs(squeeze(freqresp(G(    'Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
+plot(freqs, abs(squeeze(freqresp(G_cen('Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
+plot(freqs, abs(squeeze(freqresp(G_svd('Ax','Dx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility'); xlabel('Frequency [Hz]');
@@ -974,9 +1007,9 @@ legend('location', 'southwest');
 
 ax2 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G(    2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen(2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd(2,2)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G(    'Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Ay','Dy')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -984,9 +1017,9 @@ title('$D_y/D_{w,y}$');
 
 ax3 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G(    3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen(3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd(3,3)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G(    'Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Arz','Rz')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -994,7 +1027,7 @@ title('$R_z/R_{w,z}$');
 
 linkaxes([ax1,ax2,ax3],'xy');
 xlim([freqs(1), freqs(end)]);
-xlim([1e-2, 5e1]); ylim([1e-7, 1e-2]);
+xlim([1e-2, 5e1]); ylim([1e-2, 1e1]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
@@ -1023,6 +1056,7 @@ for out_i = 1:3
 end
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility'); xlabel('Frequency [Hz]');
+ylim([1e-6, 1e3]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
@@ -1044,28 +1078,35 @@ la = l/2*0.7; % Position of Act. [m]
 ha = h/2*0.7; % Position of Act. [m]
 #+end_src
 
-#+begin_src matlab :exports none
+#+begin_src matlab
 %% Name of the Simulink File
 mdl = 'gravimeter';
 
 %% Input/Output definition
 clear io; io_i = 1;
+io(io_i) = linio([mdl, '/Dx'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Dy'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Rz'], 1, 'openinput');  io_i = io_i + 1;
 io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
 io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
 io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 3, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
 
 G = linearize(mdl, io);
-G.InputName  = {'F1', 'F2', 'F3'};
-G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+G.InputName  = {'Dx', 'Dy', 'Rz', 'F1', 'F2', 'F3'};
+G.OutputName = {'Ax', 'Ay', 'Arz', 'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 #+end_src
 
-#+begin_src matlab :exports none
-G_cen_b = feedback(G, pinv(Jt')*K_cen*pinv(Ja));
-G_svd_b = feedback(G, inv(V')*K_svd*U_inv(1:3, :));
+The loop is closed using the developed controllers.
+#+begin_src matlab
+G_cen_b = lft(G, -pinv(Jt')*K_cen*pinv(Ja));
+G_svd_b = lft(G, -inv(V')*K_svd*U_inv(1:3, :));
 #+end_src
 
 The new plant is computed, and the centralized and SVD control architectures are applied using the previously computed Jacobian matrices and $U$ and $V$ matrices.
@@ -1080,9 +1121,9 @@ tiledlayout(1, 3, 'TileSpacing', 'None', 'Padding', 'None');
 
 ax1 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G_cen(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Initial');
-plot(freqs, abs(squeeze(freqresp(G_cen_b(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Jacobian');
-plot(freqs, abs(squeeze(freqresp(G_svd_b(1,1)/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+plot(freqs, abs(squeeze(freqresp(G_cen(      'Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
+plot(freqs, abs(squeeze(freqresp(G_cen_b('Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
+plot(freqs, abs(squeeze(freqresp(G_svd_b('Ax','Dx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility'); xlabel('Frequency [Hz]');
@@ -1091,9 +1132,9 @@ legend('location', 'southwest');
 
 ax2 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G_cen(2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen_b(2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd_b(2,2)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G_cen(      'Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen_b('Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd_b('Ay','Dy')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -1101,9 +1142,9 @@ title('$D_y/D_{w,y}$');
 
 ax3 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G_cen(3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen_b(3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd_b(3,3)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G_cen(      'Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen_b('Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd_b('Arz','Rz')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -1111,7 +1152,7 @@ title('$R_z/R_{w,z}$');
 
 linkaxes([ax1,ax2,ax3],'xy');
 xlim([freqs(1), freqs(end)]);
-xlim([1e-2, 5e1]); ylim([1e-7, 3e-4]);
+xlim([1e-2, 5e1]); ylim([1e-2, 1e1]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
@@ -1500,6 +1541,361 @@ exportFig('figs/gravimeter_svd_high_damping.pdf', 'width', 'wide', 'height', 'no
 #+caption: Diagonal and off-diagonal term when decoupling with SVD on the gravimeter with high damping
 #+RESULTS:
 [[file:figs/gravimeter_svd_high_damping.png]]
+
+* Analytical Model
+** Model
+
+#+name: fig:gravimeter_model_analytical
+#+caption: Model of the gravimeter
+[[file:figs/gravimeter_model_analytical.png]]
+
+- collocated actuators and sensors
+
+** Stiffness and Mass matrices
+
+*Stiffness matrix*:
+\begin{equation}
+  \mathcal{F}_{\{O\}} = -K_{\{O\}} \mathcal{X}_{\{O\}}
+\end{equation}
+with:
+- $\mathcal{X}_{\{O\}}$ are displacements/rotations of the mass $x$, $y$, $R_z$ expressed in the frame $\{O\}$
+- $\mathcal{F}_{\{O\}}$ are forces/torques $\mathcal{F}_x$, $\mathcal{F}_y$, $\mathcal{M}_z$ applied at the origin of $\{O\}$
+
+*Mass matrix*:
+\begin{equation}
+  \mathcal{F}_{\{O\}} = M_{\{O\}} \ddot{\mathcal{X}}_{\{O\}}
+\end{equation}
+
+
+Consider the two following frames:
+- $\{M\}$: Center of mass => diagonal mass matrix
+  \[ M_{\{M\}} = \begin{bmatrix}m & 0 & 0 \\ 0 & m & 0 \\ 0 & 0 & I\end{bmatrix} \]
+  \[ K_{\{M\}} = \begin{bmatrix}k_1 & 0 & k_1 h_a \\ 0 & k_2 + k_3 & 0 \\ k_1 h_a & 0 & k_1 h_a + (k_2 + k_3)l_a\end{bmatrix} \]
+- $\{K\}$: Diagonal stiffness matrix
+  \[ K_{\{K\}} = \begin{bmatrix}k_1 & 0 & 0 \\ 0 & k_2 + k_3 & 0 \\ 0 & 0 & (k_2 + k_3)l_a\end{bmatrix} \]
+  - [ ] Compute the mass matrix $M_{\{K\}}$
+    Needs two Jacobians => complicated matrix
+
+** Equations
+
+- [ ] Ideally write the equation from $\tau$ to $\mathcal{L}$
+
+\begin{equation}
+  \mathcal{L} = \begin{bmatrix} \mathcal{L}_1 \\ \mathcal{L}_2 \\ \mathcal{L}_3 \end{bmatrix}
+\end{equation}
+
+\begin{equation}
+  \tau = \begin{bmatrix} \tau_1 \\ \tau_2 \\ \tau_3 \end{bmatrix}
+\end{equation}
+
+** Jacobians
+
+Usefulness of Jacobians:
+- $J_{\{M\}}$ converts $\dot{\mathcal{L}}$ to $\dot{\mathcal{X}}_{\{M\}}$:
+  \[ \dot{\mathcal{X}}_{\{M\}} = J_{\{M\}} \dot{\mathcal{L}} \]
+- $J_{\{M\}}^T$ converts $\tau$ to $\mathcal{F}_{\{M\}}$:
+  \[ \mathcal{F}_{\{M\}} = J_{\{M\}}^T \tau \]
+- $J_{\{K\}}$ converts  $\dot{\mathcal{K}}$to $\dot{\mathcal{X}}_{\{K\}}$:
+  \[ \dot{\mathcal{X}}_{\{K\}} = J_{\{K\}} \dot{\mathcal{K}} \]
+- $J_{\{K\}}^T$ converts $\tau$ to $\mathcal{F}_{\{K\}}$:
+  \[ \mathcal{F}_{\{K\}} = J_{\{K\}}^T \tau \]
+
+
+Let's compute the Jacobians:
+\begin{equation}
+J_{\{M\}} = \begin{bmatrix} 1 & 0 & h_a \\ 0 & 1 & -l_a \\ 0 & 1 & l_a \end{bmatrix}
+\end{equation}
+
+\begin{equation}
+J_{\{K\}} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & -l_a \\ 0 & 1 & l_a \end{bmatrix}
+\end{equation}
+
+** Matlab Init                                              :noexport:ignore:
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+<<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+<<matlab-init>>
+#+end_src
+
+** Parameters
+#+begin_src matlab
+l  = 1.0; % Length of the mass [m]
+h  = 2*1.7; % Height of the mass [m]
+
+la = l/2; % Position of Act. [m]
+ha = h/2; % Position of Act. [m]
+
+m = 400; % Mass [kg]
+I = 115; % Inertia [kg m^2]
+
+c1 = 2e1; % Actuator Damping [N/(m/s)]
+c2 = 2e1; % Actuator Damping [N/(m/s)]
+c3 = 2e1; % Actuator Damping [N/(m/s)]
+
+k1 = 15e3; % Actuator Stiffness [N/m]
+k2 = 15e3; % Actuator Stiffness [N/m]
+k3 = 15e3; % Actuator Stiffness [N/m]
+#+end_src
+
+** Transfer function from $\tau$ to $\delta \mathcal{L}$
+Mass, Damping and Stiffness matrices expressed in $\{M\}$:
+#+begin_src matlab
+Mm = [m 0 0 ;
+      0 m 0 ;
+      0 0 I];
+
+Cm = [c1    0     c1*ha ;
+      0     c2+c3 0 ;
+      c1*ha 0     c1*ha + (c2+c3)*la];
+
+Km = [k1    0     k1*ha ;
+      0     k2+k3 0 ;
+      k1*ha 0     k1*ha + (k2+k3)*la];
+#+end_src
+
+Jacobian $J_{\{M\}}$:
+#+begin_src matlab
+Jm = [1 0  ha ;
+      0 1 -la ;
+      0 1  la];
+#+end_src
+
+#+begin_src matlab
+Mt = inv(Jm')*Mm*inv(Jm);
+Ct = inv(Jm')*Cm*inv(Jm);
+Kt = inv(Jm')*Km*inv(Jm);
+#+end_src
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Mt, {}, {}, ' %.1f ');
+#+end_src
+
+#+caption: $M_t$
+#+RESULTS:
+|  400.0 |  340.0 | -340.0 |
+|  340.0 |  504.0 | -304.0 |
+| -340.0 | -304.0 |  504.0 |
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Kt, {}, {}, ' %.1f ');
+#+end_src
+
+#+caption: $K_t$
+#+RESULTS:
+| 15000.0 |     0.0 |     0.0 |
+|     0.0 | 24412.5 | -9412.5 |
+|     0.0 | -9412.5 | 24412.5 |
+
+#+begin_src matlab
+Gt = s^2*inv(Mt*s^2 + Ct*s + Kt);
+% Gt = JM*s^2*inv(MM*s^2 + CM*s + KM)*JM';
+#+end_src
+
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gt(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gt(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gt(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+#+end_src
+
+** Transfer function from $\mathcal{F}_{\{M\}}$ to $\mathcal{X}_{\{M\}}$
+
+#+begin_src matlab
+Gm = inv(Jm)*Gt*inv(Jm');
+#+end_src
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Mm, {}, {}, ' %.1f ');
+#+end_src
+
+#+caption: $M_{\{M\}}$
+#+RESULTS:
+| 400.0 |   0.0 |   0.0 |
+|   0.0 | 400.0 |   0.0 |
+|   0.0 |   0.0 | 115.0 |
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Km, {}, {}, ' %.1f ');
+#+end_src
+
+#+caption: $K_{\{M\}}$
+#+RESULTS:
+| 15000.0 |     0.0 | 12750.0 |
+|     0.0 | 30000.0 |     0.0 |
+| 12750.0 |     0.0 | 27750.0 |
+
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gm(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gm(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gm(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+#+end_src
+
+** Transfer function from $\mathcal{F}_{\{K\}}$ to $\mathcal{X}_{\{K\}}$
+
+Jacobian:
+#+begin_src matlab
+Jk = [1 0  0
+      0 1 -la
+      0 1  la];
+#+end_src
+
+Mass, Damping and Stiffness matrices expressed in $\{K\}$:
+#+begin_src matlab
+Mk = Jk'*Mt*Jk;
+Ck = Jk'*Ct*Jk;
+Kk = Jk'*Kt*Jk;
+#+end_src
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Mk, {}, {}, ' %.1f ');
+#+end_src
+
+#+caption: $M_{\{K\}}$
+#+RESULTS:
+|  400.0 |   0.0 | -340.0 |
+|    0.0 | 400.0 |    0.0 |
+| -340.0 |   0.0 |  404.0 |
+
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Kk, {}, {}, ' %.1f ');
+#+end_src
+
+#+caption: $K_{\{K\}}$
+#+RESULTS:
+| 15000.0 |     0.0 |     0.0 |
+|     0.0 | 30000.0 |     0.0 |
+|     0.0 |     0.0 | 16912.5 |
+
+#+begin_src matlab
+% Gk = s^2*inv(Mk*s^2 + Ck*s + Kk);
+Gk = inv(Jk)*Gt*inv(Jk');
+#+end_src
+
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [1:i_in-1, i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gk(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gk(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_x(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gk(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+legend('location', 'southeast');
+ylim([1e-8, 1e0]);
+#+end_src
+
+** Analytical
+*** Matlab Init                                            :noexport:ignore:
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+<<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+<<matlab-init>>
+#+end_src
+
+*** Parameters
+#+begin_src matlab
+syms la ha m I c k positive
+#+end_src
+
+#+begin_src matlab
+Mm = [m 0 0 ;
+      0 m 0 ;
+      0 0 I];
+
+Cm = [c    0   c*ha ;
+      0    2*c 0 ;
+      c*ha 0   c*(ha+2*la)];
+
+Km = [k    0   k*ha ;
+      0    2*k 0 ;
+      k*ha 0   k*(ha+2*la)];
+#+end_src
+
+#+begin_src matlab
+Jm = [1 0  ha ;
+      0 1 -la ;
+      0 1  la];
+#+end_src
+
+#+begin_src matlab
+Mt = inv(Jm')*Mm*inv(Jm);
+Ct = inv(Jm')*Cm*inv(Jm);
+Kt = inv(Jm')*Km*inv(Jm);
+#+end_src
+
+#+begin_src matlab
+Jk = [1 0  0
+      0 1 -la
+      0 1  la];
+#+end_src
+
+Mass, Damping and Stiffness matrices expressed in $\{K\}$:
+#+begin_src matlab
+Mk = Jk'*Mt*Jk;
+Ck = Jk'*Ct*Jk;
+Kk = Jk'*Kt*Jk;
+#+end_src
+
+#+begin_src matlab :results replace value raw
+['\begin{equation} M_{\{K\}} = ', latex(simplify(Kk)), '\end{equation}']
+#+end_src
+
+#+RESULTS:
+\begin{equation} M_{\{K\}} = \left(\begin{array}{ccc} k & 0 & 0\\ 0 & 2\,k & 0\\ 0 & 0 & k\,\left(-{\mathrm{ha}}^2+\mathrm{ha}+2\,\mathrm{la}\right) \end{array}\right)\end{equation}
 
 * Stewart Platform - Simscape Model
 :PROPERTIES:
