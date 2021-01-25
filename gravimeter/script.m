@@ -4,7 +4,7 @@ clear; close all; clc;
 %% Intialize Laplace variable
 s = zpk('s');
 
-freqs = logspace(-1, 2, 1000);
+freqs = logspace(-1, 3, 1000);
 
 % Gravimeter Model - Parameters
 % <<sec:gravimeter_model>>
@@ -107,7 +107,7 @@ for out_i = 1:4
         xlim([1e-1, 2e1]); ylim([1e-4, 1e0]);
 
         if in_i == 1
-            ylabel('Amplitude [m/N]')
+            ylabel('Amplitude [$\frac{m/s^2}{N}$]')
         else
             set(gca, 'YTickLabel',[]);
         end
@@ -155,6 +155,12 @@ size(Gx)
 % : State-space model with 3 outputs, 3 inputs, and 6 states.
 
 % The diagonal and off-diagonal elements of $G_x$ are shown in Figure [[fig:gravimeter_jacobian_plant]].
+
+% It is shown at the system is:
+% - decoupled at high frequency thanks to a diagonal mass matrix (the Jacobian being evaluated at the center of mass of the payload)
+% - coupled at low frequency due to the non-diagonal terms in the stiffness matrix, especially the term corresponding to a coupling between a force in the x direction to a rotation around z (due to the torque applied by the stiffness 1).
+
+% The choice of the frame in this the Jacobian is evaluated is discussed in Section [[sec:choice_jacobian_reference]].
 
 
 figure;
@@ -538,12 +544,10 @@ w0 = 2*pi*0.1; % Controller Pole [rad/s]
 
 K_cen = diag(1./diag(abs(evalfr(Gx, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
 L_cen = K_cen*Gx;
-G_cen = feedback(G, pinv(Jt')*K_cen*pinv(Ja));
 
 K_svd = diag(1./diag(abs(evalfr(Gsvd, j*wc))))*(1/abs(evalfr(1/(1 + s/w0), j*wc)))/(1 + s/w0);
 L_svd = K_svd*Gsvd;
 U_inv = inv(U);
-G_svd = feedback(G, inv(V')*K_svd*U_inv(1:3, :));
 
 
 
@@ -598,6 +602,43 @@ linkaxes([ax1,ax2],'x');
 % Closed-Loop system Performances
 % <<sec:gravimeter_closed_loop_results>>
 
+% Now the system is identified again with additional inputs and outputs:
+% - $x$, $y$ and $R_z$ ground motion
+% - $x$, $y$ and $R_z$ acceleration of the payload.
+
+
+%% Name of the Simulink File
+mdl = 'gravimeter';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/Dx'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Dy'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Rz'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 3, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
+
+G = linearize(mdl, io);
+G.InputName  = {'Dx', 'Dy', 'Rz', 'F1', 'F2', 'F3'};
+G.OutputName = {'Ax', 'Ay', 'Arz', 'Ax1', 'Ay1', 'Ax2', 'Ay2'};
+
+
+
+% The loop is closed using the developed controllers.
+
+G_cen = lft(G, -pinv(Jt')*K_cen*pinv(Ja));
+G_svd = lft(G, -inv(V')*K_svd*U_inv(1:3, :));
+
+
+
 % Let's first verify the stability of the closed-loop systems:
 
 isstable(G_cen)
@@ -629,9 +670,9 @@ tiledlayout(1, 3, 'TileSpacing', 'None', 'Padding', 'None');
 
 ax1 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G(    1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
-plot(freqs, abs(squeeze(freqresp(G_cen(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
-plot(freqs, abs(squeeze(freqresp(G_svd(1,1)/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+plot(freqs, abs(squeeze(freqresp(G(    'Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
+plot(freqs, abs(squeeze(freqresp(G_cen('Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
+plot(freqs, abs(squeeze(freqresp(G_svd('Ax','Dx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility'); xlabel('Frequency [Hz]');
@@ -640,9 +681,9 @@ legend('location', 'southwest');
 
 ax2 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G(    2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen(2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd(2,2)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G(    'Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Ay','Dy')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -650,9 +691,9 @@ title('$D_y/D_{w,y}$');
 
 ax3 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G(    3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen(3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd(3,3)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G(    'Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen('Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd('Arz','Rz')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -660,7 +701,7 @@ title('$R_z/R_{w,z}$');
 
 linkaxes([ax1,ax2,ax3],'xy');
 xlim([freqs(1), freqs(end)]);
-xlim([1e-2, 5e1]); ylim([1e-7, 1e-2]);
+xlim([1e-2, 5e1]); ylim([1e-2, 1e1]);
 
 
 
@@ -686,8 +727,10 @@ for out_i = 1:3
 end
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility'); xlabel('Frequency [Hz]');
+ylim([1e-6, 1e3]);
 
 % Robustness to a change of actuator position
+% <<sec:robustness_actuator_position>>
 
 % Let say we change the position of the actuators:
 
@@ -699,26 +742,36 @@ mdl = 'gravimeter';
 
 %% Input/Output definition
 clear io; io_i = 1;
+io(io_i) = linio([mdl, '/Dx'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Dy'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Rz'], 1, 'openinput');  io_i = io_i + 1;
 io(io_i) = linio([mdl, '/F1'], 1, 'openinput');  io_i = io_i + 1;
 io(io_i) = linio([mdl, '/F2'], 1, 'openinput');  io_i = io_i + 1;
 io(io_i) = linio([mdl, '/F3'], 1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 1, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 2, 'openoutput'); io_i = io_i + 1;
+io(io_i) = linio([mdl, '/Abs_Motion'], 3, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_side'], 1, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_side'], 2, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_top'], 1, 'openoutput'); io_i = io_i + 1;
 io(io_i) = linio([mdl, '/Acc_top'], 2, 'openoutput'); io_i = io_i + 1;
 
 G = linearize(mdl, io);
-G.InputName  = {'F1', 'F2', 'F3'};
-G.OutputName = {'Ax1', 'Ay1', 'Ax2', 'Ay2'};
-
-G_cen_b = feedback(G, pinv(Jt')*K_cen*pinv(Ja));
-G_svd_b = feedback(G, inv(V')*K_svd*U_inv(1:3, :));
+G.InputName  = {'Dx', 'Dy', 'Rz', 'F1', 'F2', 'F3'};
+G.OutputName = {'Ax', 'Ay', 'Arz', 'Ax1', 'Ay1', 'Ax2', 'Ay2'};
 
 
 
-% The new plant is computed, and the centralized and SVD control architectures are applied using the previsouly computed Jacobian matrices and $U$ and $V$ matrices.
+% The loop is closed using the developed controllers.
 
-% The closed-loop system are still stable, and their
+G_cen_b = lft(G, -pinv(Jt')*K_cen*pinv(Ja));
+G_svd_b = lft(G, -inv(V')*K_svd*U_inv(1:3, :));
+
+
+
+% The new plant is computed, and the centralized and SVD control architectures are applied using the previously computed Jacobian matrices and $U$ and $V$ matrices.
+
+% The closed-loop system are still stable in both cases, and the obtained transmissibility are equivalent as shown in Figure [[fig:gravimeter_transmissibility_offset_act]].
 
 
 freqs = logspace(-2, 2, 1000);
@@ -728,9 +781,9 @@ tiledlayout(1, 3, 'TileSpacing', 'None', 'Padding', 'None');
 
 ax1 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G_cen(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Initial');
-plot(freqs, abs(squeeze(freqresp(G_cen_b(1,1)/s^2, freqs, 'Hz'))), 'DisplayName', 'Jacobian');
-plot(freqs, abs(squeeze(freqresp(G_svd_b(1,1)/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
+plot(freqs, abs(squeeze(freqresp(G_cen(      'Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Open-Loop');
+plot(freqs, abs(squeeze(freqresp(G_cen_b('Ax','Dx')/s^2, freqs, 'Hz'))), 'DisplayName', 'Centralized');
+plot(freqs, abs(squeeze(freqresp(G_svd_b('Ax','Dx')/s^2, freqs, 'Hz'))), '--', 'DisplayName', 'SVD');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 ylabel('Transmissibility'); xlabel('Frequency [Hz]');
@@ -739,9 +792,9 @@ legend('location', 'southwest');
 
 ax2 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G_cen(2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen_b(2,2)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd_b(2,2)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G_cen(      'Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen_b('Ay','Dy')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd_b('Ay','Dy')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -749,9 +802,9 @@ title('$D_y/D_{w,y}$');
 
 ax3 = nexttile;
 hold on;
-plot(freqs, abs(squeeze(freqresp(G_cen(3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_cen_b(3,3)/s^2, freqs, 'Hz'))));
-plot(freqs, abs(squeeze(freqresp(G_svd_b(3,3)/s^2, freqs, 'Hz'))), '--');
+plot(freqs, abs(squeeze(freqresp(G_cen(      'Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_cen_b('Arz','Rz')/s^2, freqs, 'Hz'))));
+plot(freqs, abs(squeeze(freqresp(G_svd_b('Arz','Rz')/s^2, freqs, 'Hz'))), '--');
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 set(gca, 'YTickLabel',[]); xlabel('Frequency [Hz]');
@@ -759,7 +812,7 @@ title('$R_z/R_{w,z}$');
 
 linkaxes([ax1,ax2,ax3],'xy');
 xlim([freqs(1), freqs(end)]);
-xlim([1e-2, 5e1]); ylim([1e-7, 3e-4]);
+xlim([1e-2, 5e1]); ylim([1e-2, 1e1]);
 
 % Decoupling of the mass matrix
 
@@ -939,6 +992,7 @@ legend('location', 'southeast');
 ylim([1e-8, 1e0]);
 
 % SVD decoupling performances
+% <<sec:decoupling_performances>>
 % As the SVD is applied on a *real approximation* of the plant dynamics at a frequency $\omega_0$, it is foreseen that the effectiveness of the decoupling depends on the validity of the real approximation.
 
 % Let's do the SVD decoupling on a plant that is mostly real (low damping) and one with a large imaginary part (larger damping).
