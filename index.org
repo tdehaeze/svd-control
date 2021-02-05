@@ -2036,7 +2036,7 @@ si = [[1;0],[0;1],[0;1]]; si = si./vecnorm(si); % Unit Vectors
 bi = [[-1;0.5],[-2;-1],[0;-1]]; % Joint's positions in frame {M}
 #+end_src
 
-Let's first verify that condition eqref:diag_cond_2D_1 is true:
+Let's first verify that condition eqref:eq:diag_cond_2D_1 is true:
 #+begin_src matlab :results value replace
 ki.*si*si'
 #+end_src
@@ -2117,7 +2117,7 @@ L = 2;
 bi = [[-L/2;h],[-L/2;-h],[L/2;h],[L/2;h]];
 #+end_src
 
-Let's first verify that condition eqref:diag_cond_2D_1 is true:
+Let's first verify that condition eqref:eq:diag_cond_2D_1 is true:
 #+begin_src matlab :results value replace
 ki.*si*si'
 #+end_src
