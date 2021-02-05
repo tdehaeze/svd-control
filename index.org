@@ -1595,7 +1595,7 @@ Usefulness of Jacobians:
   \[ \dot{\mathcal{X}}_{\{M\}} = J_{\{M\}} \dot{\mathcal{L}} \]
 - $J_{\{M\}}^T$ converts $\tau$ to $\mathcal{F}_{\{M\}}$:
   \[ \mathcal{F}_{\{M\}} = J_{\{M\}}^T \tau \]
-- $J_{\{K\}}$ converts  $\dot{\mathcal{K}}$to $\dot{\mathcal{X}}_{\{K\}}$:
+- $J_{\{K\}}$ converts  $\dot{\mathcal{K}}$ to $\dot{\mathcal{X}}_{\{K\}}$:
   \[ \dot{\mathcal{X}}_{\{K\}} = J_{\{K\}} \dot{\mathcal{K}} \]
 - $J_{\{K\}}^T$ converts $\tau$ to $\mathcal{F}_{\{K\}}$:
   \[ \mathcal{F}_{\{K\}} = J_{\{K\}}^T \tau \]
@@ -2045,7 +2045,7 @@ bi = [[-1;0.5],[-2;-1],[0;-1]]; % Joint's positions in frame {M}
 #+end_src
 
 Let's first verify that condition eqref:eq:diag_cond_2D_1 is true:
-#+begin_src matlab :results value replace
+#+begin_src matlab :results value replace :exports results
 ki.*si*si'
 #+end_src
 
@@ -2058,7 +2058,7 @@ Now, compute ${}^MO_K$:
 Ok = inv([sum(ki.*si(2,:).*si, 2), -sum(ki.*si(1,:).*si, 2)])*sum(ki.*(bi(1,:).*si(2,:) - bi(2,:).*si(1,:)).*si, 2);
 #+end_src
 
-#+begin_src matlab :results value replace :exports none :tangle no
+#+begin_src matlab :results value replace :exports results :tangle no
 ans = Ok
 #+end_src
 
@@ -2076,7 +2076,7 @@ In order to verify that the new frame $\{K\}$ indeed yields a diagonal stiffness
 Jk = [si', (Kbi(1,:).*si(2,:) - Kbi(2,:).*si(1,:))'];
 #+end_src
 
-#+begin_src matlab :results value replace :exports none :tangle no
+#+begin_src matlab :results value replace :exports results :tangle no
 ans = Jk
 #+end_src
 
@@ -2090,7 +2090,7 @@ And the stiffness matrix:
 K = Jk'*diag(ki)*Jk
 #+end_src
 
-#+begin_src matlab :results value replace :exports none :tangle no
+#+begin_src matlab :results value replace :exports results :tangle no
 ans = K
 #+end_src
 
@@ -2126,7 +2126,7 @@ bi = [[-L/2;h],[-L/2;-h],[L/2;h],[L/2;h]];
 #+end_src
 
 Let's first verify that condition eqref:eq:diag_cond_2D_1 is true:
-#+begin_src matlab :results value replace
+#+begin_src matlab :results value replace :exports both
 ki.*si*si'
 #+end_src
 
@@ -2139,7 +2139,7 @@ Now, compute ${}^MO_K$:
 Ok = inv([sum(ki.*si(2,:).*si, 2), -sum(ki.*si(1,:).*si, 2)])*sum(ki.*(bi(1,:).*si(2,:) - bi(2,:).*si(1,:)).*si, 2);
 #+end_src
 
-#+begin_src matlab :results value replace :exports none :tangle no
+#+begin_src matlab :results value replace :exports results :tangle no
 ans = Ok
 #+end_src
 
@@ -2157,7 +2157,7 @@ In order to verify that the new frame $\{K\}$ indeed yields a diagonal stiffness
 Jk = [si', (Kbi(1,:).*si(2,:) - Kbi(2,:).*si(1,:))'];
 #+end_src
 
-#+begin_src matlab :results value replace :exports none :tangle no
+#+begin_src matlab :results value replace :exports results :tangle no
 ans = Jk
 #+end_src
 
@@ -2172,7 +2172,7 @@ And the stiffness matrix:
 K = Jk'*diag(ki)*Jk
 #+end_src
 
-#+begin_src matlab :results value replace :exports none :tangle no
+#+begin_src matlab :results value replace :exports results :tangle no
 ans = K
 #+end_src
 
@@ -2353,7 +2353,7 @@ bi = [[1;-1;1],[1;1;-1],[1;1;1],[1;-1;-1],[1;-1;-1],[-1;1;-1],[1;1;-1],[-1;-1;-1
 #+end_src
 
 Cond 1:
-#+begin_src matlab :results value replace
+#+begin_src matlab :results value replace :exports both
 ki.*si*si'
 #+end_src
 
@@ -2374,7 +2374,7 @@ else
 end
 #+end_src
 
-#+begin_src matlab :exports results :results value replace
+#+begin_src matlab :results value replace :exports results :tangle no
 ans = Ok
 #+end_src
 
