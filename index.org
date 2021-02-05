@@ -1929,6 +1929,14 @@ The stiffness matrix in the frame $\{K\}$ can be expressed as:
 where:
 - $J_{\{K\}}$ is the Jacobian transformation from the struts to the frame $\{K\}$
 - $\mathcal{K}$ is a diagonal matrix with the strut stiffnesses on the diagonal
+  \begin{equation}
+  \mathcal{K} = \begin{bmatrix}
+    k_1 &     &        & 0 \\
+        & k_2 &        &   \\
+        &     & \ddots &   \\
+    0   &     &        & k_n
+  \end{bmatrix}
+  \end{equation}
 
 The Jacobian for a planar manipulator, evaluated in a frame $\{K\}$, can be expressed as follows:
 \begin{equation} \label{eq:jacobian_planar}
@@ -2203,8 +2211,17 @@ For a fully parallel manipulator, the stiffness matrix $K_{\{K\}}$ expressed in 
   K_{\{K\}} = J_{\{K\}}^T \mathcal{K} J_{\{K\}}
 \end{equation}
 where:
-- $K_{\{K\}}$ is the Jacobian transformation from the struts to the frame $\{K\}$
-- $\mathcal{K}$ is a diagonal matrix with the strut stiffnesses on the diagonal
+- $J_{\{K\}}$ is the Jacobian transformation from the struts to the frame $\{K\}$
+- $\mathcal{K}$ is a diagonal matrix with the strut stiffnesses on the diagonal:
+  \begin{equation}
+  \mathcal{K} = \begin{bmatrix}
+    k_1 &     &        & 0 \\
+        & k_2 &        &   \\
+        &     & \ddots &   \\
+    0   &     &        & k_n
+  \end{bmatrix}
+  \end{equation}
+
 
 The analytical expression of $J_{\{K\}}$ is:
 \begin{equation}
@@ -2286,7 +2303,7 @@ Taking the transpose and re-arranging:
 k_i ({}^Mb_i \times \hat{s}_i) \hat{s}_i^T = k_i ({}^MO_K \times \hat{s}_i) \hat{s}_i^T
 \end{equation}
 
-As the vector cross product also can be expressed as the product of a skew-symmetric matrix and a vector, we obtain:
+As the vector cross product also can be expressed as the product of a skew-symmetric matrix and a vehttps://rwth.zoom.us/j/92311133102?pwd=UTAzS21YYkUwT2pMZDBLazlGNzdvdz09tor, we obtain:
 \begin{equation}
 k_i ({}^Mb_i \times \hat{s}_i) \hat{s}_i^T = {}^M\bm{O}_{K} ( k_i \hat{s}_i \hat{s}_i^T )
 \end{equation}
