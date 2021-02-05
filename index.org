@@ -1897,6 +1897,540 @@ Kk = Jk'*Kt*Jk;
 #+RESULTS:
 \begin{equation} M_{\{K\}} = \left(\begin{array}{ccc} k & 0 & 0\\ 0 & 2\,k & 0\\ 0 & 0 & k\,\left(-{\mathrm{ha}}^2+\mathrm{ha}+2\,\mathrm{la}\right) \end{array}\right)\end{equation}
 
+* Diagonal Stiffness Matrix for a planar manipulator
+** Model and Assumptions
+Consider a parallel manipulator with:
+- $b_i$: location of the joints on the top platform are called $b_i$
+- $\hat{s}_i$: unit vector corresponding to the struts
+- $k_i$: stiffness of the struts
+- $\tau_i$: actuator forces
+- $O_M$: center of mass of the solid body
+
+Consider two frames:
+- $\{M\}$ with origin $O_M$
+- $\{K\}$ with origin $O_K$
+
+As an example, take the system shown in Figure [[fig:3dof_model_fully_parallel]].
+
+#+name: fig:3dof_model_fully_parallel
+#+caption: Example of 3DoF parallel platform
+[[file:figs/3dof_model_fully_parallel.png]]
+
+** Objective
+
+The objective is to find conditions for the existence of a frame $\{K\}$ in which the Stiffness matrix of the manipulator is diagonal.
+If the conditions are fulfilled, a second objective is to fine the location of the frame $\{K\}$ analytically.
+
+** Conditions for Diagonal Stiffness
+The stiffness matrix in the frame $\{K\}$ can be expressed as:
+\begin{equation} \label{eq:stiffness_formula_planar}
+  K_{\{K\}} = J_{\{K\}}^T \mathcal{K} J_{\{K\}}
+\end{equation}
+where:
+- $J_{\{K\}}$ is the Jacobian transformation from the struts to the frame $\{K\}$
+- $\mathcal{K}$ is a diagonal matrix with the strut stiffnesses on the diagonal
+
+The Jacobian for a planar manipulator, evaluated in a frame $\{K\}$, can be expressed as follows:
+\begin{equation} \label{eq:jacobian_planar}
+J_{\{K\}} = \begin{bmatrix}
+  {}^K\hat{s}_1^T & {}^Kb_{1,x} {}^K\hat{s}_{1,y} - {}^Kb_{1,x} {}^K\hat{s}_{1,y} \\
+  {}^K\hat{s}_2^T & {}^Kb_{2,x} {}^K\hat{s}_{2,y} - {}^Kb_{2,x} {}^K\hat{s}_{2,y} \\
+  \vdots          & \vdots                            \\
+  {}^K\hat{s}_n^T & {}^Kb_{n,x} {}^K\hat{s}_{n,y} - {}^Kb_{n,x} {}^K\hat{s}_{n,y} \\
+\end{bmatrix}
+\end{equation}
+
+Let's omit the mention of frame, it is assumed that vectors are expressed in frame $\{K\}$.
+It is specified otherwise.
+
+Injecting eqref:eq:jacobian_planar into eqref:eq:stiffness_formula_planar yields:
+\begin{equation}
+\boxed{
+K_{\{K\}} = \left[ \begin{array}{c|c}
+  k_i \hat{s}_i \hat{s}_i^T              & k_i \hat{s}_i (b_{i,x}\hat{s}_{i,y} - b_{i,y}\hat{s}_{i,x}) \cr
+  \hline
+  k_i \hat{s}_i (b_{i,x}\hat{s}_{i,y} - b_{i,y}\hat{s}_{i,x}) & k_i (b_{i,x}\hat{s}_{i,y} - b_{i,y}\hat{s}_{i,x})^2
+\end{array} \right]
+}
+\end{equation}
+
+In order to have a decoupled stiffness matrix, we have the following two conditions:
+\begin{align}
+k_i \hat{s}_i \hat{s}_i^T &= \text{diag. matrix} \label{eq:diag_cond_2D_1} \\
+k_i \hat{s}_i (b_{i,x}\hat{s}_{i,y} - b_{i,y}\hat{s}_{i,x}) &= 0 \label{eq:diag_cond_2D_2}
+\end{align}
+
+Note that we don't have any condition on the term $k_i (b_{i,x}\hat{s}_{i,y} - b_{i,y}\hat{s}_{i,x})^2$ as it is only a scalar.
+
+Condition eqref:eq:diag_cond_2D_1:
+- represents the coupling between translations and forces
+- does only depends on the orientation of the struts and the stiffnesses and not on the choice of frame
+- it is therefore a intrinsic property of the chosen geometry
+
+Condition eqref:eq:diag_cond_2D_2:
+- represents the coupling between forces/rotations and torques/translation
+- it does depend on the positions of the joints $b_i$ in the frame $\{K\}$
+
+Let's make a change of frame from the initial frame $\{M\}$ to the frame $\{K\}$:
+\begin{align}
+{}^Kb_i &= {}^Mb_i - {}^MO_K \\
+{}^K\hat{s}_i &= {}^M\hat{s}_i
+\end{align}
+
+And the goal is to find ${}^MO_K$ such that eqref:eq:diag_cond_2D_2 is fulfilled:
+\begin{equation}
+k_i ({}^Mb_{i,x}\hat{s}_{i,y} - {}^Mb_{i,y}\hat{s}_{i,x} - {}^MO_{K,x}\hat{s}_{i,y} + {}^MO_{K,y}\hat{s}_{i,x}) \hat{s}_i = 0
+\end{equation}
+\begin{equation}
+k_i ({}^Mb_{i,x}\hat{s}_{i,y} - {}^Mb_{i,y}\hat{s}_{i,x}) \hat{s}_i = {}^MO_{K,x} k_i \hat{s}_{i,y} \hat{s}_i -  {}^MO_{K,y} k_i \hat{s}_{i,x} \hat{s}_i
+\end{equation}
+
+And we have two sets of linear equations of two unknowns.
+
+This can be easily solved by writing the equations in a matrix form:
+\begin{equation}
+\underbrace{k_i ({}^Mb_{i,x}\hat{s}_{i,y} - {}^Mb_{i,y}\hat{s}_{i,x}) \hat{s}_i}_{2 \times 1} =
+\underbrace{\begin{bmatrix}
+& \\
+k_i \hat{s}_{i,y} \hat{s}_i & - k_i \hat{s}_{i,x} \hat{s}_i \\
+& \\
+\end{bmatrix}}_{2 \times 2}
+\underbrace{\begin{bmatrix}
+{}^MO_{K,x}\\
+{}^MO_{K,y}
+\end{bmatrix}}_{2 \times 1}
+\end{equation}
+
+And finally, if the matrix is invertible:
+\begin{equation}
+\boxed{
+{}^MO_K = {\begin{bmatrix}
+& \\
+k_i \hat{s}_{i,y} \hat{s}_i & - k_i \hat{s}_{i,x} \hat{s}_i \\
+& \\
+\end{bmatrix}}^{-1} k_i ({}^Mb_{i,x}\hat{s}_{i,y} - {}^Mb_{i,y}\hat{s}_{i,x}) \hat{s}_i
+}
+\end{equation}
+
+Note that a rotation of the frame $\{K\}$ with respect to frame $\{M\}$ would make not change on the "diagonality" of $K_{\{K\}}$.
+
+** Example 1 - Planar manipulator with 3 actuators
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+<<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+<<matlab-init>>
+#+end_src
+
+Consider system of Figure [[fig:3dof_model_fully_parallel_example]].
+
+#+name: fig:3dof_model_fully_parallel_example
+#+caption: Example of 3DoF parallel platform
+[[file:figs/3dof_model_fully_parallel.png]]
+
+The stiffnesses $k_i$, the joint positions ${}^Mb_i$ and joint unit vectors ${}^M\hat{s}_i$ are defined below:
+#+begin_src matlab
+ki = [5,1,2]; % Stiffnesses [N/m]
+si = [[1;0],[0;1],[0;1]]; si = si./vecnorm(si); % Unit Vectors
+bi = [[-1;0.5],[-2;-1],[0;-1]]; % Joint's positions in frame {M}
+#+end_src
+
+Let's first verify that condition eqref:diag_cond_2D_1 is true:
+#+begin_src matlab :results value replace
+ki.*si*si'
+#+end_src
+
+#+RESULTS:
+| 5 | 0 |
+| 0 | 2 |
+
+Now, compute ${}^MO_K$:
+#+begin_src matlab
+Ok = inv([sum(ki.*si(2,:).*si, 2), -sum(ki.*si(1,:).*si, 2)])*sum(ki.*(bi(1,:).*si(2,:) - bi(2,:).*si(1,:)).*si, 2);
+#+end_src
+
+#+begin_src matlab :results value replace :exports none :tangle no
+ans = Ok
+#+end_src
+
+#+RESULTS:
+|  -1 |
+| 0.5 |
+
+Let's compute the new coordinates ${}^Kb_i$ after the change of frame:
+#+begin_src matlab
+Kbi = bi - Ok;
+#+end_src
+
+In order to verify that the new frame $\{K\}$ indeed yields a diagonal stiffness matrix, we first compute the Jacobian $J_{\{K\}}$:
+#+begin_src matlab
+Jk = [si', (Kbi(1,:).*si(2,:) - Kbi(2,:).*si(1,:))'];
+#+end_src
+
+#+begin_src matlab :results value replace :exports none :tangle no
+ans = Jk
+#+end_src
+
+#+RESULTS:
+| 1 | 0 |  0 |
+| 0 | 1 | -1 |
+| 0 | 1 |  1 |
+
+And the stiffness matrix:
+#+begin_src matlab
+K = Jk'*diag(ki)*Jk
+#+end_src
+
+#+begin_src matlab :results value replace :exports none :tangle no
+ans = K
+#+end_src
+
+#+RESULTS:
+| 5 | 0 | 0 |
+| 0 | 2 | 0 |
+| 0 | 0 | 2 |
+
+** Example 2 - Planar manipulator with 4 actuators
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+<<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+<<matlab-init>>
+#+end_src
+
+Now consider the planar manipulator of Figure [[fig:model_planar_2]].
+
+#+name: fig:model_planar_2
+#+caption: Planar Manipulator
+#+attr_latex: :width 0.8\linewidth
+[[file:figs/model_planar_2.png]]
+
+The stiffnesses $k_i$, the joint positions ${}^Mb_i$ and joint unit vectors ${}^M\hat{s}_i$ are defined below:
+#+begin_src matlab
+ki = [1,2,1,1];
+si = [[1;0],[0;1],[-1;0],[0;1]];
+si = si./vecnorm(si);
+h = 0.2;
+L = 2;
+bi = [[-L/2;h],[-L/2;-h],[L/2;h],[L/2;h]];
+#+end_src
+
+Let's first verify that condition eqref:diag_cond_2D_1 is true:
+#+begin_src matlab :results value replace
+ki.*si*si'
+#+end_src
+
+#+RESULTS:
+| 2 | 0 |
+| 0 | 3 |
+
+Now, compute ${}^MO_K$:
+#+begin_src matlab
+Ok = inv([sum(ki.*si(2,:).*si, 2), -sum(ki.*si(1,:).*si, 2)])*sum(ki.*(bi(1,:).*si(2,:) - bi(2,:).*si(1,:)).*si, 2);
+#+end_src
+
+#+begin_src matlab :results value replace :exports none :tangle no
+ans = Ok
+#+end_src
+
+#+RESULTS:
+| -0.33333 |
+|      0.2 |
+
+Let's compute the new coordinates ${}^Kb_i$ after the change of frame:
+#+begin_src matlab
+Kbi = bi - Ok;
+#+end_src
+
+In order to verify that the new frame $\{K\}$ indeed yields a diagonal stiffness matrix, we first compute the Jacobian $J_{\{K\}}$:
+#+begin_src matlab
+Jk = [si', (Kbi(1,:).*si(2,:) - Kbi(2,:).*si(1,:))'];
+#+end_src
+
+#+begin_src matlab :results value replace :exports none :tangle no
+ans = Jk
+#+end_src
+
+#+RESULTS:
+|  1 | 0 |        0 |
+|  0 | 1 | -0.66667 |
+| -1 | 0 |        0 |
+|  0 | 1 |   1.3333 |
+
+And the stiffness matrix:
+#+begin_src matlab
+K = Jk'*diag(ki)*Jk
+#+end_src
+
+#+begin_src matlab :results value replace :exports none :tangle no
+ans = K
+#+end_src
+
+#+RESULTS:
+| 2 |           0 |           0 |
+| 0 |           3 | -2.2204e-16 |
+| 0 | -2.2204e-16 |      2.6667 |
+
+* Diagonal Stiffness Matrix for a general parallel manipulator
+** Model and Assumptions
+Let's consider a 6dof parallel manipulator with:
+- $b_i$: location of the joints on the top platform are called $b_i$
+- $\hat{s}_i$: unit vector corresponding to the struts
+- $k_i$: stiffness of the struts
+- $\tau_i$: actuator forces
+- $O_M$: center of mass of the solid body
+
+Consider two frames:
+- $\{M\}$ with origin $O_M$
+- $\{K\}$ with origin $O_K$
+
+An example is shown in Figure [[fig:stewart_architecture_example]].
+
+#+name: fig:stewart_architecture_example
+#+caption: Parallel manipulator Example
+[[file:figs/stewart_architecture_example.png]]
+
+** Objective
+
+The objective is to find conditions for the existence of a frame $\{K\}$ in which the Stiffness matrix of the manipulator is diagonal.
+If the conditions are fulfilled, a second objective is to fine the location of the frame $\{K\}$ analytically.
+
+** Analytical formula of the stiffness matrix
+For a fully parallel manipulator, the stiffness matrix $K_{\{K\}}$ expressed in a frame $\{K\}$ is:
+\begin{equation}
+  K_{\{K\}} = J_{\{K\}}^T \mathcal{K} J_{\{K\}}
+\end{equation}
+where:
+- $K_{\{K\}}$ is the Jacobian transformation from the struts to the frame $\{K\}$
+- $\mathcal{K}$ is a diagonal matrix with the strut stiffnesses on the diagonal
+
+The analytical expression of $J_{\{K\}}$ is:
+\begin{equation}
+J_{\{K\}} = \begin{bmatrix}
+  {}^K\hat{s}_1^T & ({}^Kb_1 \times {}^K\hat{s}_1)^T \\
+  {}^K\hat{s}_2^T & ({}^Kb_2 \times {}^K\hat{s}_2)^T \\
+  \vdots          & \vdots                            \\
+  {}^K\hat{s}_n^T & ({}^Kb_n \times {}^K\hat{s}_n)^T
+\end{bmatrix}
+\end{equation}
+
+To simplify, we ignore the superscript $K$ and we assume that all vectors / positions are expressed in this frame $\{K\}$.
+Otherwise, it is explicitly written.
+
+Let's now write the analytical expressing of the stiffness matrix $K_{\{K\}}$:
+\begin{equation}
+K_{\{K\}} = \begin{bmatrix}
+  \hat{s}_1              & \dots & \hat{s}_n \\
+  (b_1 \times \hat{s}_1) & \dots & (b_n \times \hat{s}_n)
+\end{bmatrix}
+\begin{bmatrix}
+  k_1 & & \\
+      & \ddots & \\
+      & & k_n
+\end{bmatrix}
+\begin{bmatrix}
+  \hat{s}_1^T & (b_1 \times \hat{s}_1)^T \\
+  \hat{s}_2^T & (b_2 \times \hat{s}_2)^T \\
+  \vdots          & \dots                            \\
+  \hat{s}_n^T & (b_n \times \hat{s}_n)^T
+\end{bmatrix}
+\end{equation}
+
+And we finally obtain:
+\begin{equation}
+\boxed{
+K_{\{K\}} = \left[ \begin{array}{c|c}
+  k_i \hat{s}_i \hat{s}_i^T              & k_i \hat{s}_i (b_i \times \hat{s}_i)^T \cr
+  \hline
+  k_i \hat{s}_i (b_i \times \hat{s}_i)^T & k_i (b_i \times \hat{s}_i) (b_i \times \hat{s}_i)^T
+\end{array} \right]
+}
+\end{equation}
+
+We want the stiffness matrix to be diagonal, therefore, we have the following conditions:
+\begin{align}
+k_i \hat{s}_i \hat{s}_i^T &= \text{diag. matrix} \label{eq:diag_cond_1} \\
+k_i (b_i \times \hat{s}_i) (b_i \times \hat{s}_i)^T &= \text{diag. matrix} \label{eq:diag_cond_2} \\
+k_i \hat{s}_i (b_i \times \hat{s}_i)^T &= 0 \label{eq:diag_cond_3}
+\end{align}
+
+Note that:
+- condition eqref:eq:diag_cond_1 corresponds to coupling between forces applied on $O_K$ to translations of the payload.
+  It does not depend on the choice of $\{K\}$, it only depends on the orientation of the struts and the stiffnesses.
+  It is therefore an intrinsic property of the manipulator.
+- condition eqref:eq:diag_cond_2 corresponds to the coupling between forces applied on $O_K$ and rotation of the payload.
+  Similarly, it does also correspond to the coupling between torques applied on $O_K$ to translations of the payload.
+- condition eqref:eq:diag_cond_3 corresponds to the coupling between torques applied on $O_K$ to rotation of the payload.
+- conditions eqref:eq:diag_cond_2 and eqref:eq:diag_cond_3 do depend on the positions ${}^Kb_i$ and therefore depend on the choice of $\{K\}$.
+
+Note that if we find a frame $\{K\}$ in which the stiffness matrix $K_{\{K\}}$ is diagonal, it will still be diagonal for any rotation of the frame $\{K\}$.
+Therefore, we here suppose that the frame $\{K\}$ is aligned with the initial frame $\{M\}$.
+
+Let's make a change of frame from the initial frame $\{M\}$ to the frame $\{K\}$:
+\begin{align}
+{}^Kb_i &= {}^Mb_i - {}^MO_K \\
+{}^K\hat{s}_i &= {}^M\hat{s}_i
+\end{align}
+
+The goal is to find ${}^MO_K$ such that conditions eqref:eq:diag_cond_2 and eqref:eq:diag_cond_3 are fulfilled.
+
+Let's first solve equation eqref:eq:diag_cond_3 that corresponds to the coupling between forces and rotations:
+\begin{equation}
+k_i \hat{s}_i (({}^Mb_i - {}^MO_K) \times \hat{s}_i)^T = 0
+\end{equation}
+
+Taking the transpose and re-arranging:
+\begin{equation}
+k_i ({}^Mb_i \times \hat{s}_i) \hat{s}_i^T = k_i ({}^MO_K \times \hat{s}_i) \hat{s}_i^T
+\end{equation}
+
+As the vector cross product also can be expressed as the product of a skew-symmetric matrix and a vector, we obtain:
+\begin{equation}
+k_i ({}^Mb_i \times \hat{s}_i) \hat{s}_i^T = {}^M\bm{O}_{K} ( k_i \hat{s}_i \hat{s}_i^T )
+\end{equation}
+
+with:
+\begin{equation} \label{eq:skew_symmetric_cross_product}
+{}^M\bm{O}_K = \begin{bmatrix}
+0 & -{}^MO_{K,z} & {}^MO_{K,y} \\
+{}^MO_{K,z} & 0 & -{}^MO_{K,x} \\
+-{}^MO_{K,y} & {}^MO_{K,x} & 0
+\end{bmatrix}
+\end{equation}
+
+We suppose $k_i \hat{s}_i \hat{s}_i^T$ invertible as it is diagonal from eqref:eq:diag_cond_1.
+
+And finally, we find:
+\begin{equation}
+\boxed{
+{}^M\bm{O}_{K} = \left( k_i ({}^Mb_i \times \hat{s}_i) \hat{s}_i^T\right) \cdot {\left( k_i \hat{s}_i \hat{s}_i^T \right)}^{-1}
+}
+\end{equation}
+
+If the obtained ${}^M\bm{O}_{K}$ is a skew-symmetric matrix, we can easily determine the corresponding vector ${}^MO_K$ from eqref:eq:skew_symmetric_cross_product.
+
+In such case, condition eqref:eq:diag_cond_2 is fulfilled and there is no coupling between translations and rotations in the frame $\{K\}$.
+
+Then, we can only verify if condition eqref:eq:diag_cond_3 is verified or not.
+
+#+begin_note
+If there is no frame $\{K\}$ such that conditions eqref:eq:diag_cond_2 and eqref:eq:diag_cond_3 are valid, it would be interesting to be able to determine the frame $\{K\}$ in which is coupling is minimal.
+#+end_note
+
+** Example 1 - 6DoF manipulator (3D)
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+<<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+<<matlab-init>>
+#+end_src
+
+Let's define the geometry of the manipulator (${}^Mb_i$, ${}^Ms_i$ and $k_i$):
+#+begin_src matlab
+ki = [2,2,1,1,3,3,1,1,1,1,2,2];
+si = [[-1;0;0],[-1;0;0],[-1;0;0],[-1;0;0],[0;0;1],[0;0;1],[0;0;1],[0;0;1],[0;-1;0],[0;-1;0],[0;-1;0],[0;-1;0]];
+bi = [[1;-1;1],[1;1;-1],[1;1;1],[1;-1;-1],[1;-1;-1],[-1;1;-1],[1;1;-1],[-1;-1;-1],[1;1;-1],[-1;1;1],[-1;1;-1],[1;1;1]]-[0;2;-1];
+#+end_src
+
+Cond 1:
+#+begin_src matlab :results value replace
+ki.*si*si'
+#+end_src
+
+#+RESULTS:
+| 6 | 0 | 0 |
+| 0 | 6 | 0 |
+| 0 | 0 | 8 |
+
+Find Ok
+#+begin_src matlab
+OkX = (ki.*cross(bi, si)*si')/(ki.*si*si');
+
+if all(diag(OkX) == 0) && all(all((OkX + OkX') == 0))
+    disp('OkX is skew symmetric')
+    Ok = [OkX(3,2);OkX(1,3);OkX(2,1)]
+else
+    error('OkX is *not* skew symmetric')
+end
+#+end_src
+
+#+begin_src matlab :exports results :results value replace
+ans = Ok
+#+end_src
+
+#+RESULTS:
+|  0 |
+| -2 |
+|  1 |
+
+#+begin_src matlab :results value replace
+% Verification of second condition
+si*cross(bi-Ok, si)'
+#+end_src
+
+#+RESULTS:
+| 0 | 0 | 0 |
+| 0 | 0 | 0 |
+| 0 | 0 | 0 |
+
+Verification of third condition
+#+begin_src matlab :results value replace
+ki.*cross(bi-Ok, si)*cross(bi-Ok, si)'
+#+end_src
+
+#+RESULTS:
+| 14 |  4 | -2 |
+|  4 | 14 |  2 |
+| -2 |  2 | 12 |
+
+Let's compute the Jacobian:
+#+begin_src matlab
+Jk = [si', cross(bi - Ok, si)'];
+#+end_src
+
+And the stiffness matrix:
+#+begin_src matlab :results value replace
+Jk'*diag(ki)*Jk
+#+end_src
+
+#+RESULTS:
+| 6 | 0 | 0 |  0 |  0 |  0 |
+| 0 | 6 | 0 |  0 |  0 |  0 |
+| 0 | 0 | 8 |  0 |  0 |  0 |
+| 0 | 0 | 0 | 14 |  4 | -2 |
+| 0 | 0 | 0 |  4 | 14 |  2 |
+| 0 | 0 | 0 | -2 |  2 | 12 |
+
+#+begin_src matlab
+figure;
+hold on;
+set(gca,'ColorOrderIndex',1)
+plot(b1(1), b1(2), 'o');
+set(gca,'ColorOrderIndex',2)
+plot(b2(1), b2(2), 'o');
+set(gca,'ColorOrderIndex',3)
+plot(b3(1), b3(2), 'o');
+set(gca,'ColorOrderIndex',1)
+quiver(b1(1),b1(2),0.1*s1(1),0.1*s1(2))
+set(gca,'ColorOrderIndex',2)
+quiver(b2(1),b2(2),0.1*s2(1),0.1*s2(2))
+set(gca,'ColorOrderIndex',3)
+quiver(b3(1),b3(2),0.1*s3(1),0.1*s3(2))
+
+plot(0, 0, 'ko');
+quiver([0,0],[0,0],[0.1,0],[0,0.1], 'k')
+
+plot(Ok(1), Ok(2), 'ro');
+quiver([Ok(1),Ok(1)],[Ok(2),Ok(2)],[0.1,0],[0,0.1], 'r')
+
+hold off;
+axis equal;
+#+end_src
+
+** TODO Example 2 - Stewart Platform
 * Stewart Platform - Simscape Model
 :PROPERTIES:
 :header-args:matlab+: :tangle stewart_platform/script.m
