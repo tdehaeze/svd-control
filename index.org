@@ -1542,73 +1542,48 @@ exportFig('figs/gravimeter_svd_high_damping.pdf', 'width', 'wide', 'height', 'no
 #+RESULTS:
 [[file:figs/gravimeter_svd_high_damping.png]]
 
-* Analytical Model
-** Model
+* Parallel Manipulator with Collocated actuator/sensor pairs
+<<sec:jac_decoupl>>
 
-#+name: fig:gravimeter_model_analytical
-#+caption: Model of the gravimeter
-[[file:figs/gravimeter_model_analytical.png]]
+** Introduction                                                      :ignore:
 
-- collocated actuators and sensors
+In this section, we will see how the Jacobian matrix can be used to decouple a specific set of mechanical systems (described in Section [[sec:jac_decoupl_model]]).
 
-** Stiffness and Mass matrices
+The basic decoupling architecture is shown in Figure [[fig:gravimeter_model_analytical]] where the Jacobian matrix is used to both compute the actuator forces from forces/torques that are to be applied in a specific defined frame, and to compute the displacement/rotation of the same mass from several sensors.
 
-*Stiffness matrix*:
-\begin{equation}
-  \mathcal{F}_{\{O\}} = -K_{\{O\}} \mathcal{X}_{\{O\}}
-\end{equation}
-with:
-- $\mathcal{X}_{\{O\}}$ are displacements/rotations of the mass $x$, $y$, $R_z$ expressed in the frame $\{O\}$
-- $\mathcal{F}_{\{O\}}$ are forces/torques $\mathcal{F}_x$, $\mathcal{F}_y$, $\mathcal{M}_z$ applied at the origin of $\{O\}$
+This is rapidly explained in Section [[sec:jac_decoupl_jacobian]].
 
-*Mass matrix*:
-\begin{equation}
-  \mathcal{F}_{\{O\}} = M_{\{O\}} \ddot{\mathcal{X}}_{\{O\}}
-\end{equation}
+#+begin_src latex :file block_diagram_jacobian_decoupling.pdf :tangle no :exports results
+\begin{tikzpicture}
+  \node[block] (G) {$\bm{G}$};
+  \node[block, left=0.6 of G] (Jt) {$J_{\{M\}}^{-T}$};
+  \node[block, right=0.6 of G] (Ja) {$J_{\{M\}}^{-1}$};
 
+  % Connections and labels
+  \draw[<-] (Jt.west) -- ++(-1.8, 0) node[above right]{$\bm{\mathcal{F}}_{\{M\}}$};
+  \draw[->] (Jt.east) -- (G.west)  node[above left]{$\bm{\tau}$};
+  \draw[->] (G.east) -- (Ja.west)  node[above left]{$\bm{\mathcal{L}}$};
+  \draw[->] (Ja.east) -- ++( 1.8, 0)  node[above left]{$\bm{\mathcal{X}}_{\{M\}}$};
 
-Consider the two following frames:
-- $\{M\}$: Center of mass => diagonal mass matrix
-  \[ M_{\{M\}} = \begin{bmatrix}m & 0 & 0 \\ 0 & m & 0 \\ 0 & 0 & I\end{bmatrix} \]
-  \[ K_{\{M\}} = \begin{bmatrix}k_1 & 0 & k_1 h_a \\ 0 & k_2 + k_3 & 0 \\ k_1 h_a & 0 & k_1 h_a + (k_2 + k_3)l_a\end{bmatrix} \]
-- $\{K\}$: Diagonal stiffness matrix
-  \[ K_{\{K\}} = \begin{bmatrix}k_1 & 0 & 0 \\ 0 & k_2 + k_3 & 0 \\ 0 & 0 & (k_2 + k_3)l_a\end{bmatrix} \]
-  - [ ] Compute the mass matrix $M_{\{K\}}$
-    Needs two Jacobians => complicated matrix
+  \begin{scope}[on background layer]
+    \node[fit={(Jt.south west) (Ja.north east)}, fill=black!10!white, draw, dashed, inner sep=16pt] (Gx) {};
+    \node[below right] at (Gx.north west) {$\bm{G}_{\{M\}}$};
+  \end{scope}
+\end{tikzpicture}
+#+end_src
 
-** Equations
+#+RESULTS:
+[[file:figs/block_diagram_jacobian_decoupling.png]]
 
-- [ ] Ideally write the equation from $\tau$ to $\mathcal{L}$
+Depending on the chosen frame, the Stiffness matrix in that particular frame can be computed.
+This is explained in Section [[sec:jac_decoupl_stiffness]].
 
-\begin{equation}
-  \mathcal{L} = \begin{bmatrix} \mathcal{L}_1 \\ \mathcal{L}_2 \\ \mathcal{L}_3 \end{bmatrix}
-\end{equation}
+Then three decoupling in three specific frames is studied:
+- Section [[sec:jac_decoupl_legs]]: control in the frame of the legs
+- Section [[sec:jac_decoupl_com]]: control in a frame whose origin is at the center of mass of the payload
+- Section [[sec:jac_decoupl_cok]]: control in a frame whose origin is located at the "center of stiffness" of the system
 
-\begin{equation}
-  \tau = \begin{bmatrix} \tau_1 \\ \tau_2 \\ \tau_3 \end{bmatrix}
-\end{equation}
-
-** Jacobians
-
-Usefulness of Jacobians:
-- $J_{\{M\}}$ converts $\dot{\mathcal{L}}$ to $\dot{\mathcal{X}}_{\{M\}}$:
-  \[ \dot{\mathcal{X}}_{\{M\}} = J_{\{M\}} \dot{\mathcal{L}} \]
-- $J_{\{M\}}^T$ converts $\tau$ to $\mathcal{F}_{\{M\}}$:
-  \[ \mathcal{F}_{\{M\}} = J_{\{M\}}^T \tau \]
-- $J_{\{K\}}$ converts  $\dot{\mathcal{K}}$ to $\dot{\mathcal{X}}_{\{K\}}$:
-  \[ \dot{\mathcal{X}}_{\{K\}} = J_{\{K\}} \dot{\mathcal{K}} \]
-- $J_{\{K\}}^T$ converts $\tau$ to $\mathcal{F}_{\{K\}}$:
-  \[ \mathcal{F}_{\{K\}} = J_{\{K\}}^T \tau \]
-
-
-Let's compute the Jacobians:
-\begin{equation}
-J_{\{M\}} = \begin{bmatrix} 1 & 0 & h_a \\ 0 & 1 & -l_a \\ 0 & 1 & l_a \end{bmatrix}
-\end{equation}
-
-\begin{equation}
-J_{\{K\}} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & -l_a \\ 0 & 1 & l_a \end{bmatrix}
-\end{equation}
+Conclusions are drawn in Section [[sec:jac_decoupl_conclusion]].
 
 ** Matlab Init                                              :noexport:ignore:
 #+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
@@ -1619,7 +1594,26 @@ J_{\{K\}} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & -l_a \\ 0 & 1 & l_a \end{bmatri
 <<matlab-init>>
 #+end_src
 
-** Parameters
+** Model
+<<sec:jac_decoupl_model>>
+
+Let's consider a parallel manipulator with several collocated actuator/sensors pairs.
+
+System in Figure [[fig:gravimeter_model_analytical]] will serve as an example.
+
+We will note:
+- $b_i$: location of the joints on the top platform
+- $\hat{s}_i$: unit vector corresponding to the struts direction
+- $k_i$: stiffness of the struts
+- $\tau_i$: actuator forces
+- $O_M$: center of mass of the solid body
+- $\mathcal{L}_i$: relative displacement of the struts
+
+#+name: fig:gravimeter_model_analytical
+#+caption: Model of the gravimeter
+[[file:figs/gravimeter_model_analytical.png]]
+
+The parameters are defined as follows:
 #+begin_src matlab
 l  = 1.0; % Length of the mass [m]
 h  = 2*1.7; % Height of the mass [m]
@@ -1639,113 +1633,377 @@ k2 = 15e3; % Actuator Stiffness [N/m]
 k3 = 15e3; % Actuator Stiffness [N/m]
 #+end_src
 
-** Transfer function from $\tau$ to $\delta \mathcal{L}$
-Mass, Damping and Stiffness matrices expressed in $\{M\}$:
-#+begin_src matlab
-Mm = [m 0 0 ;
-      0 m 0 ;
-      0 0 I];
+Let's express ${}^Mb_i$ and $\hat{s}_i$:
+\begin{align}
+{}^Mb_1 &= [-l/2,\ -h_a] \\
+{}^Mb_2 &= [-la, \ -h/2] \\
+{}^Mb_3 &= [ la, \ -h/2]
+\end{align}
 
-Cm = [c1    0     c1*ha ;
-      0     c2+c3 0 ;
-      c1*ha 0     c1*ha + (c2+c3)*la];
-
-Km = [k1    0     k1*ha ;
-      0     k2+k3 0 ;
-      k1*ha 0     k1*ha + (k2+k3)*la];
-#+end_src
-
-Jacobian $J_{\{M\}}$:
-#+begin_src matlab
-Jm = [1 0  ha ;
-      0 1 -la ;
-      0 1  la];
-#+end_src
+\begin{align}
+\hat{s}_1 &= [1,\ 0] \\
+\hat{s}_2 &= [0,\ 1] \\
+\hat{s}_3 &= [0,\ 1]
+\end{align}
 
 #+begin_src matlab
-Mt = inv(Jm')*Mm*inv(Jm);
-Ct = inv(Jm')*Cm*inv(Jm);
-Kt = inv(Jm')*Km*inv(Jm);
+s1 = [1;0];
+s2 = [0;1];
+s3 = [0;1];
+
+Mb1 = [-l/2;-ha];
+Mb2 = [-la; -h/2];
+Mb3 = [ la; -h/2];
 #+end_src
 
-#+begin_src matlab :exports results :results value table replace :tangle no
-data2orgtable(Mt, {}, {}, ' %.1f ');
+Frame $\{K\}$ is chosen such that the stiffness matrix is diagonal (explained in Section [[sec:diagonal_stiffness_planar]]).
+
+The positions ${}^Kb_i$ are then:
+\begin{align}
+{}^Kb_1 &= [-l/2,\ 0] \\
+{}^Kb_2 &= [-la, \ -h/2+h_a] \\
+{}^Kb_3 &= [ la, \ -h/2+h_a]
+\end{align}
+
+#+begin_src matlab
+Kb1 = [-l/2; 0];
+Kb2 = [-la; -h/2+ha];
+Kb3 = [ la; -h/2+ha];
 #+end_src
 
-#+caption: $M_t$
+** The Jacobian Matrix
+<<sec:jac_decoupl_jacobian>>
+
+Let's note:
+- $\bm{\mathcal{L}}$ the vector of actuator displacement:
+  \begin{equation}
+    \bm{\mathcal{L}} = \begin{bmatrix} \mathcal{L}_1 \\ \mathcal{L}_2 \\ \mathcal{L}_3 \end{bmatrix}
+  \end{equation}
+- $\bm{\tau}$ the vector of actuator forces:
+  \begin{equation}
+    \bm{\tau} = \begin{bmatrix} \tau_1 \\ \tau_2 \\ \tau_3 \end{bmatrix}
+  \end{equation}
+- $\bm{\mathcal{F}}_{\{O\}}$ the vector of forces/torques applied on the payload on expressed in frame $\{O\}$:
+  \begin{equation}
+    \bm{\mathcal{F}}_{\{O\}} = \begin{bmatrix} \mathcal{F}_{\{O\},x} \\ \mathcal{F}_{\{O\},y} \\ \mathcal{M}_{\{O\},z} \end{bmatrix}
+  \end{equation}
+- $\bm{\mathcal{X}}_{\{O\}}$ the vector of displacement of the payload with respect to frame $\{O\}$:
+  \begin{equation}
+    \bm{\mathcal{X}}_{\{O\}} = \begin{bmatrix} \mathcal{X}_{\{O\},x} \\ \mathcal{X}_{\{O\},y} \\ \mathcal{X}_{\{O\},R_z} \end{bmatrix}
+  \end{equation}
+
+
+
+The Jacobian matrix can be used to:
+- Convert joints velocity $\dot{\mathcal{L}}$ to payload velocity and angular velocity $\dot{\bm{\mathcal{X}}}_{\{O\}}$:
+  \[ \dot{\bm{\mathcal{X}}}_{\{O\}} = J_{\{O\}} \dot{\bm{\mathcal{L}}} \]
+- Convert actuators forces $\bm{\tau}$ to forces/torque applied on the payload $\bm{\mathcal{F}}_{\{O\}}$:
+  \[ \bm{\mathcal{F}}_{\{O\}} = J_{\{O\}}^T \bm{\tau} \]
+with $\{O\}$ any chosen frame.
+
+If we consider *small* displacements, we have an approximate relation that links the displacements (instead of velocities):
+\begin{equation}
+\bm{\mathcal{X}}_{\{M\}} = J_{\{M\}} \bm{\mathcal{L}}
+\end{equation}
+
+
+The Jacobian can be computed as follows:
+\begin{equation}
+J_{\{O\}} = \begin{bmatrix}
+  {}^O\hat{s}_1^T & {}^Ob_{1,x} {}^O\hat{s}_{1,y} - {}^Ob_{1,x} {}^O\hat{s}_{1,y} \\
+  {}^O\hat{s}_2^T & {}^Ob_{2,x} {}^O\hat{s}_{2,y} - {}^Ob_{2,x} {}^O\hat{s}_{2,y} \\
+  \vdots          & \vdots                            \\
+  {}^O\hat{s}_n^T & {}^Ob_{n,x} {}^O\hat{s}_{n,y} - {}^Ob_{n,x} {}^O\hat{s}_{n,y} \\
+\end{bmatrix}
+\end{equation}
+
+
+Let's compute the Jacobian matrix in frame $\{M\}$ and $\{K\}$:
+#+begin_src matlab
+Jm = [s1', Mb1(1)*s1(2)-Mb1(2)*s1(1);
+      s2', Mb2(1)*s2(2)-Mb2(2)*s2(1);
+      s3', Mb3(1)*s3(2)-Mb3(2)*s3(1)];
+#+end_src
+
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Jm
+#+end_src
+
+#+caption: Jacobian Matrix $J_{\{M\}}$
 #+RESULTS:
-|  400.0 |  340.0 | -340.0 |
-|  340.0 |  504.0 | -304.0 |
-| -340.0 | -304.0 |  504.0 |
-
-#+begin_src matlab :exports results :results value table replace :tangle no
-data2orgtable(Kt, {}, {}, ' %.1f ');
-#+end_src
-
-#+caption: $K_t$
-#+RESULTS:
-| 15000.0 |     0.0 |     0.0 |
-|     0.0 | 24412.5 | -9412.5 |
-|     0.0 | -9412.5 | 24412.5 |
+| 1 | 0 |  1.7 |
+| 0 | 1 | -0.5 |
+| 0 | 1 |  0.5 |
 
 #+begin_src matlab
-Gt = s^2*inv(Mt*s^2 + Ct*s + Kt);
-% Gt = JM*s^2*inv(MM*s^2 + CM*s + KM)*JM';
+Jk = [s1', Kb1(1)*s1(2)-Kb1(2)*s1(1);
+      s2', Kb2(1)*s2(2)-Kb2(2)*s2(1);
+      s3', Kb3(1)*s3(2)-Kb3(2)*s3(1)];
 #+end_src
+
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Jk
+#+end_src
+
+#+caption: Jacobian Matrix $J_{\{K\}}$
+#+RESULTS:
+| 1 | 0 |    0 |
+| 0 | 1 | -0.5 |
+| 0 | 1 |  0.5 |
+
+In the frame $\{M\}$, the Jacobian is:
+\begin{equation}
+J_{\{M\}} = \begin{bmatrix} 1 & 0 & h_a \\ 0 & 1 & -l_a \\ 0 & 1 & l_a \end{bmatrix}
+\end{equation}
+
+And in frame $\{K\}$, the Jacobian is:
+\begin{equation}
+J_{\{K\}} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & -l_a \\ 0 & 1 & l_a \end{bmatrix}
+\end{equation}
+
+** The Stiffness Matrix
+<<sec:jac_decoupl_stiffness>>
+
+For a parallel manipulator, the stiffness matrix expressed in a frame $\{O\}$ is:
+\begin{equation}
+  K_{\{O\}} = J_{\{O\}}^T \mathcal{K} J_{\{O\}}
+\end{equation}
+where:
+- $J_{\{O\}}$ is the Jacobian matrix expressed in frame $\{O\}$
+- $\mathcal{K}$ is a diagonal matrix with the strut stiffnesses on the diagonal
+  \begin{equation}
+  \mathcal{K} = \begin{bmatrix}
+    k_1 &     &        & 0 \\
+        & k_2 &        &   \\
+        &     & \ddots &   \\
+    0   &     &        & k_n
+  \end{bmatrix}
+  \end{equation}
+
+We have the same thing for the damping matrix.
+
+#+begin_src matlab
+Kr = diag([k1,k2,k3]);
+Cr = diag([c1,c2,c3]);
+#+end_src
+
+** Equations of motion - Frame of the legs
+<<sec:jac_decoupl_legs>>
+
+Applying the second Newton's law on the system in Figure [[fig:gravimeter_model_analytical]] at its center of mass $O_M$, we obtain:
+\begin{equation}
+\left( M_{\{M\}} s^2 + K_{\{M\}} \right) \bm{\mathcal{X}}_{\{M\}} = \bm{\mathcal{F}}_{\{M\}}
+\end{equation}
+with:
+- $M_{\{M\}}$ is the mass matrix expressed in $\{M\}$:
+  \[ M_{\{M\}} = \begin{bmatrix}m & 0 & 0 \\ 0 & m & 0 \\ 0 & 0 & I\end{bmatrix} \]
+- $K_{\{M\}}$ is the stiffness matrix expressed in $\{M\}$:
+  \[ K_{\{M\}} = J_{\{M\}}^T \mathcal{K} J_{\{M\}} \]
+- $\bm{\mathcal{X}}_{\{M\}}$ are displacements/rotations of the mass $x$, $y$, $R_z$ expressed in the frame $\{M\}$
+- $\bm{\mathcal{F}}_{\{M\}}$ are forces/torques $\mathcal{F}_x$, $\mathcal{F}_y$, $\mathcal{M}_z$ applied at the origin of $\{M\}$
+
+Let's use the Jacobian matrix to compute the equations in terms of actuator forces $\bm{\tau}$ and strut displacement $\bm{\mathcal{L}}$:
+\begin{equation}
+\left( M_{\{M\}} s^2 + K_{\{M\}} \right) J_{\{M\}}^{-1} \bm{\mathcal{L}} = J_{\{M\}}^T \bm{\tau}
+\end{equation}
+
+And we obtain:
+\begin{equation}
+\left( J_{\{M\}}^{-T} M_{\{M\}} J_{\{M\}}^{-1} s^2 + \mathcal{K} \right) \bm{\mathcal{L}} = \bm{\tau}
+\end{equation}
+
+The transfer function $\bm{G}(s)$ from $\bm{\tau}$ to $\bm{\mathcal{L}}$ is:
+\begin{equation}
+\boxed{\bm{G}(s) = {\left( J_{\{M\}}^{-T} M_{\{M\}} J_{\{M\}}^{-1} s^2 + \mathcal{K} \right)}^{-1}}
+\end{equation}
+
+#+begin_src latex :file gravimeter_block_decentralized.pdf :tangle no :exports results
+\begin{tikzpicture}
+  \node[block] (G) {$\bm{G}$};
+
+  % Connections and labels
+  \draw[<-] (G.west) -- ++(-0.8, 0) node[above right]{$\bm{\tau}$};;
+  \draw[->] (G.east) -- ++( 0.8, 0)  node[above left]{$\bm{\mathcal{L}}$};
+\end{tikzpicture}
+#+end_src
+
+#+name: fig:gravimeter_block_decentralized
+#+caption: Block diagram of the transfer function from $\bm{\tau}$ to $\bm{\mathcal{L}}$
+#+RESULTS:
+[[file:figs/gravimeter_block_decentralized.png]]
+
+#+begin_src matlab
+%% Mass Matrix in frame {M}
+Mm = diag([m,m,I]);
+#+end_src
+
+Let's note the mass matrix in the frame of the legs:
+\begin{equation}
+M_{\{L\}} = J_{\{M\}}^{-T} M_{\{M\}} J_{\{M\}}^{-1}
+\end{equation}
+
+#+begin_src matlab
+%% Mass Matrix in the frame of the struts
+Ml = inv(Jm')*Mm*inv(Jm);
+#+end_src
+
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Ml
+#+end_src
+
+#+caption: $M_{\{L\}}$
+#+RESULTS:
+|  400 |   680 |  -680 |
+|  680 |  1371 | -1171 |
+| -680 | -1171 |  1371 |
+
+As we can see, the Stiffness matrix in the frame of the legs is diagonal.
+This means the plant dynamics will be diagonal at low frequency.
+#+begin_src matlab
+Kl = diag([k1, k2, k3]);
+#+end_src
+
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Kl
+#+end_src
+
+#+caption: $K_{\{L\}} = \mathcal{K}$
+#+RESULTS:
+| 15000 |     0 |     0 |
+|     0 | 15000 |     0 |
+|     0 |     0 | 15000 |
+
+#+begin_src matlab
+Cl = diag([c1, c2, c3]);
+#+end_src
+
+The transfer function $\bm{G}(s)$ from $\bm{\tau}$ to $\bm{\mathcal{L}}$ is defined below and its magnitude is shown in Figure [[fig:plant_frame_L]].
+#+begin_src matlab
+Gl = inv(Ml*s^2 + Cl*s + Kl);
+#+end_src
+
+We can indeed see that the system is well decoupled at low frequency.
 
 #+begin_src matlab :exports none
-freqs = logspace(-1, 2, 1000);
+freqs = logspace(-2, 2, 1000);
 figure;
 
 % Magnitude
 hold on;
 for i_in = 1:3
     for i_out = [1:i_in-1, i_in+1:3]
-        plot(freqs, abs(squeeze(freqresp(Gt(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+        plot(freqs, abs(squeeze(freqresp(Gl(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
              'HandleVisibility', 'off');
     end
 end
-plot(freqs, abs(squeeze(freqresp(Gt(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-     'DisplayName', '$G_x(i,j)\ i \neq j$');
+plot(freqs, abs(squeeze(freqresp(Gl(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$\mathcal{L}_i/\tau_j\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-    plot(freqs, abs(squeeze(freqresp(Gt(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gl(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', ['$\mathcal{L}_', int2str(i_in_out), '/\tau_', int2str(i_in_out), '$']);
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 xlabel('Frequency [Hz]'); ylabel('Magnitude');
-legend('location', 'southeast');
-ylim([1e-8, 1e0]);
+legend('location', 'northeast', 'FontSize', 8);
+ylim([1e-8, 1e-2]);
 #+end_src
 
-** Transfer function from $\mathcal{F}_{\{M\}}$ to $\mathcal{X}_{\{M\}}$
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/plant_frame_L.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:plant_frame_L
+#+caption: Dynamics from $\bm{\tau}$ to $\bm{\mathcal{L}}$
+#+RESULTS:
+[[file:figs/plant_frame_L.png]]
+
+** Equations of motion - "Center of mass" {M}
+<<sec:jac_decoupl_com>>
+
+The equations of motion expressed in frame $\{M\}$ are:
+\begin{equation}
+\left( M_{\{M\}} s^2 + K_{\{M\}} \right) \bm{\mathcal{X}}_{\{M\}} = \bm{\mathcal{F}}_{\{M\}}
+\end{equation}
+
+And the plant from $\bm{F}_{\{M\}}$ to $\bm{\mathcal{X}}_{\{M\}}$ is:
+\begin{equation}
+\boxed{\bm{G}_{\{X\}} = {\left( M_{\{M\}} s^2 + K_{\{M\}} \right)}^{-1}}
+\end{equation}
+with:
+- $M_{\{M\}}$ is the mass matrix expressed in $\{M\}$:
+  \[ M_{\{M\}} = \begin{bmatrix}m & 0 & 0 \\ 0 & m & 0 \\ 0 & 0 & I\end{bmatrix} \]
+- $K_{\{M\}}$ is the stiffness matrix expressed in $\{M\}$:
+  \[ K_{\{M\}} = J_{\{M\}}^T \mathcal{K} J_{\{M\}} \]
+
+#+begin_src latex :file gravimeter_block_com.pdf :tangle no :exports results
+\begin{tikzpicture}
+  \node[block] (G) {$\bm{G}$};
+  \node[block, left=0.6 of G] (Jt) {$J_{\{M\}}^{-T}$};
+  \node[block, right=0.6 of G] (Ja) {$J_{\{M\}}^{-1}$};
+
+  % Connections and labels
+  \draw[<-] (Jt.west) -- ++(-1.8, 0) node[above right]{$\bm{\mathcal{F}}_{\{M\}}$};
+  \draw[->] (Jt.east) -- (G.west)  node[above left]{$\bm{\tau}$};
+  \draw[->] (G.east) -- (Ja.west)  node[above left]{$\bm{\mathcal{L}}$};
+  \draw[->] (Ja.east) -- ++( 1.8, 0)  node[above left]{$\bm{\mathcal{X}}_{\{M\}}$};
+
+  \begin{scope}[on background layer]
+    \node[fit={(Jt.south west) (Ja.north east)}, fill=black!10!white, draw, dashed, inner sep=16pt] (Gx) {};
+    \node[below right] at (Gx.north west) {$\bm{G}_{\{M\}}$};
+  \end{scope}
+\end{tikzpicture}
+#+end_src
+
+#+name: fig:gravimeter_block_com
+#+caption: Block diagram of the transfer function from $\bm{\mathcal{F}}_{\{M\}}$ to $\bm{\mathcal{X}}_{\{M\}}$
+#+RESULTS:
+[[file:figs/gravimeter_block_com.png]]
+
 
 #+begin_src matlab
-Gm = inv(Jm)*Gt*inv(Jm');
+%% Mass Matrix in frame {M}
+Mm = diag([m,m,I]);
 #+end_src
 
-#+begin_src matlab :exports results :results value table replace :tangle no
-data2orgtable(Mm, {}, {}, ' %.1f ');
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Mm
 #+end_src
 
-#+caption: $M_{\{M\}}$
+#+caption: Mass matrix expressed in $\{M\}$: $M_{\{M\}}$
 #+RESULTS:
-| 400.0 |   0.0 |   0.0 |
-|   0.0 | 400.0 |   0.0 |
-|   0.0 |   0.0 | 115.0 |
+| 400 |   0 |   0 |
+|   0 | 400 |   0 |
+|   0 |   0 | 115 |
 
-#+begin_src matlab :exports results :results value table replace :tangle no
-data2orgtable(Km, {}, {}, ' %.1f ');
+#+begin_src matlab
+%% Stiffness Matrix in frame {M}
+Km = Jm'*Kr*Jm;
 #+end_src
 
-#+caption: $K_{\{M\}}$
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Km
+#+end_src
+
+#+caption: Stiffness matrix expressed in $\{M\}$: $K_{\{M\}}$
 #+RESULTS:
-| 15000.0 |     0.0 | 12750.0 |
-|     0.0 | 30000.0 |     0.0 |
-| 12750.0 |     0.0 | 27750.0 |
+| 15000 |     0 | 25500 |
+|     0 | 30000 |     0 |
+| 25500 |     0 | 50850 |
+
+#+begin_src matlab
+%% Damping Matrix in frame {M}
+Cm = Jm'*Cr*Jm;
+#+end_src
+
+The plant from $\bm{F}_{\{M\}}$ to $\bm{\mathcal{X}}_{\{M\}}$ is defined below and its magnitude is shown in Figure [[fig:plant_frame_M]].
+#+begin_src matlab
+%% Plant in frame {M}
+Gm = inv(Mm*s^2 + Cm*s + Km);
+#+end_src
 
 #+begin_src matlab :exports none
-freqs = logspace(-1, 2, 1000);
+freqs = logspace(-2, 2, 1000);
 figure;
 
 % Magnitude
@@ -1757,62 +2015,112 @@ for i_in = 1:3
     end
 end
 plot(freqs, abs(squeeze(freqresp(Gm(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-     'DisplayName', '$G_x(i,j)\ i \neq j$');
+     'DisplayName', '$G_{\\\{M\\\}}(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-    plot(freqs, abs(squeeze(freqresp(Gm(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gm(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', ['$G_{\\\{M\\\}}(', int2str(i_in_out), ',', int2str(i_in_out), ')$']);
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 xlabel('Frequency [Hz]'); ylabel('Magnitude');
-legend('location', 'southeast');
-ylim([1e-8, 1e0]);
+legend('location', 'southwest', 'FontSize', 8);
+ylim([1e-8, 1e-2]);
 #+end_src
 
-** Transfer function from $\mathcal{F}_{\{K\}}$ to $\mathcal{X}_{\{K\}}$
-
-Jacobian:
-#+begin_src matlab
-Jk = [1 0  0
-      0 1 -la
-      0 1  la];
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/plant_frame_M.pdf', 'width', 'wide', 'height', 'normal');
 #+end_src
 
-Mass, Damping and Stiffness matrices expressed in $\{K\}$:
-#+begin_src matlab
-Mk = Jk'*Mt*Jk;
-Ck = Jk'*Ct*Jk;
-Kk = Jk'*Kt*Jk;
-#+end_src
-
-#+begin_src matlab :exports results :results value table replace :tangle no
-data2orgtable(Mk, {}, {}, ' %.1f ');
-#+end_src
-
-#+caption: $M_{\{K\}}$
+#+name: fig:plant_frame_M
+#+caption: Dynamics from $\bm{\mathcal{F}}_{\{M\}}$ to $\bm{\mathcal{X}}_{\{M\}}$
 #+RESULTS:
-|  400.0 |   0.0 | -340.0 |
-|    0.0 | 400.0 |    0.0 |
-| -340.0 |   0.0 |  404.0 |
+[[file:figs/plant_frame_M.png]]
 
+** Equations of motion - "Center of stiffness" {K}
+<<sec:jac_decoupl_cok>>
 
-#+begin_src matlab :exports results :results value table replace :tangle no
-data2orgtable(Kk, {}, {}, ' %.1f ');
+Let's now express the transfer function from $\bm{\mathcal{F}}_{\{K\}}$ to $\bm{\mathcal{X}}_{\{K\}}$.
+We start from:
+\begin{equation}
+\left( M_{\{M\}} s^2 + K_{\{M\}} \right) J_{\{M\}}^{-1} \bm{\mathcal{L}} = J_{\{M\}}^T \bm{\tau}
+\end{equation}
+
+And we make use of the Jacobian $J_{\{K\}}$ to obtain:
+\begin{equation}
+\left( M_{\{M\}} s^2 + K_{\{M\}} \right) J_{\{M\}}^{-1} J_{\{K\}} \bm{\mathcal{X}}_{\{K\}} = J_{\{M\}}^T J_{\{K\}}^{-T} \bm{\mathcal{F}}_{\{K\}}
+\end{equation}
+
+And finally:
+\begin{equation}
+\left( J_{\{K\}}^T J_{\{M\}}^{-T} M_{\{M\}} J_{\{M\}}^{-1} J_{\{K\}} s^2 + J_{\{K\}}^T \mathcal{K} J_{\{K\}} \right) \bm{\mathcal{X}}_{\{K\}} = \bm{\mathcal{F}}_{\{K\}}
+\end{equation}
+
+The transfer function from $\bm{\mathcal{F}}_{\{K\}}$ to $\bm{\mathcal{X}}_{\{K\}}$ is then:
+\begin{equation}
+\boxed{\bm{G}_{\{K\}} = {\left( J_{\{K\}}^T J_{\{M\}}^{-T} M_{\{M\}} J_{\{M\}}^{-1} J_{\{K\}} s^2 + J_{\{K\}}^T \mathcal{K} J_{\{K\}} \right)}^{-1}}
+\end{equation}
+
+The frame $\{K\}$ has been chosen such that $J_{\{K\}}^T \mathcal{K} J_{\{K\}}$ is diagonal.
+
+#+begin_src latex :file gravimeter_block_cok.pdf :tangle no :exports results
+\begin{tikzpicture}
+  \node[block] (G) {$\bm{G}$};
+  \node[block, left=0.6 of G] (Jt) {$J_{\{K\}}^{-T}$};
+  \node[block, right=0.6 of G] (Ja) {$J_{\{K\}}^{-1}$};
+
+  % Connections and labels
+  \draw[<-] (Jt.west) -- ++(-1.8, 0) node[above right]{$\bm{\mathcal{F}}_{\{K\}}$};
+  \draw[->] (Jt.east) -- (G.west)  node[above left]{$\bm{\tau}$};
+  \draw[->] (G.east) -- (Ja.west)  node[above left]{$\bm{\mathcal{L}}$};
+  \draw[->] (Ja.east) -- ++( 1.8, 0)  node[above left]{$\bm{\mathcal{X}}_{\{K\}}$};
+
+  \begin{scope}[on background layer]
+    \node[fit={(Jt.south west) (Ja.north east)}, fill=black!10!white, draw, dashed, inner sep=16pt] (Gx) {};
+    \node[below right] at (Gx.north west) {$\bm{G}_{\{K\}}$};
+  \end{scope}
+\end{tikzpicture}
 #+end_src
 
-#+caption: $K_{\{K\}}$
+#+name: fig:gravimeter_block_cok
+#+caption: Block diagram of the transfer function from $\bm{\mathcal{F}}_{\{K\}}$ to $\bm{\mathcal{X}}_{\{K\}}$
 #+RESULTS:
-| 15000.0 |     0.0 |     0.0 |
-|     0.0 | 30000.0 |     0.0 |
-|     0.0 |     0.0 | 16912.5 |
+[[file:figs/gravimeter_block_cok.png]]
 
 #+begin_src matlab
-% Gk = s^2*inv(Mk*s^2 + Ck*s + Kk);
-Gk = inv(Jk)*Gt*inv(Jk');
+Mk = Jk'*inv(Jm)'*Mm*inv(Jm)*Jk;
+#+end_src
+
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Mk
+#+end_src
+
+#+caption: Mass matrix expressed in $\{K\}$: $M_{\{K\}}$
+#+RESULTS:
+|  400 |   0 | -680 |
+|    0 | 400 |    0 |
+| -680 |   0 | 1271 |
+
+#+begin_src matlab
+Kk = Jk'*Kr*Jk;
+#+end_src
+
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Kk
+#+end_src
+
+#+caption: Stiffness matrix expressed in $\{K\}$: $K_{\{K\}}$
+#+RESULTS:
+| 15000 |     0 |    0 |
+|     0 | 30000 |    0 |
+|     0 |     0 | 7500 |
+
+The plant from $\bm{F}_{\{K\}}$ to $\bm{\mathcal{X}}_{\{K\}}$ is defined below and its magnitude is shown in Figure [[fig:plant_frame_K]].
+#+begin_src matlab
+Gk = inv(Mk*s^2 + Ck*s + Kk);
 #+end_src
 
 #+begin_src matlab :exports none
-freqs = logspace(-1, 2, 1000);
+freqs = logspace(-2, 2, 1000);
 figure;
 
 % Magnitude
@@ -1824,80 +2132,32 @@ for i_in = 1:3
     end
 end
 plot(freqs, abs(squeeze(freqresp(Gk(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
-     'DisplayName', '$G_x(i,j)\ i \neq j$');
+     'DisplayName', '$G_{\\\{K\\\}}(i,j)\ i \neq j$');
 set(gca,'ColorOrderIndex',1)
 for i_in_out = 1:3
-    plot(freqs, abs(squeeze(freqresp(Gk(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_x(%d,%d)$', i_in_out, i_in_out));
+    plot(freqs, abs(squeeze(freqresp(Gk(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', ['$G_{\\\{K\\\}}(', int2str(i_in_out), ',', int2str(i_in_out), ')$']);
 end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 xlabel('Frequency [Hz]'); ylabel('Magnitude');
-legend('location', 'southeast');
-ylim([1e-8, 1e0]);
+legend('location', 'southwest', 'FontSize', 8);
+ylim([1e-8, 1e-2]);
 #+end_src
 
-** Analytical
-*** Matlab Init                                            :noexport:ignore:
-#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
-<<matlab-dir>>
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/plant_frame_K.pdf', 'width', 'wide', 'height', 'normal');
 #+end_src
 
-#+begin_src matlab :exports none :results silent :noweb yes
-<<matlab-init>>
-#+end_src
-
-*** Parameters
-#+begin_src matlab
-syms la ha m I c k positive
-#+end_src
-
-#+begin_src matlab
-Mm = [m 0 0 ;
-      0 m 0 ;
-      0 0 I];
-
-Cm = [c    0   c*ha ;
-      0    2*c 0 ;
-      c*ha 0   c*(ha+2*la)];
-
-Km = [k    0   k*ha ;
-      0    2*k 0 ;
-      k*ha 0   k*(ha+2*la)];
-#+end_src
-
-#+begin_src matlab
-Jm = [1 0  ha ;
-      0 1 -la ;
-      0 1  la];
-#+end_src
-
-#+begin_src matlab
-Mt = inv(Jm')*Mm*inv(Jm);
-Ct = inv(Jm')*Cm*inv(Jm);
-Kt = inv(Jm')*Km*inv(Jm);
-#+end_src
-
-#+begin_src matlab
-Jk = [1 0  0
-      0 1 -la
-      0 1  la];
-#+end_src
-
-Mass, Damping and Stiffness matrices expressed in $\{K\}$:
-#+begin_src matlab
-Mk = Jk'*Mt*Jk;
-Ck = Jk'*Ct*Jk;
-Kk = Jk'*Kt*Jk;
-#+end_src
-
-#+begin_src matlab :results replace value raw
-['\begin{equation} M_{\{K\}} = ', latex(simplify(Kk)), '\end{equation}']
-#+end_src
-
+#+name: fig:plant_frame_K
+#+caption: Dynamics from $\bm{\mathcal{F}}_{\{K\}}$ to $\bm{\mathcal{X}}_{\{K\}}$
 #+RESULTS:
-\begin{equation} M_{\{K\}} = \left(\begin{array}{ccc} k & 0 & 0\\ 0 & 2\,k & 0\\ 0 & 0 & k\,\left(-{\mathrm{ha}}^2+\mathrm{ha}+2\,\mathrm{la}\right) \end{array}\right)\end{equation}
+[[file:figs/plant_frame_K.png]]
+
+** Conclusion
+<<sec:jac_decoupl_conclusion>>
 
 * Diagonal Stiffness Matrix for a planar manipulator
+<<sec:diagonal_stiffness_planar>>
 ** Model and Assumptions
 Consider a parallel manipulator with:
 - $b_i$: location of the joints on the top platform are called $b_i$
@@ -2261,7 +2521,7 @@ And we finally obtain:
 K_{\{K\}} = \left[ \begin{array}{c|c}
   k_i \hat{s}_i \hat{s}_i^T              & k_i \hat{s}_i (b_i \times \hat{s}_i)^T \cr
   \hline
-  k_i \hat{s}_i (b_i \times \hat{s}_i)^T & k_i (b_i \times \hat{s}_i) (b_i \times \hat{s}_i)^T
+  k_i (b_i \times \hat{s}_i) \hat{s}_i^T & k_i (b_i \times \hat{s}_i) (b_i \times \hat{s}_i)^T
 \end{array} \right]
 }
 \end{equation}
@@ -2303,7 +2563,7 @@ Taking the transpose and re-arranging:
 k_i ({}^Mb_i \times \hat{s}_i) \hat{s}_i^T = k_i ({}^MO_K \times \hat{s}_i) \hat{s}_i^T
 \end{equation}
 
-As the vector cross product also can be expressed as the product of a skew-symmetric matrix and a vehttps://rwth.zoom.us/j/92311133102?pwd=UTAzS21YYkUwT2pMZDBLazlGNzdvdz09tor, we obtain:
+As the vector cross product also can be expressed as the product of a skew-symmetric matrix and a vector, we obtain:
 \begin{equation}
 k_i ({}^Mb_i \times \hat{s}_i) \hat{s}_i^T = {}^M\bm{O}_{K} ( k_i \hat{s}_i \hat{s}_i^T )
 \end{equation}
@@ -2448,6 +2708,162 @@ axis equal;
 #+end_src
 
 ** TODO Example 2 - Stewart Platform
+* Stiffness and Mass Matrices in the Leg's frame
+
+** Equations
+Equations in the $\{M\}$ frame:
+\begin{equation}
+\left( M_{\{M\}} s^2 + K_{\{M\}} \right) \mathcal{X}_{\{M\}} = \mathcal{F}_{\{M\}}
+\end{equation}
+
+Thank to the Jacobian, we can transform the equation of motion expressed in the $\{M\}$ frame to the frame of the legs:
+\begin{equation}
+J_{\{M\}}^{-T} \left( M_{\{M\}} s^2 + K_{\{M\}} \right) J_{\{M\}}^{-1} \dot{\mathcal{L}} = \tau
+\end{equation}
+
+And we have new stiffness and mass matrices:
+\begin{equation}
+\left( M_{\{L\}} s^2 + K_{\{L\}} \right) \dot{\mathcal{L}} = \tau
+\end{equation}
+with:
+- The local mass matrix:
+  \[ M_{\{L\}} = J_{\{M\}}^{-T} M_{\{M\}} J_{\{M\}}^{-1} \]
+- The local stiffness matrix:
+  \[ K_{\{L\}} = J_{\{M\}}^{-T} K_{\{M\}} J_{\{M\}}^{-1} \]
+
+** Stiffness matrix
+We have that:
+\[ K_{\{M\}} = J_{\{M\}}^T \mathcal{K} J_{\{M\}} \]
+
+Therefore, we find that $K_{\{L\}}$ is a diagonal matrix:
+\begin{equation}
+K_{\{L\}} = \mathcal{K} = \begin{bmatrix}
+k_1 & & 0 \\
+ & \ddots & \\
+0 & & k_n
+\end{bmatrix}
+\end{equation}
+
+The dynamics from $\tau$ to $\mathcal{L}$ is therefore decoupled at low frequency.
+
+** Mass matrix
+The mass matrix in the frames of the legs is:
+\[ M_{\{L\}} = J_{\{M\}}^{-T} M_{\{M\}} J_{\{M\}}^{-1} \]
+with $M_{\{M\}}$ a diagonal matrix:
+\begin{equation}
+M_{\{M\}} = \begin{bmatrix}
+m &   &   &     &     & \\
+  & m &   &     & 0   & \\
+  &   & m &     &     & \\
+  &   &   & I_x &     & \\
+  & 0 &   &     & I_y & \\
+  &   &   &     &     & I_z
+\end{bmatrix}
+\end{equation}
+
+Let's suppose $M_{\{L\}} = \mathcal{M}$ diagonal and try to find what does this imply:
+\[ M_{\{M\}} = J_{\{M\}}^{T} \mathcal{M} J_{\{M\}} \]
+with:
+\begin{equation}
+\mathcal{M} = \begin{bmatrix}
+m_1 & & 0 \\
+ & \ddots & \\
+0 & & m_n
+\end{bmatrix}
+\end{equation}
+
+We obtain:
+\begin{equation}
+\boxed{
+M_{\{M\}} = \left[ \begin{array}{c|c}
+  m_i \hat{s}_i \hat{s}_i^T              & m_i \hat{s}_i (b_i \times \hat{s}_i)^T \cr
+  \hline
+  k_i \hat{s}_i (b_i \times \hat{s}_i)^T & m_i (b_i \times \hat{s}_i) (b_i \times \hat{s}_i)^T
+\end{array} \right]
+}
+\end{equation}
+
+Therefore, we have the following conditions:
+\begin{align}
+m_i \hat{s}_i \hat{s}_i^T &= m \bm{I}_{3} \\
+m_i \hat{s}_i (b_i \times \hat{s}_i)^T &= \bm{O}_{3} \\
+m_i (b_i \times \hat{s}_i) (b_i \times \hat{s}_i)^T &= \text{diag}(I_x, I_y, I_z)
+\end{align}
+
+
+** Planar Example
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+<<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+<<matlab-init>>
+#+end_src
+
+The stiffnesses $k_i$, the joint positions ${}^Mb_i$ and joint unit vectors ${}^M\hat{s}_i$ are defined below:
+#+begin_src matlab
+ki = [1,1,1]; % Stiffnesses [N/m]
+si = [[1;0],[0;1],[0;1]]; si = si./vecnorm(si); % Unit Vectors
+bi = [[-1; 0],[-10;-1],[0;-1]]; % Joint's positions in frame {M}
+#+end_src
+
+Jacobian in frame $\{M\}$:
+#+begin_src matlab
+Jm = [si', (bi(1,:).*si(2,:) - bi(2,:).*si(1,:))'];
+#+end_src
+
+And the stiffness matrix in frame $\{K\}$:
+#+begin_src matlab
+Km = Jm'*diag(ki)*Jm;
+#+end_src
+
+#+begin_src matlab :results value replace :exports results :tangle no
+ans = Km
+#+end_src
+
+#+RESULTS:
+| 2 |  0 |  1 |
+| 0 |  1 | -1 |
+| 1 | -1 |  2 |
+
+Mass matrix in the frame $\{M\}$:
+#+begin_src matlab
+m = 10; % [kg]
+I = 1; % [kg.m^2]
+
+Mm = diag([m, m, I]);
+#+end_src
+
+
+Now compute $K$ and $M$ in the frame of the legs:
+#+begin_src matlab
+ML = inv(Jm)'*Mm*inv(Jm)
+KL = inv(Jm)'*Km*inv(Jm)
+#+end_src
+
+#+begin_src matlab
+Gm = 1/(ML*s^2 + KL);
+#+end_src
+
+#+begin_src matlab
+freqs = logspace(-2, 1, 1000);
+figure;
+hold on;
+for i = 1:length(ki)
+    plot(freqs, abs(squeeze(freqresp(Gm(i,i), freqs, 'Hz'))), 'k-')
+end
+for i = 1:length(ki)
+    for j = i+1:length(ki)
+        plot(freqs, abs(squeeze(freqresp(Gm(i,j), freqs, 'Hz'))), 'r-')
+    end
+end
+hold off;
+xlabel('Frequency [Hz]');
+ylabel('Magnitude');
+set(gca, 'xscale', 'log');
+set(gca, 'yscale', 'log');
+#+end_src
+
 * Stewart Platform - Simscape Model
 :PROPERTIES:
 :header-args:matlab+: :tangle stewart_platform/script.m
