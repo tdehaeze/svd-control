@@ -43,7 +43,7 @@
 
 #+begin_export html
   <hr>
-  <p>This report is also available as a <a href="./index.pdf">pdf</a>.</p>
+  <p>This report is also available as a <a href="./svd-control.pdf">pdf</a>.</p>
   <hr>
 #+end_export
 
