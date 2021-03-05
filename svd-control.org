@@ -2156,6 +2156,645 @@ exportFig('figs/plant_frame_K.pdf', 'width', 'wide', 'height', 'normal');
 ** Conclusion
 <<sec:jac_decoupl_conclusion>>
 
+* SVD / Jacobian / Model decoupling comparison
+** Introduction                                                      :ignore:
+
+The goal of this section is to compare the use of several methods for the decoupling of parallel manipulators.
+
+It is structured as follow:
+- Section [[sec:decoupling_comp_model]]: the model used to compare/test decoupling strategies is presented
+- Section [[sec:comp_jacobian]]: decoupling using Jacobian matrices is presented
+- Section [[sec:comp_modal]]: modal decoupling is presented
+- Section [[sec:comp_svd]]: SVD decoupling is presented
+- Section [[sec:decoupling_comp]]: the three decoupling methods are applied on the test model and compared
+- Section [[sec:decoupling_conclusion]]: conclusions are drawn on the three decoupling methods
+
+** Matlab Init                                              :noexport:ignore:
+#+begin_src matlab :tangle no :exports none :results silent :noweb yes :var current_dir=(file-name-directory buffer-file-name)
+<<matlab-dir>>
+#+end_src
+
+#+begin_src matlab :exports none :results silent :noweb yes
+<<matlab-init>>
+#+end_src
+
+** Test Model
+<<sec:decoupling_comp_model>>
+Let's consider a parallel manipulator with several collocated actuator/sensors pairs.
+
+System in Figure [[fig:model_test_decoupling]] will serve as an example.
+
+We will note:
+- $b_i$: location of the joints on the top platform
+- $\hat{s}_i$: unit vector corresponding to the struts direction
+- $k_i$: stiffness of the struts
+- $\tau_i$: actuator forces
+- $O_M$: center of mass of the solid body
+- $\mathcal{L}_i$: relative displacement of the struts
+
+#+name: fig:model_test_decoupling
+#+caption: Model use to compare decoupling techniques
+[[file:figs/model_test_decoupling.png]]
+
+The parameters are defined below.
+
+#+begin_src matlab
+%% System parameters
+l  = 1.0; % Length of the mass [m]
+h  = 2*1.7; % Height of the mass [m]
+
+la = l/2; % Position of Act. [m]
+ha = h/2; % Position of Act. [m]
+
+m = 400; % Mass [kg]
+I = 115; % Inertia [kg m^2]
+
+%% Actuator Damping [N/(m/s)]
+c1 = 2e1;
+c2 = 2e1;
+c3 = 2e1;
+
+%% Actuator Stiffness [N/m]
+k1 = 15e3;
+k2 = 15e3;
+k3 = 15e3;
+
+%% Unit vectors of the actuators
+s1 = [1;0];
+s2 = [0;1];
+s3 = [0;1];
+
+%%  Location of the joints
+Mb1 = [-l/2;-ha];
+Mb2 = [-la; -h/2];
+Mb3 = [ la; -h/2];
+
+%% Jacobian matrix
+J = [s1', Mb1(1)*s1(2)-Mb1(2)*s1(1);
+     s2', Mb2(1)*s2(2)-Mb2(2)*s2(1);
+     s3', Mb3(1)*s3(2)-Mb3(2)*s3(1)];
+
+%% Stiffnesss and Damping matrices of the struts
+Kr = diag([k1,k2,k3]);
+Cr = diag([c1,c2,c3]);
+#+end_src
+
+#+begin_src matlab
+%% Mass Matrix in frame {M}
+M = diag([m,m,I]);
+
+%% Stiffness Matrix in frame {M}
+K = J'*Kr*J;
+
+%% Damping Matrix in frame {M}
+C = J'*Cr*J;
+#+end_src
+
+The plant from $\bm{\tau}$ to $\bm{\mathcal{L}}$ is defined below
+#+begin_src matlab
+%% Plant in frame {M}
+G = J*inv(M*s^2 + C*s + K)*J';
+#+end_src
+
+The magnitude of the coupled plant $G$ is shown in Figure [[fig:coupled_plant_bode]].
+
+#+begin_src matlab :exports none
+figure;
+tiledlayout(3, 3, 'TileSpacing', 'None', 'Padding', 'None');
+
+for out_i = 1:3
+    for in_i = 1:3
+        nexttile;
+        plot(freqs, abs(squeeze(freqresp(G(out_i,in_i), freqs, 'Hz'))), 'k-', ...
+             'DisplayName', sprintf('$\\mathcal{L}_%i/\\tau_%i$', out_i, in_i));
+        set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+        xlim([1e-1, 2e1]); ylim([1e-6, 1e-2]);
+        legend('location', 'northeast', 'FontSize', 8);
+
+        if in_i == 1
+            ylabel('Mag. [m/N]')
+        else
+            set(gca, 'YTickLabel',[]);
+        end
+
+        if out_i == 3
+            xlabel('Frequency [Hz]')
+        else
+            set(gca, 'XTickLabel',[]);
+        end
+    end
+end
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/coupled_plant_bode.pdf', 'width', 'full', 'height', 'tall');
+#+end_src
+
+#+name: fig:coupled_plant_bode
+#+caption: Magnitude of the coupled plant.
+#+attr_latex: :width 0.3\linewidth
+#+RESULTS:
+[[file:figs/coupled_plant_bode.png]]
+
+
+** Jacobian Decoupling
+<<sec:comp_jacobian>>
+
+The Jacobian matrix can be used to:
+- Convert joints velocity $\dot{\mathcal{L}}$ to payload velocity and angular velocity $\dot{\bm{\mathcal{X}}}_{\{O\}}$:
+  \[ \dot{\bm{\mathcal{X}}}_{\{O\}} = J_{\{O\}} \dot{\bm{\mathcal{L}}} \]
+- Convert actuators forces $\bm{\tau}$ to forces/torque applied on the payload $\bm{\mathcal{F}}_{\{O\}}$:
+  \[ \bm{\mathcal{F}}_{\{O\}} = J_{\{O\}}^T \bm{\tau} \]
+with $\{O\}$ any chosen frame.
+
+By wisely choosing frame $\{O\}$, we can obtain nice decoupling for plant:
+\begin{equation}
+  \bm{G}_{\{O\}} = J_{\{O\}}^{-1} \bm{G} J_{\{O\}}^{-T}
+\end{equation}
+
+The obtained plan corresponds to forces/torques applied on origin of frame $\{O\}$ to the translation/rotation of the payload expressed in frame $\{O\}$.
+
+#+begin_src latex :file jacobian_decoupling_arch.pdf :tangle no :exports results
+\begin{tikzpicture}
+  \node[block] (G) {$\bm{G}$};
+  \node[block, left=0.6 of G] (Jt) {$J_{\{O\}}^{-T}$};
+  \node[block, right=0.6 of G] (Ja) {$J_{\{O\}}^{-1}$};
+
+  % Connections and labels
+  \draw[<-] (Jt.west) -- ++(-1.8, 0) node[above right]{$\bm{\mathcal{F}}_{\{O\}}$};
+  \draw[->] (Jt.east) -- (G.west)  node[above left]{$\bm{\tau}$};
+  \draw[->] (G.east) -- (Ja.west)  node[above left]{$\bm{\mathcal{L}}$};
+  \draw[->] (Ja.east) -- ++( 1.8, 0)  node[above left]{$\bm{\mathcal{X}}_{\{O\}}$};
+
+  \begin{scope}[on background layer]
+    \node[fit={(Jt.south west) (Ja.north east)}, fill=black!10!white, draw, dashed, inner sep=16pt] (Gx) {};
+    \node[below right] at (Gx.north west) {$\bm{G}_{\{O\}}$};
+  \end{scope}
+\end{tikzpicture}
+#+end_src
+
+#+name: fig:jacobian_decoupling_arch
+#+caption: Block diagram of the transfer function from $\bm{\mathcal{F}}_{\{O\}}$ to $\bm{\mathcal{X}}_{\{O\}}$
+#+RESULTS:
+[[file:figs/jacobian_decoupling_arch.png]]
+
+#+begin_important
+The Jacobian matrix is only based on the geometry of the system and does not depend on the physical properties such as mass and stiffness.
+
+The inputs and outputs of the decoupled plant $\bm{G}_{\{O\}}$ have physical meaning:
+- $\bm{\mathcal{F}}_{\{O\}}$ are forces/torques applied on the payload at the origin of frame $\{O\}$
+- $\bm{\mathcal{X}}_{\{O\}}$ are translations/rotation of the payload expressed in frame $\{O\}$
+
+It is then easy to include a reference tracking input that specify the wanted motion of the payload in the frame $\{O\}$.
+#+end_important
+
+** Modal Decoupling
+<<sec:comp_modal>>
+
+Let's consider a system with the following equations of motion:
+\begin{equation}
+M \bm{\ddot{x}} + C \bm{\dot{x}}  + K \bm{x} = \bm{\mathcal{F}}
+\end{equation}
+
+And the measurement output is a combination of the motion variable $\bm{x}$:
+\begin{equation}
+\bm{y} = C_{ox} \bm{x} + C_{ov} \dot{\bm{x}}
+\end{equation}
+
+Let's make a *change of variables*:
+\begin{equation}
+\boxed{\bm{x} = \Phi \bm{x}_m}
+\end{equation}
+with:
+- $\bm{x}_m$ the modal amplitudes
+- $\Phi$ a matrix whose columns are the modes shapes of the system
+
+And we map the actuator forces:
+\begin{equation}
+\bm{\mathcal{F}} = J^T \bm{\tau}
+\end{equation}
+
+The equations of motion become:
+\begin{equation}
+M \Phi \bm{\ddot{x}}_m + C \Phi \bm{\dot{x}}_m  + K \Phi \bm{x}_m = J^T \bm{\tau}
+\end{equation}
+And the measured output is:
+\begin{equation}
+\bm{y} = C_{ox} \Phi \bm{x}_m + C_{ov} \Phi \dot{\bm{x}}_m
+\end{equation}
+
+By pre-multiplying the EoM by $\Phi^T$:
+\begin{equation}
+\Phi^T M \Phi \bm{\ddot{x}}_m + \Phi^T C \Phi \bm{\dot{x}}_m  + \Phi^T K \Phi \bm{x}_m = \Phi^T J^T \bm{\tau}
+\end{equation}
+
+And we note:
+- $M_m = \Phi^T M \Phi = \text{diag}(\mu_i)$ the modal mass matrix
+- $C_m = \Phi^T C \Phi = \text{diag}(2 \xi_i \mu_i \omega_i)$ (classical damping)
+- $K_m = \Phi^T K \Phi = \text{diag}(\mu_i \omega_i^2)$ the modal stiffness matrix
+
+And we have:
+\begin{equation}
+  \ddot{\bm{x}}_m + 2 \Xi \Omega \dot{\bm{x}}_m + \Omega^2 \bm{x}_m = \mu^{-1} \Phi^T J^T \bm{\tau}
+\end{equation}
+with:
+- $\mu = \text{diag}(\mu_i)$
+- $\Omega = \text{diag}(\omega_i)$
+- $\Xi = \text{diag}(\xi_i)$
+
+And we call the *modal input matrix*:
+\begin{equation}
+  \boxed{B_m = \mu^{-1} \Phi^T J^T}
+\end{equation}
+And the *modal output matrices*:
+\begin{equation}
+  \boxed{C_m = C_{ox} \Phi + C_{ov} \Phi s}
+\end{equation}
+
+
+Let's note the "modal input":
+\begin{equation}
+\bm{\tau}_m = B_m \bm{\tau}
+\end{equation}
+
+The transfer function from $\bm{\tau}_m$ to $\bm{x}_m$ is:
+\begin{equation} \label{eq:modal_eq}
+\boxed{\frac{\bm{x}_m}{\bm{\tau}_m} = \left( I_n s^2 + 2 \Xi \Omega s + \Omega^2 \right)^{-1}}
+\end{equation}
+which is a *diagonal* transfer function matrix.
+We therefore have decoupling of the dynamics from $\bm{\tau}_m$ to $\bm{x}_m$.
+
+
+We now expressed the transfer function from input $\bm{\tau}$ to output $\bm{y}$ as a function of the "modal variables":
+\begin{equation}
+  \boxed{\frac{\bm{y}}{\bm{\tau}} = \underbrace{\left( C_{ox} + s C_{ov} \right) \Phi}_{C_m} \underbrace{\left( I_n s^2 + 2 \Xi \Omega s + \Omega^2 \right)^{-1}}_{\text{diagonal}} \underbrace{\left( \mu^{-1} \Phi^T J^T \right)}_{B_m}}
+\end{equation}
+
+By inverting $B_m$ and $C_m$ and using them as shown in Figure [[fig:modal_decoupling_architecture]], we can see that we control the system in the "modal space" in which it is decoupled.
+
+#+begin_src latex :file decoupling_modal.pdf :tangle no :exports results
+\begin{tikzpicture}
+  \node[block] (G) {$\bm{G}$};
+  \node[block, left=0.6 of G] (Bm) {$B_m^{-1}$};
+  \node[block, right=0.6 of G] (Cm) {$C_m^{-1}$};
+
+  % Connections and labels
+  \draw[<-] (Bm.west) -- ++(-1.4, 0) node[above right]{$\bm{\tau}_m$};
+  \draw[->] (Bm.east) -- (G.west)  node[above left]{$\bm{\tau}$};
+  \draw[->] (G.east) -- (Cm.west)  node[above left]{$\bm{y}$};
+  \draw[->] (Cm.east) -- ++( 1.4, 0)  node[above left]{$\bm{x}_m$};
+
+  \begin{scope}[on background layer]
+    \node[fit={(Bm.south west) (Cm.north east)}, fill=black!10!white, draw, dashed, inner sep=16pt] (Gm) {};
+    \node[below right] at (Gm.north west) {$\bm{G}_m$};
+  \end{scope}
+\end{tikzpicture}
+#+end_src
+
+#+name: fig:modal_decoupling_architecture
+#+caption: Modal Decoupling Architecture
+#+RESULTS:
+[[file:figs/decoupling_modal.png]]
+
+The system $\bm{G}_m(s)$ shown in Figure [[fig:modal_decoupling_architecture]] is diagonal eqref:eq:modal_eq.
+
+#+begin_important
+Modal decoupling requires to have the equations of motion of the system.
+From the equations of motion (and more precisely the mass and stiffness matrices), the mode shapes $\Phi$ are computed.
+
+Then, the system can be decoupled in the modal space.
+The obtained system on the diagonal are second order resonant systems which can be easily controlled.
+
+Using this decoupling strategy, it is possible to control each mode individually.
+#+end_important
+
+** SVD Decoupling
+<<sec:comp_svd>>
+
+Procedure:
+- Identify the dynamics of the system from inputs to outputs (can be obtained experimentally)
+- Choose a frequency where we want to decouple the system (usually, the crossover frequency is a good choice)
+#+begin_src matlab
+%% Decoupling frequency [rad/s]
+wc = 2*pi*10;
+
+%% System's response at the decoupling frequency
+H1 = evalfr(G, j*wc);
+#+end_src
+- Compute a real approximation of the system's response at that frequency
+#+begin_src matlab
+%% Real approximation of G(j.wc)
+D = pinv(real(H1'*H1));
+H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+#+end_src
+- Perform a Singular Value Decomposition of the real approximation
+#+begin_src matlab
+[U,S,V] = svd(H1);
+#+end_src
+- Use the singular input and output matrices to decouple the system as shown in Figure [[fig:decoupling_svd]]
+  \[ G_{svd}(s) = U^{-1} G(s) V^{-T} \]
+#+begin_src matlab
+Gsvd = inv(U)*G*inv(V');
+#+end_src
+
+#+begin_src latex :file decoupling_svd.pdf :tangle no :exports results
+\begin{tikzpicture}
+  \node[block] (G) {$\bm{G}$};
+
+  \node[block, left=0.6 of G.west] (V) {$V^{-T}$};
+  \node[block, right=0.6 of G.east] (U) {$U^{-1}$};
+
+  % Connections and labels
+  \draw[<-] (V.west) -- ++(-1.0, 0) node[above right]{$u$};
+  \draw[->] (V.east) -- (G.west) node[above left]{$\tau$};
+  \draw[->] (G.east) -- (U.west) node[above left]{$a$};
+  \draw[->] (U.east) -- ++( 1.0, 0) node[above left]{$y$};
+
+  \begin{scope}[on background layer]
+    \node[fit={(V.south west) (G.north-|U.east)}, fill=black!10!white, draw, dashed, inner sep=14pt] (Gsvd) {};
+    \node[below right] at (Gsvd.north west) {$\bm{G}_{SVD}$};
+  \end{scope}
+\end{tikzpicture}
+#+end_src
+
+#+name: fig:decoupling_svd
+#+caption: Decoupled plant $\bm{G}_{SVD}$ using the Singular Value Decomposition
+#+RESULTS:
+[[file:figs/decoupling_svd.png]]
+
+#+begin_important
+In order to apply the Singular Value Decomposition, we need to have the Frequency Response Function of the system, at least near the frequency where we wish to decouple the system.
+The FRF can be experimentally obtained or based from a model.
+
+This method ensure good decoupling near the chosen frequency, but no guaranteed decoupling away from this frequency.
+
+Also, it depends on how good the real approximation of the FRF is, therefore it might be less good for plants with high damping.
+
+This method is quite general and can be applied to any type of system.
+The inputs and outputs are ordered from higher gain to lower gain at the chosen frequency.
+
+- [ ] Do we loose any physical meaning of the obtained inputs and outputs?
+- [ ] Can we take advantage of the fact that U and V are unitary?
+#+end_important
+
+** Comparison
+<<sec:decoupling_comp>>
+*** Jacobian Decoupling
+Decoupling properties depends on the chosen frame $\{O\}$.
+
+Let's take the CoM as the decoupling frame.
+
+#+begin_src matlab
+Gx = pinv(J)*G*pinv(J');
+Gx.InputName  = {'Fx', 'Fy', 'Mz'};
+Gx.OutputName  = {'Dx', 'Dy', 'Rz'};
+#+end_src
+
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gx(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gx(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_{x}(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gx(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{x}(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+ylim([1e-7, 1e-1]);
+legend('location', 'northeast');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/jacobian_plant.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:jacobian_plant
+#+caption: Plant decoupled using the Jacobian matrices $G_x(s)$
+#+RESULTS:
+[[file:figs/jacobian_plant.png]]
+
+*** Modal Decoupling
+For the system in Figure [[fig:model_test_decoupling]], we have:
+\begin{align}
+\bm{x} &= \begin{bmatrix} x \\ y \\ R_z \end{bmatrix} \\
+\bm{y} &= \mathcal{L} = J \bm{x}; \quad C_{ox} = J; \quad C_{ov} = 0 \\
+M &= \begin{bmatrix}
+m & 0 & 0 \\
+0 & m & 0 \\
+0 & 0 & I
+\end{bmatrix}; \quad K = J' \begin{bmatrix}
+k & 0 & 0 \\
+0 & k & 0 \\
+0 & 0 & k
+\end{bmatrix} J; \quad C = J' \begin{bmatrix}
+c & 0 & 0 \\
+0 & c & 0 \\
+0 & 0 & c
+\end{bmatrix} J
+\end{align}
+
+In order to apply the architecture shown in Figure [[fig:modal_decoupling_architecture]], we need to compute $C_{ox}$, $C_{ov}$, $\Phi$, $\mu$ and $J$.
+
+#+begin_src matlab
+%% Modal Decomposition
+[V,D] = eig(M\K);
+
+%% Modal Mass Matrix
+mu = V'*M*V;
+
+%% Modal output matrix
+Cm = J*V;
+
+%% Modal input matrix
+Bm = inv(mu)*V'*J';
+#+end_src
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Bm, {}, {}, ' %.4f ');
+#+end_src
+
+#+name: tab:modal_decoupling_Bm
+#+caption: $B_m$ matrix
+#+attr_latex: :environment tabularx :width 0.3\linewidth :align ccc
+#+attr_latex: :center t :booktabs t :float t
+#+RESULTS:
+| -0.0004 | -0.0007 |  0.0007 |
+| -0.0151 |  0.0041 | -0.0041 |
+|     0.0 |  0.0025 |  0.0025 |
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(Cm, {}, {}, ' %.1f ');
+#+end_src
+
+#+name: tab:modal_decoupling_Cm
+#+caption: $C_m$ matrix
+#+attr_latex: :environment tabularx :width 0.2\linewidth :align ccc
+#+attr_latex: :center t :booktabs t :float t
+#+RESULTS:
+| -0.1 | -1.8 | 0.0 |
+| -0.2 |  0.5 | 1.0 |
+|  0.2 | -0.5 | 1.0 |
+
+And the plant in the modal space is defined below and its magnitude is shown in Figure [[fig:modal_plant]].
+#+begin_src matlab
+Gm = inv(Cm)*G*inv(Bm);
+#+end_src
+
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gm(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gm(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_m(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gm(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_m(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+ylim([1e-6, 1e2]);
+legend('location', 'northeast');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/modal_plant.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:modal_plant
+#+caption: Modal plant $G_m(s)$
+#+RESULTS:
+[[file:figs/modal_plant.png]]
+
+Let's now close one loop at a time and see how the transmissibility changes.
+
+*** SVD Decoupling
+
+#+begin_src matlab :exports results :results value table replace :tangle no
+data2orgtable(H1, {}, {}, ' %.2g ');
+#+end_src
+
+#+caption: Real approximate of $G$ at the decoupling frequency $\omega_c$
+#+attr_latex: :environment tabularx :width 0.3\linewidth :align ccc
+#+attr_latex: :center t :booktabs t :float t
+#+RESULTS:
+|   -8e-06 |  2.1e-06 | -2.1e-06 |
+|  2.1e-06 | -1.3e-06 | -2.5e-08 |
+| -2.1e-06 | -2.5e-08 | -1.3e-06 |
+
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gsvd(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gsvd(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_{svd}(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gsvd(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{svd}(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+ylim([1e-8, 1e-2]);
+legend('location', 'northeast');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/svd_plant.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:svd_plant
+#+caption: Svd plant $G_m(s)$
+#+RESULTS:
+[[file:figs/svd_plant.png]]
+
+** Further Notes
+*** Robustness of the decoupling strategies?
+
+What happens if we have an additional resonance in the system (Figure [[fig:model_test_decoupling_spurious_res]]).
+
+Less actuator than DoF:
+- modal decoupling: can still control first $n$ modes?
+- SVD decoupling: does not matter
+- Jacobian decoupling: could give poor decoupling?
+
+#+name: fig:model_test_decoupling_spurious_res
+#+caption: Plant with spurious resonance (additional DoF)
+[[file:figs/model_test_decoupling_spurious_res.png]]
+
+*** Other decoupling strategies
+
+- DC decoupling: pre-multiply the plant by $G(0)^{-1}$
+- full decoupling: pre-multiply the plant by $G(s)^{-1}$
+
+** Conclusion
+<<sec:decoupling_conclusion>>
+
+The three proposed methods clearly have a lot in common as they all tend to make system more decoupled by pre and/or post multiplying by a constant matrix
+However, the three methods also differs by a number of points which are summarized in Table [[tab:decoupling_strategies_comp]].
+
+#+name: tab:decoupling_strategies_comp
+#+caption: Comparison of decoupling strategies
+#+attr_latex: :environment tabularx :width \linewidth :align lXXX
+#+attr_latex: :center t :booktabs t :float sideways
+|                           | *Jacobian*                                                                             | *Modal*                                                            | *SVD*                                                  |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Philosophy*              | Topology Driven                                                                        | Physics Driven                                                     | Data Driven                                            |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Requirements*            | Known geometry                                                                         | Known equations of motion                                          | Identified FRF                                         |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Decoupling Matrices*     | Decoupling using $J$ obtained from geometry                                            | Decoupling using $\Phi$ obtained from modal decomposition          | Decoupling using $U$ and $V$ obtained from SVD         |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Decoupled Plant*         | $\bm{G}_{\{O\}} = J_{\{O\}}^{-1} \bm{G} J_{\{O\}}^{-T}$                                | $\bm{G}_m = C_m^{-1} \bm{G} B_m^{-1}$                              | $\bm{G}_{svd}(s) = U^{-1} \bm{G}(s) V^{-T}$            |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Implemented Controller*  | $\bm{K}_{\{O\}} = J_{\{O\}}^{-T} \bm{K}_{d}(s) J_{\{O\}}^{-1}$                         | $\bm{K}_m = B_m^{-1} \bm{K}_{d}(s) C_m^{-1}$                       | $\bm{K}_{svd}(s) = V^{-T} \bm{K}_{d}(s) U^{-1}$        |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Physical Interpretation* | Forces/Torques to Displacement/Rotation in chosen frame                                | Inputs to excite individual modes                                  | Directions of max to min controllability/observability |
+|                           |                                                                                        | Output to sense individual modes                                   |                                                        |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Decoupling Properties*   | Decoupling at low or high frequency depending on the chosen frame                      | Good decoupling at all frequencies                                 | Good decoupling near the chosen frequency              |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Pros*                    | Physical inputs / outputs                                                              | Target specific modes                                              | Good Decoupling near the crossover                     |
+|                           | Good decoupling at High frequency (diagonal mass matrix if Jacobian taken at the CoM)  | 2nd order diagonal plant                                           | Very General                                           |
+|                           | Good decoupling at Low frequency (if Jacobian taken at specific point)                 |                                                                    |                                                        |
+|                           | Easy integration of meaningful reference inputs                                        |                                                                    |                                                        |
+|                           |                                                                                        |                                                                    |                                                        |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Cons*                    | Coupling between force/rotation may be high at low frequency (non diagonal terms in K) | Need analytical equations                                          | Loose the physical meaning of inputs /outputs          |
+|                           | Limited to parallel mechanisms (?)                                                     |                                                                    | Decoupling depends on the real approximation validity  |
+|                           | If good decoupling at all frequencies => requires specific mechanical architecture     |                                                                    |                                                        |
+|---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
+| *Applicability*           | Parallel Mechanisms                                                                    | Systems whose dynamics that can be expressed with M and K matrices | Very general                                           |
+|                           | Only small motion for the Jacobian matrix to stay constant                             |                                                                    | Need FRF data (either experimentally or analytically)  |
+
+
 * Diagonal Stiffness Matrix for a planar manipulator
 <<sec:diagonal_stiffness_planar>>
 ** Model and Assumptions
