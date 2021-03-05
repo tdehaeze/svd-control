@@ -1,5 +1,6 @@
 auto/
 *.tex
+_minted*
 
 nohup.out
 
