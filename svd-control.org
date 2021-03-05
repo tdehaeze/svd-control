@@ -2474,7 +2474,7 @@ Using this decoupling strategy, it is possible to control each mode individually
 Procedure:
 - Identify the dynamics of the system from inputs to outputs (can be obtained experimentally)
 - Choose a frequency where we want to decouple the system (usually, the crossover frequency is a good choice)
-#+begin_src matlab
+#+begin_src matlab :eval no
 %% Decoupling frequency [rad/s]
 wc = 2*pi*10;
 
@@ -2482,18 +2482,18 @@ wc = 2*pi*10;
 H1 = evalfr(G, j*wc);
 #+end_src
 - Compute a real approximation of the system's response at that frequency
-#+begin_src matlab
+#+begin_src matlab :eval no
 %% Real approximation of G(j.wc)
 D = pinv(real(H1'*H1));
 H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
 #+end_src
 - Perform a Singular Value Decomposition of the real approximation
-#+begin_src matlab
+#+begin_src matlab :eval no
 [U,S,V] = svd(H1);
 #+end_src
 - Use the singular input and output matrices to decouple the system as shown in Figure [[fig:decoupling_svd]]
   \[ G_{svd}(s) = U^{-1} G(s) V^{-T} \]
-#+begin_src matlab
+#+begin_src matlab :eval no
 Gsvd = inv(U)*G*inv(V');
 #+end_src
 
@@ -2688,6 +2688,21 @@ exportFig('figs/modal_plant.pdf', 'width', 'wide', 'height', 'normal');
 Let's now close one loop at a time and see how the transmissibility changes.
 
 *** SVD Decoupling
+#+begin_src matlab
+%% Decoupling frequency [rad/s]
+wc = 2*pi*10;
+
+%% System's response at the decoupling frequency
+H1 = evalfr(G, j*wc);
+
+%% Real approximation of G(j.wc)
+D = pinv(real(H1'*H1));
+H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+
+[U,S,V] = svd(H1);
+
+Gsvd = inv(U)*G*inv(V');
+#+end_src
 
 #+begin_src matlab :exports results :results value table replace :tangle no
 data2orgtable(H1, {}, {}, ' %.2g ');
@@ -2700,6 +2715,9 @@ data2orgtable(H1, {}, {}, ' %.2g ');
 |   -8e-06 |  2.1e-06 | -2.1e-06 |
 |  2.1e-06 | -1.3e-06 | -2.5e-08 |
 | -2.1e-06 | -2.5e-08 | -1.3e-06 |
+
+- [ ] Do we have something special when applying SVD to a collocated MIMO system?
+- When applying SVD on a non-collocated MIMO system, we obtained a decoupled plant looking like the one in Figure [[fig:gravimeter_svd_plant]]
 
 #+begin_src matlab :exports none
 freqs = logspace(-1, 2, 1000);
@@ -2722,7 +2740,7 @@ end
 hold off;
 set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
 xlabel('Frequency [Hz]'); ylabel('Magnitude');
-ylim([1e-8, 1e-2]);
+% ylim([1e-8, 1e-2]);
 legend('location', 'northeast');
 #+end_src
 
@@ -2789,7 +2807,7 @@ However, the three methods also differs by a number of points which are summariz
 |---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
 | *Cons*                    | Coupling between force/rotation may be high at low frequency (non diagonal terms in K) | Need analytical equations                                          | Loose the physical meaning of inputs /outputs          |
 |                           | Limited to parallel mechanisms (?)                                                     |                                                                    | Decoupling depends on the real approximation validity  |
-|                           | If good decoupling at all frequencies => requires specific mechanical architecture     |                                                                    |                                                        |
+|                           | If good decoupling at all frequencies => requires specific mechanical architecture     |                                                                    | Diagonal plants may not be easy to control             |
 |---------------------------+----------------------------------------------------------------------------------------+--------------------------------------------------------------------+--------------------------------------------------------|
 | *Applicability*           | Parallel Mechanisms                                                                    | Systems whose dynamics that can be expressed with M and K matrices | Very general                                           |
 |                           | Only small motion for the Jacobian matrix to stay constant                             |                                                                    | Need FRF data (either experimentally or analytically)  |
