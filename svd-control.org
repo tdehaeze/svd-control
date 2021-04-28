@@ -2178,6 +2178,14 @@ It is structured as follow:
 <<matlab-init>>
 #+end_src
 
+#+begin_src matlab :tangle no
+addpath('matlab')
+#+end_src
+
+#+begin_src matlab
+freqs = logspace(-1, 2, 1000);
+#+end_src
+
 ** Test Model
 <<sec:decoupling_comp_model>>
 Let's consider a parallel manipulator with several collocated actuator/sensors pairs.
@@ -2292,7 +2300,6 @@ exportFig('figs/coupled_plant_bode.pdf', 'width', 'full', 'height', 'tall');
 
 #+name: fig:coupled_plant_bode
 #+caption: Magnitude of the coupled plant.
-#+attr_latex: :width 0.3\linewidth
 #+RESULTS:
 [[file:figs/coupled_plant_bode.png]]
 
@@ -2753,12 +2760,11 @@ exportFig('figs/svd_plant.pdf', 'width', 'wide', 'height', 'normal');
 #+RESULTS:
 [[file:figs/svd_plant.png]]
 
-** Further Notes
-*** Robustness of the decoupling strategies?
+** Robustness of the decoupling strategies?
+*** Introduction                                                    :ignore:
+What happens if we add an additional resonance in the system (Figure [[fig:model_test_decoupling_spurious_res]]).
 
-What happens if we have an additional resonance in the system (Figure [[fig:model_test_decoupling_spurious_res]]).
-
-Less actuator than DoF:
+Having less actuator than DoF (under-actuated system):
 - modal decoupling: can still control first $n$ modes?
 - SVD decoupling: does not matter
 - Jacobian decoupling: could give poor decoupling?
@@ -2767,16 +2773,226 @@ Less actuator than DoF:
 #+caption: Plant with spurious resonance (additional DoF)
 [[file:figs/model_test_decoupling_spurious_res.png]]
 
-*** Other decoupling strategies
+*** Plant
+A multi body model of the system in Figure [[fig:model_test_decoupling_spurious_res]] has been made using Simscape.
 
-- DC decoupling: pre-multiply the plant by $G(0)^{-1}$
-- full decoupling: pre-multiply the plant by $G(s)^{-1}$
+Its parameters are defined below:
+#+begin_src matlab
+leq = 20e-3; % Equilibrium length of struts [m]
+mr = 5; % [kg]
+kr = (2*pi*10)^2*mr; % Stiffness [N/m]
+cr = 1e1; % Damping [N/(m/s)]
+
+m = 400 - mr; % Mass [kg]
+#+end_src
+
+The plant is then identified and shown in Figure [[fig:coupled_plant_bode_spurious]].
+The added resonance only slightly modifies the plant around 10Hz.
+#+begin_src matlab :exports none
+%% Name of the Simulink File
+mdl = 'suspended_mass';
+
+%% Input/Output definition
+clear io; io_i = 1;
+io(io_i) = linio([mdl, '/F'],  1, 'openinput');  io_i = io_i + 1;
+io(io_i) = linio([mdl, '/dL'], 1, 'openoutput'); io_i = io_i + 1;
+
+Gr = linearize(mdl, io);
+Gr.InputName  = {'F1', 'F2', 'F3'};
+Gr.OutputName = {'L1', 'L2', 'L3'};
+#+end_src
+
+#+begin_src matlab :exports none
+figure;
+tiledlayout(3, 3, 'TileSpacing', 'None', 'Padding', 'None');
+
+for out_i = 1:3
+    for in_i = 1:3
+        nexttile;
+        hold on;
+        plot(freqs, abs(squeeze(freqresp(G(out_i,in_i), freqs, 'Hz'))), 'k-', ...
+             'DisplayName', sprintf('$\\mathcal{L}_%i/\\tau_%i$', out_i, in_i));
+        plot(freqs, abs(squeeze(freqresp(Gr(out_i,in_i), freqs, 'Hz'))), 'k--', ...
+             'HandleVisibility', 'off');
+        hold off;
+        set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+        xlim([1e-1, 2e1]); ylim([1e-6, 1e-2]);
+        legend('location', 'northeast', 'FontSize', 8);
+
+        if in_i == 1
+            ylabel('Mag. [m/N]')
+        else
+            set(gca, 'YTickLabel',[]);
+        end
+
+        if out_i == 3
+            xlabel('Frequency [Hz]')
+        else
+            set(gca, 'XTickLabel',[]);
+        end
+    end
+end
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/coupled_plant_bode_spurious.pdf', 'width', 'full', 'height', 'tall');
+#+end_src
+
+#+name: fig:coupled_plant_bode_spurious
+#+caption: Magnitude of the coupled plant without additional mode (solid) and with the additional mode (dashed).
+#+RESULTS:
+[[file:figs/coupled_plant_bode_spurious.png]]
+
+*** Jacobian Decoupling
+The obtained plant is decoupled using the Jacobian matrix.
+
+#+begin_src matlab
+Gxr = pinv(J)*Gr*pinv(J');
+Gxr.InputName  = {'Fx', 'Fy', 'Mz'};
+Gxr.OutputName  = {'Dx', 'Dy', 'Rz'};
+#+end_src
+
+The obtained plant is shown in Figure [[fig:jacobian_plant_spurious]] and is not much different than for the plant without the spurious resonance.
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gxr(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gxr(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_{x,r}(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gxr(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{x,r}(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+ylim([1e-7, 1e-1]);
+legend('location', 'northeast');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/jacobian_plant_spurious.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:jacobian_plant_spurious
+#+caption: Plant with spurious resonance decoupled using the Jacobian matrices $G_{x,r}(s)$
+#+RESULTS:
+[[file:figs/jacobian_plant_spurious.png]]
+
+*** Modal Decoupling
+The obtained plant is now decoupled using the modal matrices obtained with the plant not including the added resonance.
+#+begin_src matlab
+Gmr = inv(Cm)*Gr*inv(Bm);
+#+end_src
+
+The obtained decoupled plant is shown in Figure [[fig:modal_plant_spurious]].
+Compare to the decoupled plant in Figure [[fig:modal_plant]], the added resonance induces some coupling, especially around the frequency of the added spurious resonance.
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gmr(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gmr(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_{m,r}(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gmr(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{m,r}(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+ylim([1e-6, 1e2]);
+legend('location', 'northeast');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/modal_plant_spurious.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:modal_plant_spurious
+#+caption: Modal plant including spurious resonance $G_{m,r}(s)$
+#+RESULTS:
+[[file:figs/modal_plant_spurious.png]]
+
+*** SVD Decoupling
+The SVD decoupling is performed on the new obtained plant.
+The decoupling frequency is slightly shifted in order not to interfere too much with the spurious resonance.
+
+#+begin_src matlab
+%% Decoupling frequency [rad/s]
+wc = 2*pi*7;
+
+%% System's response at the decoupling frequency
+H1 = evalfr(Gr, j*wc);
+
+%% Real approximation of G(j.wc)
+D = pinv(real(H1'*H1));
+H1 = pinv(D*real(H1'*diag(exp(j*angle(diag(H1*D*H1.'))/2))));
+
+[U,S,V] = svd(H1);
+
+Gsvdr = inv(U)*Gr*inv(V');
+#+end_src
+
+The obtained plant is shown in Figure [[fig:svd_plant_spurious]].
+#+begin_src matlab :exports none
+freqs = logspace(-1, 2, 1000);
+figure;
+
+% Magnitude
+hold on;
+for i_in = 1:3
+    for i_out = [i_in+1:3]
+        plot(freqs, abs(squeeze(freqresp(Gsvdr(i_out, i_in), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+             'HandleVisibility', 'off');
+    end
+end
+plot(freqs, abs(squeeze(freqresp(Gsvdr(1, 2), freqs, 'Hz'))), 'color', [0,0,0,0.2], ...
+     'DisplayName', '$G_{svd,r}(i,j)\ i \neq j$');
+set(gca,'ColorOrderIndex',1)
+for i_in_out = 1:3
+    plot(freqs, abs(squeeze(freqresp(Gsvdr(i_in_out, i_in_out), freqs, 'Hz'))), 'DisplayName', sprintf('$G_{svd,r}(%d,%d)$', i_in_out, i_in_out));
+end
+hold off;
+set(gca, 'XScale', 'log'); set(gca, 'YScale', 'log');
+xlabel('Frequency [Hz]'); ylabel('Magnitude');
+ylim([1e-8, 1e-2]);
+legend('location', 'northeast');
+#+end_src
+
+#+begin_src matlab :tangle no :exports results :results file replace
+exportFig('figs/svd_plant_spurious.pdf', 'width', 'wide', 'height', 'normal');
+#+end_src
+
+#+name: fig:svd_plant_spurious
+#+caption: SVD decoupled plant including a spurious resonance $G_{svd,r}(s)$
+#+RESULTS:
+[[file:figs/svd_plant_spurious.png]]
 
 ** Conclusion
 <<sec:decoupling_conclusion>>
 
 The three proposed methods clearly have a lot in common as they all tend to make system more decoupled by pre and/or post multiplying by a constant matrix
 However, the three methods also differs by a number of points which are summarized in Table [[tab:decoupling_strategies_comp]].
+
+Other decoupling strategies could be included in this study, such as:
+- DC decoupling: pre-multiply the plant by $G(0)^{-1}$
+- full decoupling: pre-multiply the plant by $G(s)^{-1}$
 
 #+name: tab:decoupling_strategies_comp
 #+caption: Comparison of decoupling strategies
@@ -4067,7 +4283,7 @@ xlabel('Frequency [Hz]'); set(gca, 'YTickLabel',[]);
 legend('location', 'southwest');
 
 linkaxes([ax1,ax2],'y');
-ylim([1e-5, 1e1]);
+xlim([1e-1, 1e3]); ylim([1e-5, 1e1]);
 #+end_src
 
 #+begin_src matlab :tangle no :exports results :results file replace
